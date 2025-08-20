@@ -168,13 +168,13 @@ public class AbstractOTPCaptchaConnectorTest {
 
     private void setupDefaultMocks() {
 
-        // Default request setup
+        // Default request setup.
         when(request.getRequestURI()).thenReturn("/commonauth");
         when(request.getParameter(FrameworkUtils.SESSION_DATA_KEY)).thenReturn(SESSION_KEY);
         when(request.getParameter(OTP_PARAM_NAME)).thenReturn("123456");
         when(request.getParameter(RESEND_PARAM)).thenReturn("false");
 
-        // Default context setup
+        // Default context setup.
         frameworkUtilsStatic.when(() -> FrameworkUtils.getAuthenticationContextFromCache(SESSION_KEY))
                 .thenReturn(context);
         when(context.getCurrentAuthenticator()).thenReturn(AUTHENTICATOR_NAME);
@@ -183,28 +183,28 @@ public class AbstractOTPCaptchaConnectorTest {
         when(context.getLastAuthenticatedUser()).thenReturn(user);
         when(context.getUserTenantDomain()).thenReturn(TENANT_DOMAIN);
 
-        // Default user setup
+        // Default user setup.
         when(user.getUserName()).thenReturn(USERNAME);
         when(user.getTenantDomain()).thenReturn(TENANT_DOMAIN);
 
-        // Default CaptchaUtil setup
+        // Default CaptchaUtil setup.
         captchaUtilStatic.when(() -> CaptchaUtil.isPathAvailable(anyString(), anyString())).thenReturn(true);
         captchaUtilStatic.when(CaptchaUtil::isCaptchaValidationEnabledForLocalOTPAuthenticators).thenReturn(true);
         captchaUtilStatic.when(() ->
                         CaptchaUtil.isMaximumFailedLoginAttemptsReached(anyString(), anyString(), anyString()))
                 .thenReturn(true);
 
-        // Default CaptchaDataHolder setup
+        // Default CaptchaDataHolder setup.
         captchaDataHolderStatic.when(CaptchaDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.isForcefullyEnabledRecaptchaForAllTenants()).thenReturn(false);
         when(dataHolder.isReCaptchaEnabled()).thenReturn(true);
         when(dataHolder.getReCaptchaErrorRedirectUrls()).thenReturn("https://x,https://y");
         doNothing().when(dataHolder).setReCaptchaErrorRedirectUrls(anyString());
 
-        // Default governance service setup
+        // Default governance service setup.
         setupGovernanceServiceDefaults();
 
-        // Default CaptchaConstants setup
+        // Default CaptchaConstants setup.
         captchaConstantsStatic.when(CaptchaConstants::getEnableSecurityMechanism).thenReturn("");
     }
 
@@ -221,11 +221,9 @@ public class AbstractOTPCaptchaConnectorTest {
             when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
                     .thenReturn(new Property[]{pAlways, pEnable, pMax});
         } catch (Exception ignored) {
-            // Ignore exceptions in test setup
+            // Ignore exceptions in test setup.
         }
     }
-
-    // ---------- canHandle() tests ----------
 
     @Test
     public void testCanHandle() throws Exception {
@@ -293,9 +291,9 @@ public class AbstractOTPCaptchaConnectorTest {
     @Test
     public void testCanHandlePreviousIdpAreFlowHandlers() throws Exception {
 
-        // Build previous IdPs so that isPreviousIdPAuthenticationFlowHandler() returns true
+        // Build previous IdPs so that isPreviousIdPAuthenticationFlowHandler() returns true.
         AuthenticatorConfig cfg = mock(AuthenticatorConfig.class);
-        // application authenticator that also implements AuthenticationFlowHandler
+        // application authenticator that also implements AuthenticationFlowHandler.
         ApplicationAuthenticator appAuth =
                 mock(org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator.class,
                 withSettings().extraInterfaces(AuthenticationFlowHandler.class));
@@ -319,12 +317,10 @@ public class AbstractOTPCaptchaConnectorTest {
         assertFalse(connector.canHandle(request, response));
     }
 
-    // ---------- preValidate() tests ----------
-
     @Test
     public void testPreValidateAlwaysOnSetsCaptcha() throws Exception {
 
-        // Enable ALWAYS through governance config
+        // Enable ALWAYS through governance config.
         Property pAlways = new Property();
         pAlways.setValue("true");
         Property pEnable = new Property();
@@ -345,7 +341,7 @@ public class AbstractOTPCaptchaConnectorTest {
     @Test
     public void testPreValidateMaxAttemptsSetsCaptcha() throws Exception {
 
-        // Always=false; enable attempts path
+        // Always=false; enable attempts path.
         Property pAlways = new Property();
         pAlways.setValue("false");
         when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
@@ -380,8 +376,6 @@ public class AbstractOTPCaptchaConnectorTest {
         connector.preValidate(request, response);
     }
 
-    // ---------- postValidate() tests ----------
-
     @Test
     public void testPostValidateSecurityMechanismDisabled() throws Exception {
 
@@ -400,8 +394,6 @@ public class AbstractOTPCaptchaConnectorTest {
         assertTrue(r.isEnableCaptchaResponsePath());
         assertEquals(r.getCaptchaAttributes().get("reCaptcha"), "true");
     }
-
-    // ---------- isRecaptchaEnabled() tests ----------
 
     @Test
     public void testIsRecaptchaEnabledForceAllTenantsTrue() throws Exception {
@@ -442,7 +434,7 @@ public class AbstractOTPCaptchaConnectorTest {
             when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
                     .thenReturn(new Property[]{});
         } catch (Exception ignored) {
-            // Ignore exceptions in test setup
+            // Ignore exceptions in test setup.
         }
         assertFalse(connector.isRecaptchaEnabled(request));
     }
@@ -450,7 +442,7 @@ public class AbstractOTPCaptchaConnectorTest {
     @Test
     public void testIsRecaptchaEnabledEnableTrueButNotMaxAttempts() throws Exception {
 
-        // ENABLE_ALWAYS=false, ENABLE=true, but max attempts NOT reached
+        // ENABLE_ALWAYS=false, ENABLE=true, but max attempts NOT reached.
         Property pAlways = new Property();
         pAlways.setValue("false");
         Property pEnable = new Property();
@@ -461,7 +453,7 @@ public class AbstractOTPCaptchaConnectorTest {
             when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
                     .thenReturn(new Property[]{pAlways, pEnable, pMax});
         } catch (Exception ignored) {
-            // Ignore exceptions in test setup
+            // Ignore exceptions in test setup.
         }
         captchaUtilStatic.when(() ->
                         CaptchaUtil.isMaximumFailedLoginAttemptsReached(anyString(), anyString(), anyString()))
@@ -473,7 +465,7 @@ public class AbstractOTPCaptchaConnectorTest {
     @Test
     public void testIsRecaptchaEnabledAllConditionsMet() throws Exception {
 
-        // ENABLE_ALWAYS=false, ENABLE=true, max attempts reached, dataHolder enabled true
+        // ENABLE_ALWAYS=false, ENABLE=true, max attempts reached, dataHolder enabled true.
         Property pAlways = new Property();
         pAlways.setValue("false");
         Property pEnable = new Property();
@@ -484,7 +476,7 @@ public class AbstractOTPCaptchaConnectorTest {
             when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
                     .thenReturn(new Property[]{pAlways, pEnable, pMax});
         } catch (Exception ignored) {
-            // Ignore exceptions in test setup
+            // Ignore exceptions in test setup.
         }
 
         captchaUtilStatic.when(() ->
@@ -495,17 +487,15 @@ public class AbstractOTPCaptchaConnectorTest {
         assertTrue(connector.isRecaptchaEnabled(request));
     }
 
-    // ---------- helper path coverage: getUserNameFromContext fallback & tenant via context.getUserTenantDomain() ----------
-
     @Test
     public void testPreValidateUsesUsernameFromRequestAndTenantFromUserTenantDomain() throws Exception {
 
-        // Remove lastAuthenticatedUser to force username fallback from request param
+        // Remove lastAuthenticatedUser to force username fallback from request param.
         when(context.getLastAuthenticatedUser()).thenReturn(null);
         when(request.getParameter("username")).thenReturn("charlie@example.com");
         when(context.getUserTenantDomain()).thenReturn(TENANT_DOMAIN);
 
-        // Disable ALWAYS; trigger attempts path
+        // Disable ALWAYS; trigger attempts path.
         Property pAlways = new Property();
         pAlways.setValue("false");
         when(governanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
