@@ -32,6 +32,7 @@ public class LocalEmailOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
     private static final String RESEND_PARAM_NAME = "resendCode";
     private static final String FAILED_ATTEMPTS_CLAIM_URI = "http://wso2.org/claims/identity/failedEmailOtpAttempts";
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/email_otp.do";
+    private static final int AUTHENTICATOR_PRIORITY = 30;
 
     @Override
     protected boolean isOTPParamPresent(ServletRequest servletRequest) {
@@ -68,5 +69,10 @@ public class LocalEmailOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
     protected String getOnFailRedirectUrl() {
 
         return ON_FAIL_REDIRECT_URL;
+    }
+
+    @Override
+    protected int getAuthenticatorPriority() {
+        return AUTHENTICATOR_PRIORITY;
     }
 }

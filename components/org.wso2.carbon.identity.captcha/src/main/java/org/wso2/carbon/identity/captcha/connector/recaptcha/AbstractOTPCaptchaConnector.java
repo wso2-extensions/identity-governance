@@ -75,7 +75,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
     @Override
     public int getPriority() {
 
-        return 30;
+        return getAuthenticatorPriority();
     }
 
     /**
@@ -116,7 +116,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
             return false;
         }
 
-        if (context.getCurrentStep() != 1 || isPreviousIdPAuthenticationFlowHandler(context)) {
+        if (!isOTPAsFirstFactor(context)) {
             return false;
         }
 
@@ -157,31 +157,31 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
             log.error("Unable to load connector configuration.", e);
         }
 
-        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() || (connectorConfigs != null &&
-                connectorConfigs.length != 0 && Boolean.parseBoolean(connectorConfigs[0].getValue()))) {
+        boolean isForcefullyEnabled = CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants();
 
-            Map<String, String> params = new HashMap<>();
-            params.put(AUTH_FAILURE, Boolean.TRUE.toString());
-            params.put(AUTH_FAILURE_MSG, RECAPTCHA_FAIL_MSG);
-            preValidationResponse.setCaptchaAttributes(params);
-            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
-            preValidationResponse.setCaptchaValidationRequired(true);
+        boolean isConnectorAlwaysEnabled = connectorConfigs != null
+                && connectorConfigs.length != 0
+                && Boolean.parseBoolean(connectorConfigs[0].getValue());
 
-        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(
-                MultitenantUtils.getTenantAwareUsername(username), tenantDomain, getFailedAttemptsClaimUri())) {
+        boolean isMaxFailedLimitReached = CaptchaUtil.isMaximumFailedLoginAttemptsReached(
+                MultitenantUtils.getTenantAwareUsername(username), tenantDomain, getFailedAttemptsClaimUri());
 
-            preValidationResponse.setCaptchaValidationRequired(true);
-            preValidationResponse.setMaxFailedLimitReached(true);
-            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
-            Map<String, String> params = new HashMap<>();
-            params.put(RECAPTCHA_PARAM, Boolean.TRUE.toString());
-            params.put(AUTH_FAILURE, Boolean.TRUE.toString());
-            params.put(AUTH_FAILURE_MSG, RECAPTCHA_FAIL_MSG);
-            preValidationResponse.setCaptchaAttributes(params);
+        if (isForcefullyEnabled || isConnectorAlwaysEnabled || isMaxFailedLimitReached) {
+
+                Map<String, String> params = new HashMap<>();
+                params.put(AUTH_FAILURE, Boolean.TRUE.toString());
+                params.put(AUTH_FAILURE_MSG, RECAPTCHA_FAIL_MSG);
+                preValidationResponse.setCaptchaValidationRequired(true);
+                preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
+
+                if (isMaxFailedLimitReached && ! (isForcefullyEnabled || isConnectorAlwaysEnabled)) {
+                    params.put(RECAPTCHA_PARAM, Boolean.TRUE.toString());
+                    preValidationResponse.setMaxFailedLimitReached(true);
+                }
+                preValidationResponse.setCaptchaAttributes(params);
         }
 
         // Post validate all requests.
-        preValidationResponse.setMaxFailedLimitReached(true);
         preValidationResponse.setPostValidationRequired(true);
         return preValidationResponse;
     }
@@ -274,6 +274,19 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
 
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled()
                 && isCaptchaValidationEnabledForLocalOTPAuthenticators();
+    }
+
+
+    /**
+     * Check if the OTP authenticator is the first factor in the authentication flow.
+     *
+     * @param context AuthenticationContext
+     * @return true if OTP authenticator is the first factor or user is not properly authenticated, false otherwise.
+     */
+    private boolean isOTPAsFirstFactor(AuthenticationContext context) {
+
+        // If the current step is not 1, check if user is properly authenticated by a previous IdP
+        return (context.getCurrentStep() == 1 || isPreviousIdPAuthenticationFlowHandler(context));
     }
 
     /**
@@ -385,4 +398,11 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
      * @return Redirect URL on failure.
      */
     protected abstract String getOnFailRedirectUrl();
+
+    /**
+     * Get the authenticator priority.
+     *
+     * @return Authenticator priority.
+     */
+    protected abstract int getAuthenticatorPriority();
 }
