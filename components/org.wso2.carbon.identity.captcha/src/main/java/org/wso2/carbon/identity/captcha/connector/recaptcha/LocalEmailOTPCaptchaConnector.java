@@ -73,6 +73,7 @@ public class LocalEmailOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
 
     @Override
     protected int getAuthenticatorPriority() {
+
         return AUTHENTICATOR_PRIORITY;
     }
 }
