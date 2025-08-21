@@ -23,6 +23,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -33,8 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
 
 /**
@@ -216,60 +215,38 @@ public class CaptchaUtilTest {
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
 
-    @Test
-    public void testLocalOtpCaptchaPropNull() {
+    /**
+     * Provides test data for local OTP captcha property validation scenarios.
+     * Each array contains: description, property value, expected result
+     */
+    @DataProvider(name = "localOtpCaptchaPropertyScenarios")
+    public Object[][] localOtpCaptchaPropertyScenarios() {
 
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp(null)) {
-            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
+        return new Object[][]{
+            {"Null property value", null, false},
+            {"Empty string property", "", false},
+            {"Whitespace only property", "   \t", false},
+            {"String 'true' (lowercase)", "true", true},
+            {"String 'True' (mixed case)", "TrUe", true},
+            {"String 'TRUE' (uppercase)", "TRUE", true},
+            {"String 'false' (lowercase)", "false", false},
+            {"String 'False' (mixed case)", "FaLsE", false},
+            {"Invalid non-boolean string", "not-a-boolean", false},
+            {"Numeric string '1'", "1", false},
+            {"Numeric string '0'", "0", false},
+            {"String 'yes'", "yes", false}
+        };
     }
 
-    @Test
-    public void testLocalOtpCaptchaPropEmpty() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("")) {
-            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+    @Test(description = "Verify local OTP captcha validation behavior for various property values",
+          dataProvider = "localOtpCaptchaPropertyScenarios")
+    public void testLocalOtpCaptchaPropertyValidation(String description, String propertyValue, 
+                                                      boolean expectedResult) {
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = stubLocalOtpCaptchaProp(propertyValue)) {
+            boolean actualResult = CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators();
+            Assert.assertEquals(actualResult, expectedResult, 
+                    String.format("Local OTP captcha validation should return %s for scenario: %s (property value: '%s')",
+                            expectedResult, description, propertyValue));
         }
     }
-
-    @Test
-    public void testLocalOtpCaptchaPropWhitespace() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("   \t")) {
-            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
-    }
-
-    @Test
-    public void testLocalOtpCaptchaPropTrue() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("true")) {
-            assertTrue(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
-    }
-
-    @Test
-    public void testLocalOtpCaptchaPropTrueMixedCase() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("TrUe")) {
-            assertTrue(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
-    }
-
-    @Test
-    public void testLocalOtpCaptchaPropFalse() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("false")) {
-            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
-    }
-
-    @Test
-    public void testLocalOtpCaptchaPropGarbage() {
-
-        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("not-a-boolean")) {
-            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
-        }
-    }
-
 }
