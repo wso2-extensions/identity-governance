@@ -28,4 +28,9 @@
             <class name="org.wso2.carbon.identity.captcha.listener.CaptchaFlowExecutionListenerTest"/>
         </classes>
     </test>
+    <test name="Captcha-Connector-Tests" preserve-order="true" parallel="false">
+        <classes>
+            <class name="org.wso2.carbon.identity.captcha.connector.recaptcha.AbstractOTPCaptchaConnectorTest"/>
+        </classes>
+    </test>
 </suite>
