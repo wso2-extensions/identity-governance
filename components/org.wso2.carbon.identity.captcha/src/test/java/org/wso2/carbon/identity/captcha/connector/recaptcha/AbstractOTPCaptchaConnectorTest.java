@@ -225,7 +225,7 @@ public class AbstractOTPCaptchaConnectorTest {
         @Override
         protected int getAuthenticatorPriority() {
 
-            return AUTHENTICATOR_PRIORITY ;
+            return AUTHENTICATOR_PRIORITY;
         }
     }
 
