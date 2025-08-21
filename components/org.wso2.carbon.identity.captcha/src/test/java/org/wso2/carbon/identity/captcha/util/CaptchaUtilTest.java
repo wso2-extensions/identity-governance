@@ -18,12 +18,15 @@ package org.wso2.carbon.identity.captcha.util;
 
 import com.google.gson.JsonObject;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.io.IOException;
 
@@ -45,6 +48,13 @@ public class CaptchaUtilTest {
     public void setUp() {
 
         MockitoAnnotations.openMocks(this);
+    }
+
+    private MockedStatic<IdentityUtil> stubLocalOtpCaptchaProp(String value) {
+
+        MockedStatic<IdentityUtil> ms = Mockito.mockStatic(IdentityUtil.class);
+        ms.when(() -> IdentityUtil.getProperty(Mockito.anyString())).thenReturn(value);
+        return ms;
     }
 
     private Method getCreateReCaptchaEnterpriseVerificationHttpPostMethod() throws NoSuchMethodException {
@@ -203,5 +213,40 @@ public class CaptchaUtilTest {
         Method method = getVerifyReCaptchaResponseMethod();
         // Verify no exception is thrown for invalid response.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
+    }
+
+    /**
+     * Provides test data for local OTP captcha property validation scenarios.
+     * Each array contains: description, property value, expected result
+     */
+    @DataProvider(name = "localOtpCaptchaPropertyScenarios")
+    public Object[][] localOtpCaptchaPropertyScenarios() {
+
+        return new Object[][]{
+            {"Null property value", null, false},
+            {"Empty string property", "", false},
+            {"Whitespace only property", "   \t", false},
+            {"String 'true' (lowercase)", "true", true},
+            {"String 'True' (mixed case)", "TrUe", true},
+            {"String 'TRUE' (uppercase)", "TRUE", true},
+            {"String 'false' (lowercase)", "false", false},
+            {"String 'False' (mixed case)", "FaLsE", false},
+            {"Invalid non-boolean string", "not-a-boolean", false},
+            {"Numeric string '1'", "1", false},
+            {"Numeric string '0'", "0", false},
+            {"String 'yes'", "yes", false}
+        };
+    }
+
+    @Test(description = "Verify local OTP captcha validation behavior for various property values",
+          dataProvider = "localOtpCaptchaPropertyScenarios")
+    public void testLocalOtpCaptchaPropertyValidation(String description, String propertyValue, 
+                                                      boolean expectedResult) {
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = stubLocalOtpCaptchaProp(propertyValue)) {
+            boolean actualResult = CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators();
+            Assert.assertEquals(actualResult, expectedResult, 
+                    String.format("Local OTP captcha validation should return %s for scenario: %s (property value: '%s')",
+                            expectedResult, description, propertyValue));
+        }
     }
 }

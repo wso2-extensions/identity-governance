@@ -69,6 +69,8 @@ public class CaptchaConstants {
 
     public static final String CAPTCHA_SUCCESS = "success";
     public static final String ENABLE_GENERIC_CAPTCHA_VALIDATION = "enable_captcha_validation";
+    public static final String ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS
+            = "Captcha.EnableCaptchaForLocalOTPAuthenticators";
     public static final String RE_CAPTCHA = "reCaptcha";
     public static final String AUTH_FAILURE = "authFailure";
     public static final String AUTH_FAILURE_MSG = "authFailureMsg";
