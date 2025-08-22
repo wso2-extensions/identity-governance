@@ -17,6 +17,7 @@
 
 package org.wso2.carbon.identity.user.endpoint.impl;
 
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -28,6 +29,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -109,6 +111,18 @@ public class MeApiServiceImplTest {
                 any(Property[].class))).thenReturn(notificationResponseBean);
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
         assertEquals(meApiService.mePost(null).getStatus(), 201);
+    }
+
+    @Test
+    public void testMePostWorkflowEngaged() throws IdentityRecoveryException {
+
+        Mockito.when(userSelfRegistrationManager.registerUser(ArgumentMatchers.isNull(), anyString(),
+                        ArgumentMatchers.isNull(), ArgumentMatchers.isNull())).thenReturn(notificationResponseBean);
+        ResolvedUser resolvedUser = new ResolvedUser();
+        resolvedUser.setUserName(USERNAME);
+        resolvedUser.setUserId(null); // Indicates workflow is engaged as user is not created yet.
+        Mockito.when(notificationResponseBean.getUser()).thenReturn(resolvedUser);
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 202);
     }
 
     @Test
