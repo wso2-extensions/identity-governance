@@ -949,6 +949,7 @@ public class UserSelfRegistrationManager {
 
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.SET_PASSWORD.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
