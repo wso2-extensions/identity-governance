@@ -184,6 +184,12 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
+        Response.ResponseBuilder responseBuilder =  Response.status(Response.Status.CREATED);
+        String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            responseBuilder = Response.status(Response.Status.ACCEPTED);
+        }
+
         // Check whether detailed api responses are enabled.
         if (isDetailedResponseBodyEnabled()) {
             String notificationChannel = notificationResponseBean.getNotificationChannel();
@@ -195,18 +201,17 @@ public class MeApiServiceImpl extends MeApiService {
             }
             SuccessfulUserCreationDTO successfulUserCreationDTO =
                     buildSuccessResponseForInternalChannels(notificationResponseBean);
-            return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
+            return responseBuilder.entity(successfulUserCreationDTO).build();
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
                 /*If the notifications are required in the form of legacy response, and notifications are externally
                  managed, the recoveryId should be in the response as text*/
                 if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                    return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
-                            .build();
+                    return responseBuilder.entity(notificationResponseBean.getRecoveryId()).build();
                 }
             }
-            return Response.status(Response.Status.CREATED).build();
+            return responseBuilder.build();
         }
     }
 
