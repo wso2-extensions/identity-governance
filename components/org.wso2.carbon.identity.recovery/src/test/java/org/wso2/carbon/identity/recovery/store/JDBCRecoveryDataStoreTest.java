@@ -116,6 +116,8 @@ public class JDBCRecoveryDataStoreTest {
                 .thenReturn(mockConnection);
         mockedIdentityTenantUtils.when(() -> IdentityTenantUtil.getTenantId(TEST_TENANT_DOMAIN))
                 .thenReturn(TEST_TENANT_ID);
+        mockedIdentityTenantUtils.when(() -> IdentityTenantUtil.getTenantDomain(TEST_TENANT_ID))
+                .thenReturn(TEST_TENANT_DOMAIN);
         mockedIdentityUtil.when(() -> IdentityUtil.isUserStoreCaseSensitive(anyString(), anyInt()))
                 .thenReturn(true);
 
@@ -243,6 +245,37 @@ public class JDBCRecoveryDataStoreTest {
         }
     }
 
+    @DataProvider(name = "askPasswordUserOnboardScenarios")
+    private Object[][] askPasswordUserOnboardScenarios() {
+
+        return new Object[][] {
+                { RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP, RecoverySteps.SET_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP, RecoverySteps.SET_PASSWORD }
+        };
+    }
+
+    @Test(dataProvider = "askPasswordUserOnboardScenarios")
+    public void testLoadExpiredAskPasswordOTPCode(RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep) throws Exception {
+
+        when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getTimestamp(eq("TIME_CREATED"), any(Calendar.class)))
+                .thenReturn(new Timestamp(System.currentTimeMillis() - 600000));
+        when(mockResultSet.getString("SCENARIO")).thenReturn(recoveryScenario.toString());
+        when(mockResultSet.getString("STEP")).thenReturn(recoveryStep.toString());
+        when(mockResultSet.getInt("TENANT_ID")).thenReturn(TEST_TENANT_ID);
+
+        mockExpiryTimes();
+        mockUtilsErrors();
+        try {
+            userRecoveryDataStore.load(TEST_SECRET_CODE, false);
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryClientException);
+        }
+    }
+
     private void mockExpiryTimes() {
 
         mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
@@ -277,6 +310,9 @@ public class JDBCRecoveryDataStoreTest {
                 .thenReturn("10");
         mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
                         .ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, TEST_TENANT_DOMAIN))
                 .thenReturn("10");
     }
 

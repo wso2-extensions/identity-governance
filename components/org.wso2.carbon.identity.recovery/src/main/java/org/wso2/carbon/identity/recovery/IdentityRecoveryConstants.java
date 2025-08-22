@@ -269,6 +269,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_FLOW_ID("18019", "Invalid flow confirmation code '%s'."),
         ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
         ERROR_CODE_MOBILE_NOT_FOUND("18021", "Mobile number is not found for the user %s."),
+        ERROR_CODE_EXPIRED_OTP("18022", "Expired OTP '%s'."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),

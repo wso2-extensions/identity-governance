@@ -60,6 +60,7 @@ import static org.wso2.carbon.identity.event.IdentityEventConstants.EventPropert
 import static org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty.OPERATION_STATUS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_OTP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER;
@@ -351,8 +352,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 }
                 if (isCodeExpired) {
                     isOperationSuccess = false;
-                    description = ERROR_CODE_EXPIRED_CODE;
-                    throw Utils.handleClientException(ERROR_CODE_EXPIRED_CODE, code);
+                    description = resolveErrorCodeForExpiry(recoveryScenario);
+                    throw Utils.handleClientException((IdentityRecoveryConstants.ErrorMessages) description, code);
                 }
                 isOperationSuccess = true;
                 description = null;
@@ -1174,5 +1175,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
                     eventName, e);
         }
+    }
+
+    private IdentityRecoveryConstants.ErrorMessages resolveErrorCodeForExpiry(Enum recoveryScenario) {
+
+        if (recoveryScenario == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP
+                || recoveryScenario == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP
+                || recoveryScenario == RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP
+                || recoveryScenario == RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP) {
+            return ERROR_CODE_EXPIRED_OTP;
+        }
+        return ERROR_CODE_EXPIRED_CODE;
     }
 }
