@@ -184,13 +184,13 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
-        Response.ResponseBuilder responseBuilder =  Response.status(Response.Status.CREATED);
-        String userId = null;
-        if (notificationResponseBean.getUser() != null && notificationResponseBean.getUser() instanceof ResolvedUser) {
-            userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
-        }
-        if (StringUtils.isEmpty(userId)) {
-            responseBuilder = Response.status(Response.Status.ACCEPTED);
+        Response.ResponseBuilder responseBuilder = Response.status(Response.Status.CREATED);
+        if (notificationResponseBean != null && notificationResponseBean.getUser() != null
+                && notificationResponseBean.getUser() instanceof ResolvedUser) {
+            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+            if (StringUtils.isEmpty(userId)) {
+                responseBuilder = Response.status(Response.Status.ACCEPTED);
+            }
         }
 
         // Check whether detailed api responses are enabled.
