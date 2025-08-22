@@ -245,17 +245,25 @@ public class JDBCRecoveryDataStoreTest {
         }
     }
 
-    @Test()
-    public void testLoadExpiredAskPasswordOTPCode() throws Exception {
+    @DataProvider(name = "askPasswordUserOnboardScenarios")
+    private Object[][] askPasswordUserOnboardScenarios() {
+
+        return new Object[][] {
+                { RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP, RecoverySteps.SET_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP, RecoverySteps.SET_PASSWORD }
+        };
+    }
+
+    @Test(dataProvider = "askPasswordUserOnboardScenarios")
+    public void testLoadExpiredAskPasswordOTPCode(RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep) throws Exception {
 
         when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getTimestamp(eq("TIME_CREATED"), any(Calendar.class)))
                 .thenReturn(new Timestamp(System.currentTimeMillis() - 600000));
-        when(mockResultSet.getString("SCENARIO"))
-                .thenReturn(RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString());
-        when(mockResultSet.getString("STEP"))
-                .thenReturn(RecoverySteps.SET_PASSWORD.toString());
+        when(mockResultSet.getString("SCENARIO")).thenReturn(recoveryScenario.toString());
+        when(mockResultSet.getString("STEP")).thenReturn(recoveryStep.toString());
         when(mockResultSet.getInt("TENANT_ID")).thenReturn(TEST_TENANT_ID);
 
         mockExpiryTimes();
