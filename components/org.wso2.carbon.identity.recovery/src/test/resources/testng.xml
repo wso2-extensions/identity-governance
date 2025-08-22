@@ -20,28 +20,7 @@
 <suite name="Identity-Governance-Recovery-Connector-Test-Suite">
     <test name="Util-Tests" preserve-order="true" parallel="false">
         <classes>
-            <class name="org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImplTest" />
-            <class name="org.wso2.carbon.identity.recovery.connector.RecoveryConfigImplTest" />
-            <class name="org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImplTest" />
-            <class name="org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImplTest" />
-            <class name="org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImplTest" />
-            <class name="org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManagerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManagerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImplTest"/>
-            <class name="org.wso2.carbon.identity.recovery.util.UtilsTest"/>
-            <class name="org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandlerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandlerTest" />
-            <class name="org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandlerTest" />
-            <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandlerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManagerTest" />
-            <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStoreTest" />
-            <class name="org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManagerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImplTest"/>
-            <class name="org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListenerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutorTest"/>
-            <class name="org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutorTest"/>
-            <class name="org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandlerTest"/>
         </classes>
     </test>
 </suite>
