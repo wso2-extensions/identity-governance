@@ -46,6 +46,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternal
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADD_USER_EVENT;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_BAD_SELF_REGISTER_REQUEST;
 
 /**
@@ -185,12 +187,9 @@ public class MeApiServiceImpl extends MeApiService {
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
         Response.ResponseBuilder responseBuilder = Response.status(Response.Status.CREATED);
-        if (notificationResponseBean != null && notificationResponseBean.getUser() != null
-                && notificationResponseBean.getUser() instanceof ResolvedUser) {
-            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
-            if (StringUtils.isEmpty(userId)) {
-                responseBuilder = Response.status(Response.Status.ACCEPTED);
-            }
+
+        if (isWorkflowAssociated(notificationResponseBean)) {
+            responseBuilder = Response.status(Response.Status.ACCEPTED);
         }
 
         // Check whether detailed api responses are enabled.
@@ -429,6 +428,22 @@ public class MeApiServiceImpl extends MeApiService {
         userDTO.setRealm(UserCoreUtil.extractDomainFromName(usernameFromContext));
         userDTO.setTenantDomain(tenantFromContext);
         return userDTO;
+    }
+
+    private boolean isWorkflowAssociated(NotificationResponseBean notificationResponseBean) {
+
+        if (notificationResponseBean != null && notificationResponseBean.getUser() != null
+                && notificationResponseBean.getUser() instanceof ResolvedUser) {
+            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+            if (StringUtils.isEmpty(userId)) {
+                try {
+                    return Utils.getWorkflowManagementService().isEventAssociated(ADD_USER_EVENT);
+                } catch (WorkflowException | UserExportException e) {
+                    LOG.warn("Error while checking if add user event is associated with a workflow.", e);
+                }
+            }
+        }
+        return false;
     }
 }
 
