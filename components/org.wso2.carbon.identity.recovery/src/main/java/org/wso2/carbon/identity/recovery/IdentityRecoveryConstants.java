@@ -227,6 +227,7 @@ public class IdentityRecoveryConstants {
     // Workflow constants.
     public static final String ENTITY_TYPE_USER = "USER";
     public static final String ADD_USER_EVENT = "ADD_USER";
+    public static final String SELF_REGISTER_USER_EVENT = "SELF_REGISTER_USER";
 
     public static final String CORRELATION_ID_MDC = "Correlation-ID";
     // Ask Password thread local property name.

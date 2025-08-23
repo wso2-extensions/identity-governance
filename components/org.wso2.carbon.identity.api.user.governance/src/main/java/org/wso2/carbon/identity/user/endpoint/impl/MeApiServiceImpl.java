@@ -55,8 +55,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADD_USER_EVENT;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_BAD_SELF_REGISTER_REQUEST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SELF_REGISTER_USER_EVENT;
 
 /**
  * Class which contains the implementation of MeApiService.
@@ -437,7 +437,7 @@ public class MeApiServiceImpl extends MeApiService {
             String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
             if (StringUtils.isEmpty(userId)) {
                 try {
-                    return Utils.getWorkflowManagementService().isEventAssociated(ADD_USER_EVENT);
+                    return Utils.getWorkflowManagementService().isEventAssociated(SELF_REGISTER_USER_EVENT);
                 } catch (WorkflowException | UserExportException e) {
                     LOG.warn("Error while checking if add user event is associated with a workflow.", e);
                 }

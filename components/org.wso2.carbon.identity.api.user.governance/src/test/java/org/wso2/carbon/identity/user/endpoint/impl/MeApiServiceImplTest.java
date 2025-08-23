@@ -66,7 +66,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADD_USER_EVENT;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SELF_REGISTER_USER_EVENT;
 
 /**
  * This class contains unit tests for MeApiServiceImpl.java.
@@ -130,7 +130,7 @@ public class MeApiServiceImplTest {
         Mockito.when(notificationResponseBean.getUser()).thenReturn(resolvedUser);
 
         mockedUtils.when(Utils::getWorkflowManagementService).thenReturn(workflowManagementService);
-        when(workflowManagementService.isEventAssociated(ADD_USER_EVENT)).thenReturn(true);
+        when(workflowManagementService.isEventAssociated(SELF_REGISTER_USER_EVENT)).thenReturn(true);
 
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 202);
     }
