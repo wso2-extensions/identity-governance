@@ -46,6 +46,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternal
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
@@ -55,6 +56,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_BAD_SELF_REGISTER_REQUEST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SELF_REGISTER_USER_EVENT;
 
 /**
  * Class which contains the implementation of MeApiService.
@@ -184,6 +186,12 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
+        Response.ResponseBuilder responseBuilder = Response.status(Response.Status.CREATED);
+
+        if (isWorkflowAssociated(notificationResponseBean)) {
+            responseBuilder = Response.status(Response.Status.ACCEPTED);
+        }
+
         // Check whether detailed api responses are enabled.
         if (isDetailedResponseBodyEnabled()) {
             String notificationChannel = notificationResponseBean.getNotificationChannel();
@@ -195,18 +203,17 @@ public class MeApiServiceImpl extends MeApiService {
             }
             SuccessfulUserCreationDTO successfulUserCreationDTO =
                     buildSuccessResponseForInternalChannels(notificationResponseBean);
-            return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
+            return responseBuilder.entity(successfulUserCreationDTO).build();
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
                 /*If the notifications are required in the form of legacy response, and notifications are externally
                  managed, the recoveryId should be in the response as text*/
                 if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                    return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
-                            .build();
+                    return responseBuilder.entity(notificationResponseBean.getRecoveryId()).build();
                 }
             }
-            return Response.status(Response.Status.CREATED).build();
+            return responseBuilder.build();
         }
     }
 
@@ -421,6 +428,22 @@ public class MeApiServiceImpl extends MeApiService {
         userDTO.setRealm(UserCoreUtil.extractDomainFromName(usernameFromContext));
         userDTO.setTenantDomain(tenantFromContext);
         return userDTO;
+    }
+
+    private boolean isWorkflowAssociated(NotificationResponseBean notificationResponseBean) {
+
+        if (notificationResponseBean != null && notificationResponseBean.getUser() != null
+                && notificationResponseBean.getUser() instanceof ResolvedUser) {
+            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+            if (StringUtils.isEmpty(userId)) {
+                try {
+                    return Utils.getWorkflowManagementService().isEventAssociated(SELF_REGISTER_USER_EVENT);
+                } catch (WorkflowException | UserExportException e) {
+                    LOG.warn("Error while checking if add user event is associated with a workflow.", e);
+                }
+            }
+        }
+        return false;
     }
 }
 
