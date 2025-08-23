@@ -60,6 +60,7 @@ import org.wso2.carbon.identity.user.endpoint.exceptions.NotFoundException;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
 import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -423,6 +424,12 @@ public class Utils {
             // Catching NPE since getOSGiService can throw NPE if the RealmService is not registered properly.
             throw new UserExportException("Error while retrieving RealmService.", e);
         }
+    }
+
+    public static WorkflowManagementService getWorkflowManagementService() throws UserExportException {
+
+        return (WorkflowManagementService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getOSGiService(WorkflowManagementService.class, null);
     }
 
     /**
