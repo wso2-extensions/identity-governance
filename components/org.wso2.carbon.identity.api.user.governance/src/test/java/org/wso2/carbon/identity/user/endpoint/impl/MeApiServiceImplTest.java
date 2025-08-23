@@ -52,6 +52,8 @@ import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
+import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.api.Claim;
 
 import java.nio.file.Paths;
@@ -64,6 +66,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADD_USER_EVENT;
 
 /**
  * This class contains unit tests for MeApiServiceImpl.java.
@@ -83,6 +86,9 @@ public class MeApiServiceImplTest {
 
     @Mock
     private NotificationResponseBean notificationResponseBean;
+
+    @Mock
+    private WorkflowManagementService workflowManagementService;
 
     @InjectMocks
     private MeApiServiceImpl meApiService;
@@ -114,7 +120,7 @@ public class MeApiServiceImplTest {
     }
 
     @Test
-    public void testMePostWorkflowEngaged() throws IdentityRecoveryException {
+    public void testMePostWorkflowEngaged() throws IdentityRecoveryException, WorkflowException {
 
         Mockito.when(userSelfRegistrationManager.registerUser(ArgumentMatchers.isNull(), anyString(),
                         ArgumentMatchers.isNull(), ArgumentMatchers.isNull())).thenReturn(notificationResponseBean);
@@ -122,6 +128,10 @@ public class MeApiServiceImplTest {
         resolvedUser.setUserName(USERNAME);
         resolvedUser.setUserId(null); // Indicates workflow is engaged as user is not created yet.
         Mockito.when(notificationResponseBean.getUser()).thenReturn(resolvedUser);
+
+        mockedUtils.when(Utils::getWorkflowManagementService).thenReturn(workflowManagementService);
+        when(workflowManagementService.isEventAssociated(ADD_USER_EVENT)).thenReturn(true);
+
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 202);
     }
 
