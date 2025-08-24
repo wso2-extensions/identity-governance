@@ -87,9 +87,9 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     private static final String REGISTRATION_COMPLETION_LISTENER = "registration-completion-listener";
     private static final String TRIGGER_NOTIFICATION = "trigger-notification";
     private static final String FLOW_ID = "flowId";
-    public static final String USER_NAME = "userName";
-    public static final String NOTIFICATION_CHANNEL = "notificationChannel";
-    public static final String ACCOUNT_LOCKED = "accountLocked";
+    private static final String USER_NAME = "userName";
+    private static final String NOTIFICATION_CHANNEL = "notificationChannel";
+    private static final String ACCOUNT_LOCKED = "accountLocked";
 
     @Override
     public int getDefaultOrderId() {
