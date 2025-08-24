@@ -91,7 +91,15 @@ public class ConfirmationCodeValidationExecutor implements Executor {
             }
 
             response.setResult(STATUS_COMPLETE);
-        } catch (IdentityRecoveryException | UserStoreException e) {
+        } catch (IdentityRecoveryException e) {
+            if (e.getErrorCode().equals(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE
+                    .getCode())) {
+                return userErrorResponse(response, e.getMessage());
+            }
+            String errorMessage = "Error while validating the confirmation code.";
+            LOG.error(errorMessage, e);
+            return errorResponse(response, errorMessage);
+        } catch (UserStoreException e) {
             String errorMessage = "Error while validating the confirmation code.";
             LOG.error(errorMessage, e);
             return errorResponse(response, errorMessage);
@@ -211,6 +219,20 @@ public class ConfirmationCodeValidationExecutor implements Executor {
 
         response.setResult(Constants.ExecutorStatus.STATUS_CLIENT_INPUT_REQUIRED);
         response.setRequiredData(Arrays.asList(fields));
+        return response;
+    }
+
+    /**
+     * Creates a user error response with the provided message.
+     *
+     * @param response ExecutorResponse to be modified with user error details.
+     * @param message  User error message to be set in the response.
+     * @return Modified ExecutorResponse with user error details.
+     */
+    private ExecutorResponse userErrorResponse(ExecutorResponse response, String message) {
+
+        response.setErrorMessage(message);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
         return response;
     }
 }
