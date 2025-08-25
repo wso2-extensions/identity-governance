@@ -107,8 +107,8 @@ public class CaptchaComponent {
             // Initialize and register LocalSMSOTPCaptchaConnector.
             captchaConnector = new LocalSMSOTPCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
-            AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
             context.getBundleContext().registerService(AuthenticationDataPublisher.class,
                     failedLoginAttemptValidator, null);
             context.getBundleContext().registerService(AbstractEventHandler.class.getName(), new
