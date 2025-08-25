@@ -174,7 +174,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
                 preValidationResponse.setCaptchaValidationRequired(true);
                 preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
 
-                if (isMaxFailedLimitReached && ! (isForcefullyEnabled || isConnectorAlwaysEnabled)) {
+                if (isMaxFailedLimitReached && !(isForcefullyEnabled || isConnectorAlwaysEnabled)) {
                     params.put(RECAPTCHA_PARAM, Boolean.TRUE.toString());
                     preValidationResponse.setMaxFailedLimitReached(true);
                 }
