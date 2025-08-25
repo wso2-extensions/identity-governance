@@ -87,8 +87,9 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     private static final String REGISTRATION_COMPLETION_LISTENER = "registration-completion-listener";
     private static final String TRIGGER_NOTIFICATION = "trigger-notification";
     private static final String FLOW_ID = "flowId";
-    public static final String USER_NAME = "userName";
-    public static final String NOTIFICATION_CHANNEL = "notificationChannel";
+    private static final String USER_NAME = "userName";
+    private static final String NOTIFICATION_CHANNEL = "notificationChannel";
+    private static final String ACCOUNT_LOCKED = "accountLocked";
 
     @Override
     public int getDefaultOrderId() {
@@ -109,8 +110,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     }
 
     @Override
-    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
-            throws FlowEngineException {
+    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext) {
 
         if (Constants.COMPLETE.equals(step.getFlowStatus()) && REGISTRATION_FLOW_TYPE.equals(flowExecutionContext.getFlowType())) {
 
@@ -146,6 +146,8 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                         UserStoreManager userStoreManager = getUserStoreManager(tenantDomain, userStoreDomain);
                         lockUserAccount(isAccountLockOnCreation, isEnableConfirmationOnCreation, tenantDomain,
                                 userStoreManager, user.getUsername());
+                        step.setStepType(Constants.StepTypes.VIEW);
+                        step.getData().addAdditionalData(ACCOUNT_LOCKED, Boolean.TRUE.toString());
                     } catch (UserStoreException | IdentityEventException e) {
                         LOG.error("Error while locking the user account from the registration completion listener " +
                                 "in the flow: " + flowExecutionContext.getContextIdentifier(), e);
