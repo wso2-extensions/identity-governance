@@ -33,7 +33,6 @@ public class LocalSMSOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
     @Override
     protected boolean isOTPParamPresent(ServletRequest servletRequest) {
 
-
         return servletRequest.getParameter(OTP_PARAM_NAME) != null;
     }
 
