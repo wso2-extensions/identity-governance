@@ -131,7 +131,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
                         "User : " + Utils.maskIfRequired(userName) + "'s email is not confirmed yet.");
-            } else if (!isSelfSignupEnabled && operationStatus && isUserEmailVerificationScenario(user)) {
+            } else if (operationStatus && isUserEmailVerificationScenario(user)) {
                 String errorCode = IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE;
                 if (isEmailOTPVerificationEnabled) {
                     errorCode = IdentityCoreConstants.USER_EMAIL_OTP_NOT_VERIFIED_ERROR_CODE;
