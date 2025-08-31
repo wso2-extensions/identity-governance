@@ -84,6 +84,9 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
 
+        boolean isEmailOTPVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP, user.getTenantDomain()));
+
         if (!isSelfSignupEnabled && !isEmailVerificationEnabled) {
             if (log.isDebugEnabled()) {
                 log.debug("Self signup feature and email verification are disabled in the tenant: " + tenantDomain);
@@ -129,11 +132,14 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
                         "User : " + Utils.maskIfRequired(userName) + "'s email is not confirmed yet.");
             } else if (!isSelfSignupEnabled && operationStatus && isUserEmailVerificationScenario(user)) {
-                IdentityErrorMsgContext customErrorMessageContext =
-                        new IdentityErrorMsgContext(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE);
+                String errorCode = IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE;
+                if (isEmailOTPVerificationEnabled) {
+                    errorCode = IdentityCoreConstants.USER_EMAIL_OTP_NOT_VERIFIED_ERROR_CODE;
+                }
+                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
-                        "User : " + Utils.maskIfRequired(userName) + "'s email is not verified yet.");
+                throw new IdentityEventException(errorCode, "User : " + Utils.maskIfRequired(userName) +
+                        "'s email is not verified yet.");
             } else if (isInvalidCredentialsScenario(operationStatus, user)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
