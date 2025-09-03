@@ -168,6 +168,13 @@ public class AccountConfirmationValidationHandlerTest {
         setupAccountLocked(true);
         setupUserConfirmed(true);
 
+        User user = createUser();
+        UserRecoveryData recoveryData = new UserRecoveryData(user, "12345", RecoveryScenarios.SELF_SIGN_UP);
+
+        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
+                .thenReturn(recoveryData);
+
         // When
         handler.handleEvent(event);
 
