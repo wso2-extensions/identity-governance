@@ -28,7 +28,6 @@ import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
@@ -56,7 +55,6 @@ import java.util.Map;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.REGISTRATION_FLOW_TYPE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION;
@@ -112,7 +110,8 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     @Override
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext) {
 
-        if (Constants.COMPLETE.equals(step.getFlowStatus()) && REGISTRATION_FLOW_TYPE.equals(flowExecutionContext.getFlowType())) {
+        if (Constants.COMPLETE.equals(step.getFlowStatus())
+                && Constants.FlowTypes.REGISTRATION.getType().equals(flowExecutionContext.getFlowType())) {
 
             FlowUser user = flowExecutionContext.getFlowUser();
             String tenantDomain = flowExecutionContext.getTenantDomain();
