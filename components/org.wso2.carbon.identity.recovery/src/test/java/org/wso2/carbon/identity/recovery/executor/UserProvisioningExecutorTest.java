@@ -190,6 +190,7 @@ public class UserProvisioningExecutorTest {
 
     @Test
     public void testExecuteWithUsernamePatternValidationSkipped() throws Exception {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = createTestFlowUser(USERNAME);
 
