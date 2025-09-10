@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
@@ -45,6 +46,9 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
+import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
+import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -69,6 +73,7 @@ import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.maskI
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.resolveEventName;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerAccountCreationNotification;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerNotification;
+import static org.wso2.carbon.identity.recovery.util.Utils.getDomainQualifiedUsername;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -88,6 +93,9 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     private static final String USER_NAME = "userName";
     private static final String NOTIFICATION_CHANNEL = "notificationChannel";
     private static final String ACCOUNT_LOCKED = "accountLocked";
+    private static final String PENDING_APPROVAL = "pendingApproval";
+    private static final String SELF_REGISTER_USER_EVENT = "SELF_REGISTER_USER";
+    private static final String WORKFLOW_USER_ENTITY_TYPE = "USER";
 
     @Override
     public int getDefaultOrderId() {
@@ -117,8 +125,24 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
             String tenantDomain = flowExecutionContext.getTenantDomain();
             String userStoreDomain = resolveUserStoreDomain(user.getUsername());
             Map<String, Object> loggerInputs = new HashMap<>();
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
 
             try {
+                WorkflowManagementService workflowManagementService = IdentityRecoveryServiceDataHolder
+                        .getInstance().getWorkflowManagementService();
+                // Check if the self registering user is associated with a workflow.
+                Entity entity = new Entity(getDomainQualifiedUsername(user), WORKFLOW_USER_ENTITY_TYPE, tenantId);
+                if (workflowManagementService.entityHasPendingWorkflowsOfType(entity, SELF_REGISTER_USER_EVENT)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(String.format("The user: %s in tenant domain: %s is associated with a pending " +
+                                "workflow. Hence self registration completion listener will not proceed.",
+                                SelfRegistrationUtils.maskIfRequired(user.getUsername()), tenantDomain));
+                    }
+                    step.setStepType(Constants.StepTypes.VIEW);
+                    step.getData().addAdditionalData(PENDING_APPROVAL, Boolean.TRUE.toString());
+                    return true;
+                }
+
                 boolean isAccountLockOnCreation = Boolean.parseBoolean(
                         Utils.getConnectorConfig(ACCOUNT_LOCK_ON_CREATION, tenantDomain));
 
@@ -200,7 +224,8 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                     logDiagnostic("Account verification notification sent successfully.", SUCCESS,
                             TRIGGER_NOTIFICATION, loggerInputs);
                 }
-            } catch (IdentityEventException | IdentityRecoveryException | IdentityApplicationManagementException e) {
+            } catch (IdentityEventException | IdentityRecoveryException | IdentityApplicationManagementException |
+                     WorkflowException e) {
                 LOG.error("Error while sending verification notification from the registration completion listener in" +
                         " the flow: " + flowExecutionContext.getContextIdentifier(), e);
                 logDiagnostic("Error while triggering verification notification.", FAILED,

@@ -78,6 +78,7 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -516,5 +517,21 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setApplicationManagementService(null);
+    }
+
+    @Reference(
+            name = "workflowservice.default",
+            service = org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetWorkflowService")
+    protected void setWorkflowService(WorkflowManagementService workflowManagementService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setWorkflowManagementService(workflowManagementService);
+    }
+
+    protected void unsetWorkflowService(WorkflowManagementService workflowManagementService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setWorkflowManagementService(null);
     }
 }
