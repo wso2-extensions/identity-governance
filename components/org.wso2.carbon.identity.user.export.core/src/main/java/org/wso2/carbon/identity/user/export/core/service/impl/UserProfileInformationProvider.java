@@ -44,6 +44,7 @@ public class UserProfileInformationProvider extends AbstractUserInformationProvi
 
     private static final Log LOG = LogFactory.getLog(UserProfileInformationProvider.class);
     private static final String ROLES_URIS_CLAIM = "roles";
+    private static final String PROFILE_ATTRIBUTE_USERNAME = "username";
 
     @Override
     public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId)
@@ -63,6 +64,8 @@ public class UserProfileInformationProvider extends AbstractUserInformationProvi
         }
 
         Map<String, String> userProfileAttributes = new HashMap<>();
+        // Adding username as a default attribute under profile.
+        userProfileAttributes.put(PROFILE_ATTRIBUTE_USERNAME, username);
         List<String> claimsToInclude = getClaimsToInclude(tenantId);
         List<String> claimsToExclude = Utils.getRestrictedClaims();
         for (Claim claim : userClaimValues) {
