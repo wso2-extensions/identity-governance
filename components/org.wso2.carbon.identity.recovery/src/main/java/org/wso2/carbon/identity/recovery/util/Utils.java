@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
@@ -2098,5 +2099,22 @@ public class Utils {
             log.warn("Failed to resolve User from context.", e);
             return null;
         }
+    }
+
+    /**
+     * Get the domain qualified username.
+     *
+     * @param user Flow user.
+     * @return Domain qualified username.
+     */
+    public static String getDomainQualifiedUsername(FlowUser user) {
+
+        String username = user.getUsername();
+        if (!StringUtils.isBlank(user.getUserStoreDomain()) &&
+                !IdentityUtil.getPrimaryDomainName().equals(user.getUserStoreDomain())) {
+            username = UserCoreUtil.addDomainToName(username, user.getUserStoreDomain());
+        }
+
+        return username;
     }
 }
