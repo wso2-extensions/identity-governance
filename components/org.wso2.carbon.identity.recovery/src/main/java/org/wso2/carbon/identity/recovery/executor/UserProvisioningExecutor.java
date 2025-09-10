@@ -218,7 +218,7 @@ public class UserProvisioningExecutor implements Executor {
     private static void setUsernamePatternValidation(FlowExecutionContext context) {
 
         Boolean isUsernamePatternValidationSkipped = (Boolean) context.getProperty(USERNAME_PATTERN_VALIDATION_SKIPPED);
-        if (isUsernamePatternValidationSkipped == null || !isUsernamePatternValidationSkipped ) {
+        if (isUsernamePatternValidationSkipped == null || !isUsernamePatternValidationSkipped) {
             return;
         }
         UserCoreUtil.setSkipUsernamePatternValidationThreadLocal(true);
