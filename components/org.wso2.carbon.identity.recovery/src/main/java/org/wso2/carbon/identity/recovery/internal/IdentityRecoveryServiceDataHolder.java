@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationMan
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -63,6 +64,8 @@ public class IdentityRecoveryServiceDataHolder {
     private IdentityDataStoreService identityDataStoreService;
     private ApplicationManagementService applicationManagementService;
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
+    private WorkflowManagementService workflowService;
+
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -343,5 +346,25 @@ public class IdentityRecoveryServiceDataHolder {
     public void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
 
         this.applicationManagementService = applicationManagementService;
+    }
+
+    /**
+     * Set WorkflowManagementService OSGi service.
+     *
+     * @param workflowManagementService Workflow Management Service.
+     */
+    public void setWorkflowManagementService(WorkflowManagementService workflowManagementService) {
+
+        this.workflowService = workflowManagementService;
+    }
+
+    /**
+     * Get WorkflowManagementService OSGi service.
+     *
+     * @return Workflow Management Service.
+     */
+    public WorkflowManagementService getWorkflowManagementService() {
+
+        return this.workflowService;
     }
 }
