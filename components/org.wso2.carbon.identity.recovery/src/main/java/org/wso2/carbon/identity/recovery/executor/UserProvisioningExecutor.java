@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,18 +27,20 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
+import org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
-import org.wso2.carbon.identity.flow.execution.engine.internal.FlowExecutionEngineDataHolder;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.exception.FederatedAssociationManagerException;
+import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -56,9 +59,8 @@ import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_EXECUTOR_FAILURE;
+
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_INVALID_USERNAME;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.USER_ALREADY_EXISTING_USERNAME;
@@ -69,6 +71,8 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleClientException;
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -96,45 +100,51 @@ public class UserProvisioningExecutor implements Executor {
     }
 
     @Override
-    public ExecutorResponse rollback(FlowExecutionContext context) throws FlowEngineException {
+    public ExecutorResponse rollback(FlowExecutionContext context) {
 
         return null;
     }
 
     @Override
-    public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
+    public ExecutorResponse execute(FlowExecutionContext context) {
 
+        ExecutorResponse response = new ExecutorResponse();
         if (REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
-            return handleRegistrationFlow(context);
+            return handleRegistrationFlow(response, context);
         }
 
-        // If the flow type is not registration, update the user profile.
-        FlowUser user = updateUserProfile(context);
-        Map<String, String> userClaims = user.getClaims();
-
         try{
+            // If the flow type is not registration, update the user profile.
+            FlowUser user = updateUserProfile(context);
+            Map<String, String> userClaims = user.getClaims();
 
             String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
             String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
-            return new ExecutorResponse(STATUS_COMPLETE);
+            response.setResult(STATUS_COMPLETE);
+            return response;
         } catch (UserStoreException e) {
-            throw handleServerException(ERROR_CODE_EXECUTOR_FAILURE, e, user.getUsername(),
+            return errorResponse(response, ERROR_CODE_USER_ONBOARD_FAILURE, e, context.getFlowUser().getUsername(),
                     context.getContextIdentifier());
+        } catch (FlowEngineClientException e) {
+            return userErrorResponse(response, e);
+        } catch (FlowEngineException e) {
+            return errorResponse(response, e);
         }
     }
 
-    private ExecutorResponse handleRegistrationFlow(FlowExecutionContext context) throws FlowEngineException {
+    private ExecutorResponse handleRegistrationFlow(ExecutorResponse response, FlowExecutionContext context) {
 
-        FlowUser user = updateUserProfile(context);
-        Map<String, String> userClaims = user.getClaims();
-        Map<String, char[]> credentials = user.getUserCredentials();
-        char[] password =
-                credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
-
+        char[] password = null;
         try {
+            FlowUser user = updateUserProfile(context);
+            Map<String, String> userClaims = user.getClaims();
+            Map<String, char[]> credentials = user.getUserCredentials();
+            password =
+                    credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
+
             String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
@@ -144,20 +154,34 @@ public class UserProvisioningExecutor implements Executor {
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
             createFederatedAssociations(user, context.getTenantDomain());
-            return new ExecutorResponse(STATUS_COMPLETE);
-        } catch (UserStoreException e) {
-            handleAndThrowClientExceptionForActionFailure(e);
-            if (e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
-                throw handleClientException(ERROR_CODE_USERNAME_ALREADY_EXISTS, context.getTenantDomain());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
+                        userStoreDomainName + " of tenant: " + context.getTenantDomain());
             }
-            throw handleServerException(ERROR_CODE_EXECUTOR_FAILURE, e, user.getUsername(),
+            response.setResult(STATUS_COMPLETE);
+            return response;
+        } catch (UserStoreException e) {
+            response = handleAndThrowClientExceptionForActionFailure(response, e);
+            if (response.getResult() != null) {
+                return response;
+            }
+            if (e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
+                return userErrorResponse(response, ERROR_CODE_USERNAME_ALREADY_EXISTS, context.getTenantDomain());
+            }
+            return errorResponse(response, ERROR_CODE_USER_ONBOARD_FAILURE, e, context.getFlowUser().getUsername(),
                     context.getContextIdentifier());
+        } catch (FlowEngineClientException e) {
+            return userErrorResponse(response, e);
+        } catch (FlowEngineException e) {
+            return errorResponse(response, e);
         } finally {
-            Arrays.fill(password, '\0');
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
         }
     }
 
-    private void handleAndThrowClientExceptionForActionFailure(UserStoreException e) throws FlowEngineException {
+    private ExecutorResponse handleAndThrowClientExceptionForActionFailure(ExecutorResponse response, UserStoreException e) {
 
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
@@ -165,7 +189,7 @@ public class UserProvisioningExecutor implements Executor {
             Throwable cause = e.getCause();
             while (cause != null) {
                 if (cause instanceof UserActionExecutionClientException) {
-                    throw new FlowEngineClientException(Constants.ErrorMessages.
+                    return userErrorResponse(response,
                             ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode(),
                             ((UserActionExecutionClientException) cause).getError(),
                             ((UserActionExecutionClientException) cause).getDescription(), cause);
@@ -173,6 +197,7 @@ public class UserProvisioningExecutor implements Executor {
                 cause = cause.getCause();
             }
         }
+        return response;
     }
 
     private FlowUser updateUserProfile(FlowExecutionContext context) throws FlowEngineException {
@@ -199,18 +224,19 @@ public class UserProvisioningExecutor implements Executor {
         UserCoreUtil.setSkipUsernamePatternValidationThreadLocal(true);
     }
 
-    private UserStoreManager getUserStoreManager(String tenantDomain, String userdomain, String flowId, String flowType)
+    private UserStoreManager getUserStoreManager(String tenantDomain, String userDomain, String flowId, String flowType)
             throws FlowEngineException {
 
-        RealmService realmService = FlowExecutionEngineDataHolder.getInstance().getRealmService();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
         UserStoreManager userStoreManager;
         try {
             UserRealm tenantUserRealm = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(tenantDomain));
-            if (IdentityUtil.getPrimaryDomainName().equals(userdomain)) {
+            if (IdentityUtil.getPrimaryDomainName().equals(userDomain)) {
                 userStoreManager = (UserStoreManager) tenantUserRealm.getUserStoreManager();
             } else {
                 userStoreManager =
-                        ((UserStoreManager) tenantUserRealm.getUserStoreManager()).getSecondaryUserStoreManager(userdomain);
+                        ((UserStoreManager) tenantUserRealm.getUserStoreManager())
+                                .getSecondaryUserStoreManager(userDomain);
             }
             if (userStoreManager == null) {
                 throw handleServerException(ERROR_CODE_USERSTORE_MANAGER_FAILURE, tenantDomain, flowType, flowId);
@@ -264,8 +290,9 @@ public class UserProvisioningExecutor implements Executor {
             return;
         }
         FederatedAssociationManager fedAssociationManager =
-                FlowExecutionEngineDataHolder.getInstance().getFederatedAssociationManager();
-        user.getFederatedAssociations().forEach(LambdaExceptionUtils.rethrowBiConsumer((idpName, idpSubjectId) -> {
+                IdentityRecoveryServiceDataHolder.getInstance().getFederatedAssociationManager();
+        user.getFederatedAssociations()
+                .forEach(LambdaExceptionUtils.rethrowBiConsumer((idpName, idpSubjectId) -> {
             if (StringUtils.isNotBlank(idpName) && StringUtils.isNotBlank(idpSubjectId)) {
                 try {
                     User localUser = new User();
@@ -281,5 +308,103 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         }));
+    }
+
+    /**
+     * Creates an error response with the provided details.
+     *
+     * @param response ExecutorResponse to be modified with error details.
+     * @param error    Error message enum to be set in the response.
+     * @param data     Optional data to format the error description.
+     * @return Modified ExecutorResponse with error details.
+     */
+    private ExecutorResponse errorResponse(ExecutorResponse response, ErrorMessages error, Throwable e, Object... data) {
+
+        String description = error.getDescription();
+        if (ArrayUtils.isNotEmpty(data)) {
+            description = String.format(description, data);
+        }
+        response.setErrorCode(error.getCode());
+        response.setErrorMessage(error.getMessage());
+        response.setErrorDescription(description);
+        response.setThrowable(e);
+        response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
+        return response;
+    }
+
+    /**
+     * Creates an error response with the provided FlowEngineException details.
+     *
+     * @param response            ExecutorResponse to be modified with error details.
+     * @param flowEngineException FlowEngineException containing error details.
+     * @return Modified ExecutorResponse with error details.
+     */
+    private ExecutorResponse errorResponse(ExecutorResponse response, FlowEngineException flowEngineException) {
+
+        response.setErrorMessage(flowEngineException.getMessage());
+        response.setErrorCode(flowEngineException.getErrorCode());
+        response.setErrorDescription(flowEngineException.getDescription());
+        response.setThrowable(flowEngineException);
+        response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
+        return response;
+    }
+
+    /**
+     * Creates an error response with the provided details.
+     *
+     * @param response ExecutorResponse to be modified with error details.
+     * @param error    Error message enum to be set in the response.
+     * @param data     Optional data to format the error description.
+     * @return Modified ExecutorResponse with error details.
+     */
+    private ExecutorResponse userErrorResponse(ExecutorResponse response, ExecutorErrorMessages error, Object... data) {
+
+        String description = error.getDescription();
+        if (ArrayUtils.isNotEmpty(data)) {
+            description = String.format(description, data);
+        }
+        response.setErrorCode(error.getCode());
+        response.setErrorMessage(error.getMessage());
+        response.setErrorDescription(description);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
+        return response;
+    }
+
+    /**
+     * Creates a user error response with the provided details.
+     *
+     * @param response    ExecutorResponse to be modified with user error details.
+     * @param errorCode   Error code to be set in the response.
+     * @param message     User error message to be set in the response.
+     * @param description Description of the error to be set in the response.
+     * @param throwable   Throwable associated with the error.
+     * @return Modified ExecutorResponse with user error details.
+     */
+    private ExecutorResponse userErrorResponse(ExecutorResponse response, String errorCode, String message,
+                                               String description, Throwable throwable) {
+
+        response.setErrorCode(errorCode);
+        response.setErrorMessage(message);
+        response.setErrorDescription(description);
+        response.setThrowable(throwable);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
+        return response;
+    }
+
+    /**
+     * Creates a user error response with the provided FlowEngineException details.
+     *
+     * @param response            ExecutorResponse to be modified with user error details.
+     * @param flowEngineException FlowEngineException containing error details.
+     * @return Modified ExecutorResponse with user error details.
+     */
+    private ExecutorResponse userErrorResponse(ExecutorResponse response, FlowEngineException flowEngineException) {
+
+        response.setErrorCode(flowEngineException.getErrorCode());
+        response.setErrorMessage(flowEngineException.getMessage());
+        response.setErrorDescription(flowEngineException.getDescription());
+        response.setThrowable(flowEngineException);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
+        return response;
     }
 }

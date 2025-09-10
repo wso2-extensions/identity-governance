@@ -42,6 +42,7 @@
             <class name="org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutorTest"/>
             <class name="org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutorTest"/>
             <class name="org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandlerTest"/>
+            <class name="org.wso2.carbon.identity.recovery.executor.UserProvisioningExecutorTest"/>
         </classes>
     </test>
 </suite>
