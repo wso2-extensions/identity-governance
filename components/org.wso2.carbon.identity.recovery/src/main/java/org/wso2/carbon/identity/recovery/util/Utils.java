@@ -2114,7 +2114,6 @@ public class Utils {
                 !IdentityUtil.getPrimaryDomainName().equals(user.getUserStoreDomain())) {
             username = UserCoreUtil.addDomainToName(username, user.getUserStoreDomain());
         }
-
         return username;
     }
 }
