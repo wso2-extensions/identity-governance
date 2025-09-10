@@ -101,6 +101,7 @@ public class SelfRegistrationCompletionListenerTest {
     private FlowExecutionContext context;
     private FlowExecutionStep step;
     private static final String notificationChannel = "EMAIL";
+    private static final String SELF_REGISTER_USER_EVENT = "SELF_REGISTER_USER";
 
     @Mock
     private IdentityRecoveryServiceDataHolder serviceDataHolder;
@@ -319,8 +320,8 @@ public class SelfRegistrationCompletionListenerTest {
         doNothing().when(SelfRegistrationUtils.class);
         SelfRegistrationUtils.triggerNotification(any(User.class), anyString(), anyString(), any(), anyString());
 
-        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"), anyString())).thenReturn(
-                myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
                 anyString())).thenReturn(
                 testApp);
@@ -379,7 +380,8 @@ public class SelfRegistrationCompletionListenerTest {
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
 
         assertTrue(result);
-        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(eq(true), eq(true),
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(eq(true),
+                        eq(true),
                         eq("tenant.com"),
                         any(UserStoreManager.class),
                         eq("testUser")),
@@ -412,7 +414,8 @@ public class SelfRegistrationCompletionListenerTest {
 
         assertTrue(result);
         selfRegistrationUtilsMockedStatic.verify(
-                () -> SelfRegistrationUtils.triggerAccountCreationNotification(eq("testUser"), eq("tenant.com"),
+                () -> SelfRegistrationUtils.triggerAccountCreationNotification(eq("testUser"),
+                        eq("tenant.com"),
                         anyString()),
                 times(1));
         loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
@@ -481,7 +484,8 @@ public class SelfRegistrationCompletionListenerTest {
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
 
         assertTrue(result);
-        loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()), times(1));
+        loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
+                times(1));
 
         DiagnosticLog.DiagnosticLogBuilder capturedBuilder = builderCaptor.getValue();
         DiagnosticLog log = capturedBuilder.build();
@@ -534,7 +538,8 @@ public class SelfRegistrationCompletionListenerTest {
                         any(),
                         eq("TRIGGER_NOTIFICATION")),
                 times(0));
-        loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()), times(2));
+        loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
+                times(2));
 
         List<DiagnosticLog.DiagnosticLogBuilder> capturedBuilders = builderCaptor.getAllValues();
         assertEquals(2, capturedBuilders.size());
@@ -554,7 +559,7 @@ public class SelfRegistrationCompletionListenerTest {
     public void testDoPostExecuteWithPendingWorkflow() throws Exception {
 
         // Simulate pending workflow for the user.
-        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq("SELF_REGISTER_USER")))
+        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq(SELF_REGISTER_USER_EVENT)))
                 .thenReturn(true);
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
@@ -582,14 +587,14 @@ public class SelfRegistrationCompletionListenerTest {
 
         // Verify workflow service was called to check for pending workflows.
         verify(workflowManagementService, times(1))
-                .entityHasPendingWorkflowsOfType(any(Entity.class), eq("SELF_REGISTER_USER"));
+                .entityHasPendingWorkflowsOfType(any(Entity.class), eq(SELF_REGISTER_USER_EVENT));
     }
 
     @Test
     public void testDoPostExecuteWorkflowException() throws Exception {
 
         // Simulate WorkflowException when checking for pending workflows.
-        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq("SELF_REGISTER_USER")))
+        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq(SELF_REGISTER_USER_EVENT)))
                 .thenThrow(new WorkflowException("Workflow service error"));
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
@@ -611,7 +616,7 @@ public class SelfRegistrationCompletionListenerTest {
     public void testDoPostExecuteWithNoPendingWorkflowContinueProcessing() throws Exception {
 
         // Simulate no pending workflow for the user (default behavior already set in setUp).
-        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq("SELF_REGISTER_USER")))
+        when(workflowManagementService.entityHasPendingWorkflowsOfType(any(Entity.class), eq(SELF_REGISTER_USER_EVENT)))
                 .thenReturn(false);
 
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
@@ -635,7 +640,7 @@ public class SelfRegistrationCompletionListenerTest {
 
         // Verify workflow service was called.
         verify(workflowManagementService, times(1))
-                .entityHasPendingWorkflowsOfType(any(Entity.class), eq("SELF_REGISTER_USER"));
+                .entityHasPendingWorkflowsOfType(any(Entity.class), eq(SELF_REGISTER_USER_EVENT));
 
         // Verify account locking occurs since no pending workflow.
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
@@ -680,7 +685,8 @@ public class SelfRegistrationCompletionListenerTest {
                 .thenReturn("testUser");
 
         ArgumentCaptor<Entity> entityCaptor = ArgumentCaptor.forClass(Entity.class);
-        when(workflowManagementService.entityHasPendingWorkflowsOfType(entityCaptor.capture(), eq("SELF_REGISTER_USER")))
+        when(workflowManagementService.entityHasPendingWorkflowsOfType(entityCaptor.capture(),
+                eq(SELF_REGISTER_USER_EVENT)))
                 .thenReturn(false);
 
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
