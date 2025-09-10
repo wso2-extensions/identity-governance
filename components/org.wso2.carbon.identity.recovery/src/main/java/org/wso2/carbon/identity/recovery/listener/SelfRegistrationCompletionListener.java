@@ -131,7 +131,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                 WorkflowManagementService workflowManagementService = IdentityRecoveryServiceDataHolder
                         .getInstance().getWorkflowManagementService();
                 // Check if the self registering user is associated with a workflow.
-                Entity entity = new Entity( getDomainQualifiedUsername(user), WORKFLOW_USER_ENTITY_TYPE, tenantId);
+                Entity entity = new Entity(getDomainQualifiedUsername(user), WORKFLOW_USER_ENTITY_TYPE, tenantId);
                 if (workflowManagementService.entityHasPendingWorkflowsOfType(entity, SELF_REGISTER_USER_EVENT)) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug(String.format("The user: %s in tenant domain: %s is associated with a pending " +
