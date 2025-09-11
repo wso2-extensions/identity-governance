@@ -570,7 +570,7 @@ public class SelfRegistrationCompletionListenerTest {
         assertEquals(Constants.StepTypes.VIEW, step.getStepType());
 
         // Verify that PENDING_APPROVAL data is added when workflow is pending.
-        assertEquals("true", step.getData().getAdditionalData().get("pendingApproval"));
+        assertEquals("PENDING_APPROVAL", step.getData().getAdditionalData().get("accountStatus"));
 
         // Verify that no further processing occurs when workflow is pending.
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
