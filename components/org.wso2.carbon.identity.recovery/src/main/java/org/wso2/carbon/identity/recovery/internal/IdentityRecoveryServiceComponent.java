@@ -56,6 +56,7 @@ import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutor;
 import org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutor;
+import org.wso2.carbon.identity.recovery.executor.UserProvisioningExecutor;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandler;
@@ -151,6 +152,8 @@ public class IdentityRecoveryServiceComponent {
                     new ConfirmationCodeValidationExecutor(), null);
             bundleContext.registerService(Executor.class.getName(),
                     new PasswordProvisioningExecutor(), null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new UserProvisioningExecutor(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

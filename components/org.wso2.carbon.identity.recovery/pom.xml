@@ -182,6 +182,8 @@
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.*;version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.flow.execution.engine.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.handler.event.account.lock.service;
