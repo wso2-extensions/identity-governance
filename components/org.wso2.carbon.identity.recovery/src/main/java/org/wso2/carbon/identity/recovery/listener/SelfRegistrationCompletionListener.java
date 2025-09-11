@@ -92,8 +92,9 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     private static final String FLOW_ID = "flowId";
     private static final String USER_NAME = "userName";
     private static final String NOTIFICATION_CHANNEL = "notificationChannel";
-    private static final String ACCOUNT_LOCKED = "accountLocked";
-    private static final String PENDING_APPROVAL = "pendingApproval";
+    private static final String ACCOUNT_LOCKED = "ACCOUNT_LOCKED";
+    private static final String PENDING_APPROVAL = "PENDING_APPROVAL";
+    private static final String ACCOUNT_STATUS = "accountStatus";
     private static final String SELF_REGISTER_USER_EVENT = "SELF_REGISTER_USER";
     private static final String WORKFLOW_USER_ENTITY_TYPE = "USER";
 
@@ -139,7 +140,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                                 SelfRegistrationUtils.maskIfRequired(user.getUsername()), tenantDomain));
                     }
                     step.setStepType(Constants.StepTypes.VIEW);
-                    step.getData().addAdditionalData(PENDING_APPROVAL, Boolean.TRUE.toString());
+                    step.getData().addAdditionalData(ACCOUNT_STATUS, PENDING_APPROVAL);
                     return true;
                 }
 
@@ -170,7 +171,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                         lockUserAccount(isAccountLockOnCreation, isEnableConfirmationOnCreation, tenantDomain,
                                 userStoreManager, user.getUsername());
                         step.setStepType(Constants.StepTypes.VIEW);
-                        step.getData().addAdditionalData(ACCOUNT_LOCKED, Boolean.TRUE.toString());
+                        step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
                     } catch (UserStoreException | IdentityEventException e) {
                         LOG.error("Error while locking the user account from the registration completion listener " +
                                 "in the flow: " + flowExecutionContext.getContextIdentifier(), e);
