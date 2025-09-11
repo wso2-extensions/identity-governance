@@ -151,7 +151,7 @@ public class UserProvisioningExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
-            createFederatedAssociations(user, context.getTenantDomain());
+            createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
                         userStoreDomainName + " of tenant: " + context.getTenantDomain());
@@ -282,7 +282,7 @@ public class UserProvisioningExecutor implements Executor {
         return username;
     }
 
-    private void createFederatedAssociations(FlowUser user, String tenantDomain) {
+    private void createFederatedAssociations(FlowUser user, String tenantDomain, String flowId) {
 
         if (user.getFederatedAssociations().isEmpty()) {
             return;
@@ -301,8 +301,7 @@ public class UserProvisioningExecutor implements Executor {
                 } catch (FederatedAssociationManagerException e) {
                     LOG.error("Error while creating federated association for user: " + user.getUsername()
                             + " with IdP: " + idpName + " and subject ID: " + idpSubjectId, e);
-                    throw handleServerException(ERROR_CODE_USER_ONBOARD_FAILURE, e, user.getUsername(),
-                            user.getUserStoreDomain(), tenantDomain);
+                    throw handleServerException(ERROR_CODE_USER_ONBOARD_FAILURE, e, user.getUsername(), flowId);
                 }
             }
         }));
