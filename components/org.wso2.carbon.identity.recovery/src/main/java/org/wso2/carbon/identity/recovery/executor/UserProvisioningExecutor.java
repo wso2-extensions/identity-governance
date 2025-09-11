@@ -111,7 +111,7 @@ public class UserProvisioningExecutor implements Executor {
             return handleRegistrationFlow(response, context);
         }
 
-        try{
+        try {
             // If the flow type is not registration, update the user profile.
             FlowUser user = updateUserProfile(context);
             Map<String, String> userClaims = user.getClaims();
