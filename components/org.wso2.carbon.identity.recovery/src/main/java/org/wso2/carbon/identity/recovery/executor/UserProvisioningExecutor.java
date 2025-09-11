@@ -27,9 +27,9 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
-import org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineServerException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
@@ -60,19 +60,17 @@ import java.util.UUID;
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_INVALID_USERNAME;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.USER_ALREADY_EXISTING_USERNAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
-import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleClientException;
-import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -311,6 +309,55 @@ public class UserProvisioningExecutor implements Executor {
     }
 
     /**
+     * Handle the flow engine server exceptions.
+     *
+     * @param error Error message.
+     * @param e     Throwable.
+     * @param data  The error message data.
+     * @return FlowEngineServerException.
+     */
+    private FlowEngineServerException handleServerException(ExecutorErrorMessages error, Throwable e, Object... data) {
+
+        String description = error.getDescription();
+        if (ArrayUtils.isNotEmpty(data)) {
+            description = String.format(description, data);
+        }
+        return new FlowEngineServerException(error.getCode(), error.getMessage(), description, e);
+    }
+
+    /**
+     * Handle the flow engine server exceptions.
+     *
+     * @param error Error message.
+     * @param data  The error message data.
+     * @return FlowEngineServerException.
+     */
+    private FlowEngineServerException handleServerException(ExecutorErrorMessages error, Object... data) {
+
+        String description = error.getDescription();
+        if (ArrayUtils.isNotEmpty(data)) {
+            description = String.format(description, data);
+        }
+        return new FlowEngineServerException(error.getCode(), error.getMessage(), description);
+    }
+
+    /**
+     * Handle the flow engine client exceptions.
+     *
+     * @param error Error message.
+     * @param data  The error message data.
+     * @return FlowEngineClientException.
+     */
+    private static FlowEngineClientException handleClientException(ExecutorErrorMessages error, Object... data) {
+
+        String description = error.getDescription();
+        if (ArrayUtils.isNotEmpty(data)) {
+            description = String.format(description, data);
+        }
+        return new FlowEngineClientException(error.getCode(), error.getMessage(), description);
+    }
+
+    /**
      * Creates an error response with the provided details.
      *
      * @param response ExecutorResponse to be modified with error details.
@@ -318,7 +365,8 @@ public class UserProvisioningExecutor implements Executor {
      * @param data     Optional data to format the error description.
      * @return Modified ExecutorResponse with error details.
      */
-    private ExecutorResponse errorResponse(ExecutorResponse response, ErrorMessages error, Throwable e, Object... data) {
+    private ExecutorResponse errorResponse(ExecutorResponse response, ExecutorErrorMessages error,
+                                           Throwable e, Object... data) {
 
         String description = error.getDescription();
         if (ArrayUtils.isNotEmpty(data)) {

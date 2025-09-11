@@ -28,17 +28,24 @@ public class ExecutorConstants {
      */
     protected enum ExecutorErrorMessages {
 
-        ERROR_CODE_USERNAME_ALREADY_EXISTS("60003",
+        ERROR_CODE_USERNAME_ALREADY_EXISTS("60001",
                 "Username already exists.",
                 "The provided username already exists in the tenant: %s"),
-        ERROR_CODE_INVALID_USERNAME("60005",
+        ERROR_CODE_INVALID_USERNAME("60002",
                 "Invalid username.",
                 "The given username: %s must be an email address."),
-        ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE("60012",
+        ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE("60003",
                 "%s",
-                "%s");
+                "%s"),
+        ERROR_CODE_USER_ONBOARD_FAILURE("65001",
+                "Error while onboarding user.",
+                "Error occurred while onboarding user: %s in the request of flow id: %s"),
+        ERROR_CODE_USERSTORE_MANAGER_FAILURE("65002",
+                                                     "Error while loading the userstore manager.",
+                                                     "Error occurred loading the userstore manager of tenant: %s while serving the" +
+                                                     " %s request of flow id: %s.");
 
-        private static final String ERROR_PREFIX = "FE";
+        private static final String ERROR_PREFIX = "FEE";
         private final String code;
         private final String message;
         private final String description;
