@@ -193,14 +193,15 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                                      boolean internallyManaged, String tenantDomain)
             throws IdentityRecoveryServerException {
 
-        boolean sendOnActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
-                tenantDomain));
+        if (!internallyManaged || NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)) {
+            // If the notification is not internally managed and the channel is external, skip sending notifications.
+            return;
+        }
 
-        // Send notification on successful account activation if the account is internally managed
-        // and the notification channel is not external and the config is enabled.
-        if (internallyManaged && !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)
-                && sendOnActivation) {
+        // Send account activation notification if the configuration is enabled.
+        if (Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
+                tenantDomain))) {
             try {
                 String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
                 triggerNotification(user, recoveryScenario, channel,
