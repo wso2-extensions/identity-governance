@@ -18,9 +18,6 @@
 
 package org.wso2.carbon.identity.recovery.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -34,7 +31,6 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
-import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
 import org.wso2.carbon.identity.flow.mgt.Constants;
@@ -58,7 +54,6 @@ import java.util.Map;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.identity.recovery.util.Utils.loadUserRecoveryData;
 
 /**
@@ -97,7 +92,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             updateAccountStateClaims(tenantDomain, notificationChannel, internallyManaged, user);
             invalidateRecoveryData(confirmationCode);
             handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
-                    tenantDomain, manager);
+                    tenantDomain);
             publishEvent(user, confirmationCode, recoveryScenario);
         } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
@@ -195,16 +190,22 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
     }
 
     private void handleNotifications(User user, String recoveryScenario, String channel, String code,
-                                     boolean internallyManaged, String tenantDomain,
-                                     NotificationPasswordRecoveryManager manager) {
+                                     boolean internallyManaged, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
-        if (internallyManaged && !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)) {
+        if (!internallyManaged || NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)) {
+            // If the notification is not internally managed and the channel is external, skip sending notifications.
+            return;
+        }
+
+        // Send account activation notification if the configuration is enabled.
+        if (Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
+                tenantDomain))) {
             try {
-                String template = determineEmailTemplate(manager, tenantDomain);
-                if (StringUtils.isNotBlank(template)) {
-                    String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-                    triggerNotification(user, recoveryScenario, channel, template, code, eventName);
-                }
+                String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+                triggerNotification(user, recoveryScenario, channel,
+                        IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS, code, eventName);
             } catch (IdentityRecoveryException e) {
                 String errorMsg = String.format("Error while sending account activation notification to user: %s",
                         user.getUserName());
@@ -232,19 +233,6 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
-    }
-
-    private String determineEmailTemplate(NotificationPasswordRecoveryManager manager, String tenantDomain)
-            throws IdentityRecoveryException {
-
-        boolean sendOnActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
-                tenantDomain));
-
-        if (manager.isAskPasswordEmailTemplateTypeExists(tenantDomain) && sendOnActivation) {
-            return IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
-        }
-        return null;
     }
 
     private void publishEvent(User user, String code, String recoveryScenario)
