@@ -169,13 +169,11 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
                     : context.getFlowUser().getUsername();
             LOG.error("Error while updating password for user: " + maskedUsername, e);
 
-            if (e instanceof UserStoreException) {
                 ExecutorResponse errorResponse =
-                        handleAndThrowClientExceptionForActionFailure(new ExecutorResponse(), (UserStoreException) e);
+                        handleAndThrowClientExceptionForActionFailure(new ExecutorResponse(), e);
                 if (errorResponse.getResult() != null) {
                     return errorResponse;
                 }
-            }
             return errorResponse(new ExecutorResponse(), e.getMessage());
         } finally {
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
@@ -349,7 +347,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
         return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 
-    private ExecutorResponse handleAndThrowClientExceptionForActionFailure(ExecutorResponse response, UserStoreException e) {
+    private ExecutorResponse handleAndThrowClientExceptionForActionFailure(ExecutorResponse response, Exception e) {
 
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
