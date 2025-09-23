@@ -161,11 +161,10 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
-            String maskedUsername = LoggerUtils
-                    .isLogMaskingEnable ? LoggerUtils
-                    .getMaskedContent(context.getFlowUser().getUsername()) : context.getFlowUser().getUsername();
-            LOG.error("Error while updating password for user: " +
-                    maskedUsername, e);
+            String maskedUsername = LoggerUtils.isLogMaskingEnable
+                    ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
+                    : context.getFlowUser().getUsername();
+            LOG.error("Error while updating password for user: " + maskedUsername, e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
         } finally {
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
@@ -233,12 +232,10 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
-
-            String maskedUsername = LoggerUtils
-                    .isLogMaskingEnable ? LoggerUtils
-                    .getMaskedContent(context.getFlowUser().getUsername()) : context.getFlowUser().getUsername();
-            LOG.error("Error while updating password for user: " +
-                    maskedUsername, e);
+            String maskedUsername = LoggerUtils.isLogMaskingEnable
+                    ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
+                    : context.getFlowUser().getUsername();
+            LOG.error("Error while updating password for user: " + maskedUsername, e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }
