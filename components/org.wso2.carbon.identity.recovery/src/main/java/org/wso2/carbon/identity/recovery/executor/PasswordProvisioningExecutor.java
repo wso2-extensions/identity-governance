@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -160,7 +161,10 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
-            LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
+            String maskedUsername = LoggerUtils.isLogMaskingEnable
+                    ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
+                    : context.getFlowUser().getUsername();
+            LOG.error("Error while updating password for user: " + maskedUsername, e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
         } finally {
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
@@ -228,7 +232,10 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
-            LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
+            String maskedUsername = LoggerUtils.isLogMaskingEnable
+                    ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
+                    : context.getFlowUser().getUsername();
+            LOG.error("Error while updating password for user: " + maskedUsername, e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }

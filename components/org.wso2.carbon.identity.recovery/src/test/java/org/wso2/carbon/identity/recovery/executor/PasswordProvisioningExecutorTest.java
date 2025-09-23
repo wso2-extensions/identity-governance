@@ -216,6 +216,59 @@ public class PasswordProvisioningExecutorTest {
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
     }
 
+    @Test
+    public void testHandleAskPasswordFlowWithException() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = new FlowUser();
+        flowUser.setUsername(USERNAME);
+        flowUser.addClaims(new HashMap<>());
+        flowUser.setUserStoreDomain("PRIMARY");
+
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(PASSWORD_KEY, "Password123");
+        userInputData.put(CONFIRMATION_CODE_INPUT, "valid-code");
+
+        when(context.getUserInputData()).thenReturn(userInputData);
+        when(context.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+
+        User user = new User();
+        user.setUserName(USERNAME);
+        user.setTenantDomain(TENANT_DOMAIN);
+        user.setUserStoreDomain("PRIMARY");
+        when(context.getProperty(USER)).thenReturn(user);
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+
+        // Mock IdentityTenantUtil
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
+                .thenReturn(TENANT_ID);
+
+        // Mocks for data holder and user store
+        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
+        RealmService realmService = mock(RealmService.class);
+        UserRealm userRealm = mock(UserRealm.class);
+        AbstractUserStoreManager storeManager = mock(AbstractUserStoreManager.class);
+
+        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+        when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(storeManager);
+
+        IdentityEventService eventServiceMock = mock(IdentityEventService.class);
+        when(dataHolder.getIdentityEventService()).thenReturn(eventServiceMock);
+
+        // Throw UserStoreException to trigger the catch block
+        doThrow(new UserStoreException("Error while updating credential"))
+                .when(storeManager).updateCredentialByAdmin(anyString(), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
+    }
+
     @DataProvider(name = "flowTypes")
     public Object[][] provideFlowTypes() {
 
