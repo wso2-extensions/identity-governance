@@ -726,12 +726,13 @@ public class UserSelfRegistrationManager {
             // Invalidate code.
             userRecoveryDataStore.invalidate(code);
 
-            boolean isSelfRegistrationConfirmationNotify = false;
-            isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
-                    (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                            user.getTenantDomain()));
-            if (isSelfRegistrationConfirmationNotify) {
-                triggerNotification(user);
+            if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario())) {
+                boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
+                        (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                                user.getTenantDomain()));
+                if (isSelfRegistrationConfirmationNotify) {
+                    triggerNotification(user);
+                }
             }
 
             if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
@@ -864,8 +865,13 @@ public class UserSelfRegistrationManager {
                         // If the email being verified isn’t the primary email, do not set the “emailVerified” claim.
                         String primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
                                 IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-                        if (!pendingEmailClaimValue.equals(primaryEmail)) {
+                        if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
                             userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+                        }
+                        if (StringUtils.isBlank(primaryEmail)) {
+                            // If the primary email is not set, set the verified email as primary.
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
                         }
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
@@ -912,9 +918,15 @@ public class UserSelfRegistrationManager {
                         // If the mobile being verified isn’t the primary mobile, do not set the “phoneVerified” claim.
                         String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
                                 IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-                        if (!pendingMobileClaimValue.equals(primaryMobile)) {
+                        if (StringUtils.isNotBlank(primaryMobile) && !pendingMobileClaimValue.equals(primaryMobile)) {
                             userClaims.remove(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM);
                         }
+                        if (StringUtils.isBlank(primaryMobile)) {
+                            // If the primary mobile is not set, set the verified mobile as primary.
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                        }
+
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
                         throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
@@ -1122,6 +1134,11 @@ public class UserSelfRegistrationManager {
                     String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
                             IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
                     if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    }
+                    if (StringUtils.isBlank(primaryMobile)) {
+                        // If the primary mobile is not set, set the verified mobile as primary.
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
                         userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
                     }
                 } catch (IdentityEventException e) {
