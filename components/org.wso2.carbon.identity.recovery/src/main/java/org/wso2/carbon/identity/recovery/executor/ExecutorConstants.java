@@ -41,9 +41,13 @@ public class ExecutorConstants {
                 "Error while onboarding user.",
                 "Error occurred while onboarding user: %s in the request of flow id: %s"),
         ERROR_CODE_USERSTORE_MANAGER_FAILURE("65002",
-                                                     "Error while loading the userstore manager.",
-                                                     "Error occurred loading the userstore manager of tenant: %s while serving the" +
-                                                     " %s request of flow id: %s.");
+                         "Error while loading the userstore manager.",
+                         "Error occurred loading the userstore manager of tenant: %s while serving the" +
+                         " %s request of flow id: %s."),
+        ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE("65003",
+                "Error while resolving notification properties.",
+                "Error occurred while resolving notification properties for user: %s " +
+                        "in the request of flow id: %s");
 
         private static final String ERROR_PREFIX = "FEE";
         private final String code;

@@ -18,11 +18,15 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
+import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -91,8 +95,11 @@ public class UserProvisioningExecutorTest {
     private MockedStatic<FlowExecutionEngineUtils> mockedFlowEngineUtils;
     private MockedStatic<UserCoreUtil> mockedUserCoreUtil;
 
+    @Mock
+    private ApplicationManagementService applicationManagementService;
+
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws IdentityApplicationManagementException {
 
         executor = new UserProvisioningExecutor();
         mockedDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
@@ -100,6 +107,7 @@ public class UserProvisioningExecutorTest {
         mockedIdentityUtil = mockStatic(IdentityUtil.class);
         mockedFlowEngineUtils = mockStatic(FlowExecutionEngineUtils.class);
         mockedUserCoreUtil = mockStatic(UserCoreUtil.class);
+        applicationManagementService = mock(ApplicationManagementService.class);
     }
 
     @AfterMethod
@@ -231,6 +239,23 @@ public class UserProvisioningExecutorTest {
 
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(dataHolder.getApplicationManagementService()).thenReturn(applicationManagementService);
+
+        ApplicationBasicInfo testApp = new ApplicationBasicInfo();
+        testApp.setUuid("app-uuid-001");
+        testApp.setApplicationName("testApp");
+        testApp.setAccessUrl("https://myapp.com");
+
+        ApplicationBasicInfo myAccount = new ApplicationBasicInfo();
+        myAccount.setUuid("my-app-uuid");
+        myAccount.setApplicationName("My Account");
+        myAccount.setAccessUrl("https://myaccount.com");
+
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
+                anyString())).thenReturn(testApp);
+
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(primaryUserStoreManager);
         when(primaryUserStoreManager.getSecondaryUserStoreManager(SECONDARY_DOMAIN))
@@ -321,7 +346,7 @@ public class UserProvisioningExecutorTest {
                 "User already exists with user name: " + USERNAME,
                 "User name already exists");
         doThrow(new UserStoreClientException("Username already exists", "USER-ACTION-PRE-UPDATE-PASSWORD-60001", cause))
-                .when(userStoreManager).addUser(anyString(), anyString(), isNull(), any(Map.class), isNull());
+                .when(userStoreManager).addUser(anyString(), anyString(), any(), any(Map.class), isNull());
 
         ExecutorResponse response = executor.execute(context);
 
@@ -347,7 +372,7 @@ public class UserProvisioningExecutorTest {
                 "PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED",
                 "Action failed");
         doThrow(clientException).when(userStoreManager).addUser(anyString(), anyString(),
-                isNull(), any(Map.class), isNull());
+                any(), any(Map.class), isNull());
 
         ExecutorResponse response = executor.execute(context);
 
@@ -380,6 +405,23 @@ public class UserProvisioningExecutorTest {
 
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(dataHolder.getApplicationManagementService()).thenReturn(applicationManagementService);
+
+        ApplicationBasicInfo testApp = new ApplicationBasicInfo();
+        testApp.setUuid("app-uuid-001");
+        testApp.setApplicationName("testApp");
+        testApp.setAccessUrl("https://myapp.com");
+
+        ApplicationBasicInfo myAccount = new ApplicationBasicInfo();
+        myAccount.setUuid("my-app-uuid");
+        myAccount.setApplicationName("My Account");
+        myAccount.setAccessUrl("https://myaccount.com");
+
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
+                anyString())).thenReturn(testApp);
+
         when(dataHolder.getFederatedAssociationManager()).thenReturn(fedAssociationManager);
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
@@ -420,6 +462,24 @@ public class UserProvisioningExecutorTest {
         FederatedAssociationManager fedAssociationManager = mock(FederatedAssociationManager.class);
 
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+        when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(dataHolder.getApplicationManagementService()).thenReturn(applicationManagementService);
+
+        ApplicationBasicInfo testApp = new ApplicationBasicInfo();
+        testApp.setUuid("app-uuid-001");
+        testApp.setApplicationName("testApp");
+        testApp.setAccessUrl("https://myapp.com");
+
+        ApplicationBasicInfo myAccount = new ApplicationBasicInfo();
+        myAccount.setUuid("my-app-uuid");
+        myAccount.setApplicationName("My Account");
+        myAccount.setAccessUrl("https://myaccount.com");
+
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
+                anyString())).thenReturn(testApp);
+
         when(dataHolder.getRealmService()).thenReturn(realmService);
         when(dataHolder.getFederatedAssociationManager()).thenReturn(fedAssociationManager);
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
@@ -464,6 +524,23 @@ public class UserProvisioningExecutorTest {
 
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(dataHolder.getApplicationManagementService()).thenReturn(applicationManagementService);
+
+        ApplicationBasicInfo testApp = new ApplicationBasicInfo();
+        testApp.setUuid("app-uuid-001");
+        testApp.setApplicationName("testApp");
+        testApp.setAccessUrl("https://myapp.com");
+
+        ApplicationBasicInfo myAccount = new ApplicationBasicInfo();
+        myAccount.setUuid("my-app-uuid");
+        myAccount.setApplicationName("My Account");
+        myAccount.setAccessUrl("https://myaccount.com");
+
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
+                anyString())).thenReturn(testApp);
+
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(primaryUserStoreManager);
         when(primaryUserStoreManager.getSecondaryUserStoreManager("Internal"))
@@ -479,7 +556,7 @@ public class UserProvisioningExecutorTest {
 
         assertEquals(response.getResult(), STATUS_COMPLETE);
         verify(internalUserStoreManager).addUser(eq("Internal/testuser"), anyString(),
-                isNull(), any(Map.class), isNull());
+                any(), any(Map.class), any());
     }
 
     private FlowUser createTestFlowUser(String username) {
@@ -510,6 +587,23 @@ public class UserProvisioningExecutorTest {
 
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(dataHolder.getApplicationManagementService()).thenReturn(applicationManagementService);
+
+        ApplicationBasicInfo testApp = new ApplicationBasicInfo();
+        testApp.setUuid("app-uuid-001");
+        testApp.setApplicationName("testApp");
+        testApp.setAccessUrl("https://myapp.com");
+
+        ApplicationBasicInfo myAccount = new ApplicationBasicInfo();
+        myAccount.setUuid("my-app-uuid");
+        myAccount.setApplicationName("My Account");
+        myAccount.setAccessUrl("https://myaccount.com");
+
+        when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
+                anyString())).thenReturn(myAccount);
+        when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
+                anyString())).thenReturn(
+                testApp);
         when(dataHolder.getFederatedAssociationManager()).thenReturn(mock(FederatedAssociationManager.class));
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);

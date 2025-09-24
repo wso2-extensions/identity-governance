@@ -29,6 +29,8 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -137,6 +139,12 @@ public class UserSelfRegistrationHandlerTest {
                 thenReturn(TRUE_STRING);
         utilsMockedStatic.when(() -> Utils.generateSecretKey(EMAIL, RecoveryScenarios.SELF_SIGN_UP.name(),
                 TENANT_DOMAIN, CONNECTOR_NAME)).thenReturn("12345");
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(false);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
         identityRecoveryServiceDataHolderMockedStatic.when(IdentityRecoveryServiceDataHolder::getInstance).
                 thenReturn(identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
