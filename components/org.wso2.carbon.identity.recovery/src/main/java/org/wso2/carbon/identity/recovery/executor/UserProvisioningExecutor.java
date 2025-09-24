@@ -22,7 +22,11 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
+import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
+import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
@@ -35,7 +39,10 @@ import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
@@ -43,6 +50,7 @@ import org.wso2.carbon.identity.user.profile.mgt.association.federation.exceptio
 import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -51,26 +59,19 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 
+import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.USER_ALREADY_EXISTING_USERNAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.*;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -83,6 +84,7 @@ public class UserProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(UserProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
+    private static final String ADMIN_LOGIN_PERMISSION = "/permission/admin/login";
 
     @Override
     public String getName() {
@@ -146,8 +148,21 @@ public class UserProvisioningExecutor implements Executor {
             String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
+
+            if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
+                Permission permission =
+                        new Permission(ADMIN_LOGIN_PERMISSION, IdentityRecoveryConstants.EXECUTE_ACTION);
+                userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null,
+                        new Permission[]{permission});
+            }
+
+            // Set notification properties to be used in the UserSelfRegistrationHandler.
+            Property[] notificationProperties = resolveNotificationProperties(context);
+            Utils.setArbitraryProperties(notificationProperties);
+
+            String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
             userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName),
-                    String.valueOf(password), null, userClaims, null);
+                    String.valueOf(password), userRoles, userClaims, null);
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
@@ -453,5 +468,40 @@ public class UserProvisioningExecutor implements Executor {
         response.setThrowable(flowEngineException);
         response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
         return response;
+    }
+
+    private Property[] resolveNotificationProperties(FlowExecutionContext context) throws FlowEngineServerException {
+
+        String tenantDomain = context.getTenantDomain();
+        ApplicationManagementService applicationManagementService =
+                IdentityRecoveryServiceDataHolder.getInstance().getApplicationManagementService();
+
+        String applicationId = context.getApplicationId();
+        String applicationName;
+        String callBackUrl;
+        ApplicationBasicInfo appInfo;
+        try {
+            if (StringUtils.isEmpty(applicationId)) {
+                applicationName = MY_ACCOUNT_APPLICATION_NAME;
+                appInfo = applicationManagementService.getApplicationBasicInfoByName(applicationName, tenantDomain);
+                applicationId = (appInfo != null) ? appInfo.getUuid() : null;
+                callBackUrl = (appInfo != null) ? appInfo.getAccessUrl() :
+                        ApplicationMgtUtil.getMyAccountAccessUrlFromServerConfig(tenantDomain);
+            } else {
+                appInfo = applicationManagementService.getApplicationBasicInfoByResourceId(applicationId, tenantDomain);
+                applicationName = (appInfo != null) ? appInfo.getApplicationName() : null;
+                callBackUrl = (appInfo != null) ? appInfo.getAccessUrl() : null;
+            }
+        } catch (IdentityApplicationManagementException e) {
+            throw handleServerException(ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE, e,
+                    context.getFlowUser().getUsername(), context.getContextIdentifier());
+        }
+
+        Property[] properties = new Property[3];
+
+        properties[0] = new Property("spId", applicationId);
+        properties[1] = new Property("sp", applicationName);
+        properties[2] = new Property("callback", callBackUrl);
+        return properties;
     }
 }

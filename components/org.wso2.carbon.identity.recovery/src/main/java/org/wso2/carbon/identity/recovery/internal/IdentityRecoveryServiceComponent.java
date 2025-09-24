@@ -67,10 +67,10 @@ import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
+import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationCompletionHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
-import org.wso2.carbon.identity.recovery.listener.InvitedRegistrationCompletionListener;
-import org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListener;
+import org.wso2.carbon.identity.recovery.listener.FlowCompletionListener;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManager;
@@ -109,6 +109,8 @@ public class IdentityRecoveryServiceComponent {
                     AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserSelfRegistrationHandler(),
                     null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new UserSelfRegistrationCompletionHandler(),
+                    null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new LiteUserRegistrationHandler(),
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserEmailVerificationHandler(),
@@ -143,11 +145,8 @@ public class IdentityRecoveryServiceComponent {
                     passwordRecoveryManager, null);
             bundleContext.registerService(InputValidationManagementService.class.getName(),
                     new InputValidationManagementServiceImpl(), null);
-
-            bundleContext.registerService(FlowExecutionListener.class, new SelfRegistrationCompletionListener(),
-                                                       null);
-            bundleContext.registerService(FlowExecutionListener.class, new InvitedRegistrationCompletionListener(),
-                    null);
+            bundleContext.registerService(FlowExecutionListener.class,
+                    new FlowCompletionListener(), null);
             bundleContext.registerService(Executor.class.getName(),
                     new ConfirmationCodeValidationExecutor(), null);
             bundleContext.registerService(Executor.class.getName(),

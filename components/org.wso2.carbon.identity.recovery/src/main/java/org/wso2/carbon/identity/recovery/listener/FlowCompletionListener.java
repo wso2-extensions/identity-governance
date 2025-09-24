@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.core.context.model.Flow;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -33,7 +33,9 @@ import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineExcept
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -44,9 +46,14 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
+import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
+import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.utils.DiagnosticLog;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,24 +61,121 @@ import java.util.Map;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.maskIfRequired;
+import static org.wso2.carbon.identity.recovery.util.Utils.getDomainQualifiedUsername;
 import static org.wso2.carbon.identity.recovery.util.Utils.loadUserRecoveryData;
+import static org.wso2.carbon.utils.DiagnosticLog.ResultStatus.FAILED;
 
 /**
- * Listener to handle post-execution steps for invited user registration completion.
- * This listener updates the account state claims, invalidates recovery data,
- * sends notifications, and publishes events upon successful completion of the flow.
+ * Listener to handle post actions after a flow is completed.
  */
-public class InvitedRegistrationCompletionListener extends AbstractFlowExecutionListener {
+public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
-    private static final Log log = LogFactory.getLog(InvitedRegistrationCompletionListener.class);
+    private static final Log log = LogFactory.getLog(FlowCompletionListener.class);
+    private static final String FLOW_COMPLETION_LISTENER = "flow-completion-listener";
+    private static final String WORKFLOW_USER_ENTITY_TYPE = "USER";
+    private static final String SELF_REGISTER_USER_EVENT = "SELF_REGISTER_USER";
+    private static final String PENDING_APPROVAL = "PENDING_APPROVAL";
+    private static final String ACCOUNT_STATUS = "accountStatus";
+    private static final String ACCOUNT_LOCKED = "ACCOUNT_LOCKED";
+    private static final String TRIGGER_NOTIFICATION = "trigger-notification";
+    private static final String FLOW_ID = "flowId";
+    private static final String USER_NAME = "userName";
+
+    @Override
+    public int getExecutionOrderId() {
+
+        return 3;
+    }
+
+    @Override
+    public int getDefaultOrderId() {
+
+        return 3;
+    }
+
+    @Override
+    public boolean isEnabled() {
+
+        return true;
+    }
 
     @Override
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext context) throws FlowEngineException {
 
-        if (!Constants.COMPLETE.equals(step.getFlowStatus()) ||
-                !Flow.Name.INVITED_USER_REGISTRATION.name().equalsIgnoreCase(context.getFlowType())) {
+        if (!Constants.COMPLETE.equals(step.getFlowStatus())){
             return true;
         }
+
+        if (Constants.FlowTypes.INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
+
+            return handleInvitedUserRegistrationCompletion(step, context);
+        }
+
+        if (Constants.FlowTypes.REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
+
+            return handleSelfRegistrationCompletion(step, context);
+        }
+
+        return true;
+    }
+
+    private boolean handleSelfRegistrationCompletion(FlowExecutionStep step, FlowExecutionContext context) {
+
+        FlowUser user = context.getFlowUser();
+        String tenantDomain = context.getTenantDomain();
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        Map<String, Object> loggerInputs = new HashMap<>();
+
+        // Start building the input map for the diagnostic logs.
+        loggerInputs.put(FLOW_ID, context.getContextIdentifier());
+        loggerInputs.put(USER_NAME, maskIfRequired(user.getUsername()));
+
+        Entity entity = new Entity(getDomainQualifiedUsername(user), WORKFLOW_USER_ENTITY_TYPE, tenantId);
+
+        try {
+            if (hasPendingWorkFlow(entity, SELF_REGISTER_USER_EVENT)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("The user: %s in tenant domain: %s is associated with a pending " +
+                                    "workflow. Hence self registration completion listener will not proceed.",
+                            SelfRegistrationUtils.maskIfRequired(user.getUsername()), tenantDomain));
+                }
+                step.setStepType(Constants.StepTypes.VIEW);
+                step.getData().addAdditionalData(ACCOUNT_STATUS, PENDING_APPROVAL);
+                return true;
+            }
+
+            boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.REGISTRATION, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED));
+
+            boolean isEnableConfirmationOnCreation = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.REGISTRATION, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
+
+            if ( isEnableConfirmationOnCreation && isAccountLockOnCreation) {
+                step.setStepType(Constants.StepTypes.VIEW);
+                step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
+            }
+        } catch (WorkflowException e) {
+            log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
+            log.error("Error while handling workflow in" +
+                    " the flow: " + context.getContextIdentifier(), e);
+            logDiagnostic("Error while retrieving workflow status from flow completion listener in.", FAILED,
+                    TRIGGER_NOTIFICATION, loggerInputs);
+        } catch (FlowMgtServerException e) {
+            log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
+            log.error("Error while retrieving flow completion configs from the registration completion listener in" +
+                    " the flow: " + context.getContextIdentifier(), e);
+            logDiagnostic("Error while triggering verification notification.", FAILED,
+                    TRIGGER_NOTIFICATION, loggerInputs);
+        }
+        return true;
+    }
+
+    private boolean handleInvitedUserRegistrationCompletion(FlowExecutionStep step, FlowExecutionContext context)
+            throws FlowEngineException {
+
         String confirmationCode = getStringProperty(context, CONFIRMATION_CODE_INPUT);
         String notificationChannel = getStringProperty(context, IdentityRecoveryConstants.NOTIFICATION_CHANNEL);
         String recoveryScenario = getStringProperty(context, IdentityRecoveryConstants.RECOVERY_SCENARIO);
@@ -99,9 +203,17 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
                     context.getFlowType(), context.getContextIdentifier());
         }
+
         return true;
     }
 
+    private boolean hasPendingWorkFlow(Entity entity,  String type) throws WorkflowException {
+
+        WorkflowManagementService workflowManagementService = IdentityRecoveryServiceDataHolder
+                .getInstance().getWorkflowManagementService();
+
+        return workflowManagementService.entityHasPendingWorkflowsOfType(entity, type);
+    }
     private String getStringProperty(FlowExecutionContext context, String key) {
 
         Object value = context.getProperty(key);
@@ -199,18 +311,17 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         }
 
         // Send account activation notification if the configuration is enabled.
-        if (Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
-                tenantDomain))) {
-            try {
+        try {
+            if (Boolean.parseBoolean(Utils.getFlowCompletionConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION,
+                    tenantDomain, Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED))) {
                 String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
                 triggerNotification(user, recoveryScenario, channel,
                         IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS, code, eventName);
-            } catch (IdentityRecoveryException e) {
-                String errorMsg = String.format("Error while sending account activation notification to user: %s",
-                        user.getUserName());
-                log.error(errorMsg, e);
             }
+        } catch (IdentityRecoveryException | FlowMgtServerException e) {
+            String errorMsg = String.format("Error while sending account activation notification to user: %s",
+                    user.getUserName());
+            log.error(errorMsg, e);
         }
     }
 
@@ -250,9 +361,24 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(event);
     }
 
-    @Override
-    public boolean isEnabled() {
+    /**
+     * This method is used to log the diagnostic information.
+     *
+     * @param message  Message to be logged.
+     * @param status   Status of the log.
+     * @param actionId Action ID.
+     */
+    private void logDiagnostic(String message, DiagnosticLog.ResultStatus status, String actionId,
+                               Map<String, Object> inputParams) {
 
-        return true;
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            LoggerUtils.triggerDiagnosticLogEvent(
+                    new DiagnosticLog.DiagnosticLogBuilder(FLOW_COMPLETION_LISTENER, actionId)
+                            .resultMessage(message)
+                            .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                            .inputParams(inputParams)
+                            .resultStatus(status)
+            );
+        }
     }
 }

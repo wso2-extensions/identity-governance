@@ -49,6 +49,10 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
@@ -2115,5 +2119,34 @@ public class Utils {
             username = UserCoreUtil.addDomainToName(username, user.getUserStoreDomain());
         }
         return username;
+    }
+
+    /**
+     * Get the flow completion configuration for the given flow type and tenant domain.
+     *
+     * @param flowType     Flow type.
+     * @param tenantDomain Tenant domain.
+     * @param config       Flow completion configuration.
+     * @return Flow completion configuration value.
+     * @throws FlowMgtServerException If an error occurs while retrieving the configuration.
+     */
+    public static String getFlowCompletionConfig(Constants.FlowTypes flowType, String tenantDomain,
+                                                  Constants.FlowCompletionConfig config) throws FlowMgtServerException {
+
+        return FlowMgtConfigUtils.getFlowConfig(flowType.getType(), tenantDomain)
+                .getFlowCompletionConfig(config);
+    }
+
+    /**
+     * Get the flow configuration for the given flow type and tenant domain.
+     *
+     * @param flowType     Flow type.
+     * @param tenantDomain Tenant domain.
+     * @return Flow configuration.
+     * @throws FlowMgtServerException If an error occurs while retrieving the configuration.
+     */
+    public static FlowConfigDTO getFlowConfig(String flowType, String tenantDomain) throws FlowMgtServerException {
+
+        return FlowMgtConfigUtils.getFlowConfig(flowType, tenantDomain);
     }
 }

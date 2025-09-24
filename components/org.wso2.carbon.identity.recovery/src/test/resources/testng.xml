@@ -33,12 +33,13 @@
             <class name="org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandlerTest"/>
+            <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationCompletionHandler"/>
             <class name="org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManagerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStoreTest" />
             <class name="org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManagerTest"/>
             <class name="org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImplTest"/>
-            <class name="org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListenerTest"/>
+            <class name="org.wso2.carbon.identity.recovery.listener.FlowCompletionListenerTest"/>
             <class name="org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutorTest"/>
             <class name="org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutorTest"/>
             <class name="org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandlerTest"/>
