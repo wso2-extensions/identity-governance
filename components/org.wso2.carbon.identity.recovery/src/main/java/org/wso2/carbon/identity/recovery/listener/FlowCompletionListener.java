@@ -103,7 +103,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     @Override
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext context) throws FlowEngineException {
 
-        if (!Constants.COMPLETE.equals(step.getFlowStatus())){
+        if (!Constants.COMPLETE.equals(step.getFlowStatus())) {
             return true;
         }
 
@@ -207,7 +207,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         return true;
     }
 
-    private boolean hasPendingWorkFlow(Entity entity,  String type) throws WorkflowException {
+    private boolean hasPendingWorkFlow(Entity entity, String type) throws WorkflowException {
 
         WorkflowManagementService workflowManagementService = IdentityRecoveryServiceDataHolder
                 .getInstance().getWorkflowManagementService();

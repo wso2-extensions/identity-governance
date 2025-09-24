@@ -163,6 +163,7 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
             }
 
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
+            // Account locking is applicable only if Confirmation on creation is enabled.
             if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
                 lockUserAccount(true, true, tenantDomain,
                                 userStoreManager, userName);
