@@ -18,9 +18,6 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -164,16 +161,17 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
+            ExecutorResponse errorResponse =
+                    handleClientExceptionForActionFailure(new ExecutorResponse(), e);
+            if (errorResponse.getResult() != null) {
+                return errorResponse;
+            }
+
             String maskedUsername = LoggerUtils.isLogMaskingEnable
                     ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
                     : context.getFlowUser().getUsername();
             LOG.error("Error while updating password for user: " + maskedUsername, e);
 
-                ExecutorResponse errorResponse =
-                        handleAndThrowClientExceptionForActionFailure(new ExecutorResponse(), e);
-                if (errorResponse.getResult() != null) {
-                    return errorResponse;
-                }
             return errorResponse(new ExecutorResponse(), e.getMessage());
         } finally {
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
@@ -241,15 +239,15 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
+            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(new ExecutorResponse(), e);
+            if (errorResponse.getResult() != null) {
+                return errorResponse;
+            }
+
             String maskedUsername = LoggerUtils.isLogMaskingEnable
                     ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
                     : context.getFlowUser().getUsername();
             LOG.error("Error while updating password for user: " + maskedUsername, e);
-
-            ExecutorResponse errorResponse = handleAndThrowClientExceptionForActionFailure(new ExecutorResponse(), e);
-            if (errorResponse.getResult() != null) {
-                return errorResponse;
-            }
             return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }
@@ -347,7 +345,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
         return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 
-    private ExecutorResponse handleAndThrowClientExceptionForActionFailure(ExecutorResponse response, Exception e) {
+    private ExecutorResponse handleClientExceptionForActionFailure(ExecutorResponse response, Exception e) {
 
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
