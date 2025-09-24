@@ -341,6 +341,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 }
             } else if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario) ||
                     RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)) {
+                /* Handle the Ask Password via OTP scenario to improve the performance instead of going to another
+                   handler. */
                 String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
                 isAskPasswordBasedPasswordSet = true;
                 if (userRecoveryData.getSecret().equals(credential)) {
