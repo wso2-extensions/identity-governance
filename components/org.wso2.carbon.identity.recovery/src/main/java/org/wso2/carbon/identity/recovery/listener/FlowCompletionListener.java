@@ -153,7 +153,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     Constants.FlowTypes.REGISTRATION, tenantDomain,
                     Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
-            if ( isEnableConfirmationOnCreation && isAccountLockOnCreation) {
+            if (isEnableConfirmationOnCreation && isAccountLockOnCreation) {
                 step.setStepType(Constants.StepTypes.VIEW);
                 step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
             }

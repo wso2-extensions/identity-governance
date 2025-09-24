@@ -59,7 +59,11 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
@@ -71,7 +75,12 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGI
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.*;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -84,7 +93,6 @@ public class UserProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(UserProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
-    private static final String ADMIN_LOGIN_PERMISSION = "/permission/admin/login";
 
     @Override
     public String getName() {
@@ -150,10 +158,8 @@ public class UserProvisioningExecutor implements Executor {
                     context.getContextIdentifier(), context.getFlowType());
 
             if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
-                Permission permission =
-                        new Permission(ADMIN_LOGIN_PERMISSION, IdentityRecoveryConstants.EXECUTE_ACTION);
                 userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null,
-                        new Permission[]{permission});
+                        new Permission[]{});
             }
 
             // Set notification properties to be used in the UserSelfRegistrationHandler.

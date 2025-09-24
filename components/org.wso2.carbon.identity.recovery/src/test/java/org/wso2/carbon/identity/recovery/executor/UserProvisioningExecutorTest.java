@@ -23,7 +23,6 @@ import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -255,8 +254,7 @@ public class UserProvisioningExecutorTest {
         when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
                 anyString())).thenReturn(myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
-                anyString())).thenReturn(
-                testApp);
+                anyString())).thenReturn(testApp);
 
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(primaryUserStoreManager);
@@ -422,9 +420,8 @@ public class UserProvisioningExecutorTest {
         when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
                 anyString())).thenReturn(myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
-                anyString())).thenReturn(
-                testApp);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
+                anyString())).thenReturn(testApp);
+
         when(dataHolder.getFederatedAssociationManager()).thenReturn(fedAssociationManager);
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
@@ -481,8 +478,7 @@ public class UserProvisioningExecutorTest {
         when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
                 anyString())).thenReturn(myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
-                anyString())).thenReturn(
-                testApp);
+                anyString())).thenReturn(testApp);
 
         when(dataHolder.getRealmService()).thenReturn(realmService);
         when(dataHolder.getFederatedAssociationManager()).thenReturn(fedAssociationManager);
@@ -543,9 +539,8 @@ public class UserProvisioningExecutorTest {
         when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"),
                 anyString())).thenReturn(myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
-                anyString())).thenReturn(
-                testApp);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
+                anyString())).thenReturn(testApp);
+
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(primaryUserStoreManager);
         when(primaryUserStoreManager.getSecondaryUserStoreManager("Internal"))
@@ -609,7 +604,6 @@ public class UserProvisioningExecutorTest {
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
                 anyString())).thenReturn(
                 testApp);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
         when(dataHolder.getFederatedAssociationManager()).thenReturn(mock(FederatedAssociationManager.class));
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);

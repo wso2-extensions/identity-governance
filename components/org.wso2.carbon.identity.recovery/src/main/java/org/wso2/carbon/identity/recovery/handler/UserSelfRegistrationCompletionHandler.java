@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery.handler;
@@ -58,22 +60,30 @@ import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.resol
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.getNotificationChannel;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerAccountCreationNotification;
 
+/**
+ * Event handler which handles post user self registration operations.
+ */
 public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationCompletionHandler.class);
 
     public String getName() {
 
-        return "userSelfRegistration";
+        return "userSelfRegistrationCompletionHandler";
     }
 
     public String getFriendlyName() {
 
-        return "User Self Registration";
+        return "User Self Registration Completion Handler";
     }
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
+
+        // This handler only handle POST_ADD_USER event.
+        if (!IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
+            return;
+        }
 
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
@@ -118,82 +128,78 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
             }
         }
 
-        if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
+        try {
 
-            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            boolean isAccountLockOnCreation =  Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.REGISTRATION, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED));
 
-            try {
+            boolean isEnableConfirmationOnCreation = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.REGISTRATION, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
-                boolean isAccountLockOnCreation =  Boolean.parseBoolean(Utils.getFlowCompletionConfig(
-                        Constants.FlowTypes.REGISTRATION, tenantDomain,
-                        Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED));
+            boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                    user.getTenantDomain()));
+            // Get the user preferred notification channel.
+            String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
+                    domainName);
 
-                boolean isEnableConfirmationOnCreation = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
-                        Constants.FlowTypes.REGISTRATION, tenantDomain,
-                        Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
+            NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
 
+            // If the preferred channel is already verified, no need to send the notifications or lock
+            // the account.
+            boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
+                    preferredChannel, eventProperties);
 
-                boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig(
-                        IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                        user.getTenantDomain()));
-                // Get the user preferred notification channel.
-                String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
-                        domainName);
-
-                NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
-
-                // If the preferred channel is already verified, no need to send the notifications or lock
-                // the account.
-                boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
-                        preferredChannel, eventProperties);
-
-                if (notificationChannelVerified) {
-                    return;
-                }
-
-                // If account lock on creation is enabled, lock the account by persisting the account lock claim.
-                if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
-                    lockUserAccount(true, true, tenantDomain,
-                                    userStoreManager, userName);
-                }
-
-                boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
-                        Constants.FlowTypes.REGISTRATION, tenantDomain,
-                        Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED));
-
-                // If notify confirmation is enabled and both iAccountLockOnCreation &&
-                // EnableConfirmationOnCreation are disabled then send account creation notification.
-                if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isNotificationInternallyManage
-                        && isSelfRegistrationConfirmationNotify
-                        && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
-                    triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
-                                                       user.getUserStoreDomain());
-                }
-                // If notifications are externally managed, no send notifications.
-                if (isEnableConfirmationOnCreation && isNotificationInternallyManage
-                        && isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties)) {
-                    userRecoveryDataStore.invalidate(user);
-
-                    // Create a secret key based on the preferred notification channel.
-                    String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.SELF_SIGN_UP.name(),
-                            tenantDomain, "SelfRegistration");
-
-                    // Resolve event name.
-                    String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
-
-                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                            RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
-
-                    // Notified channel is stored in remaining setIds for recovery purposes.
-                    recoveryDataDO.setRemainingSetIds(preferredChannel);
-                    userRecoveryDataStore.store(recoveryDataDO);
-                    SelfRegistrationUtils.triggerNotification(user, preferredChannel, secretKey,
-                                                              Utils.getArbitraryProperties(), eventName);
-                }
-            } catch (IdentityRecoveryException | FlowMgtServerException e) {
-                throw new IdentityEventException("Error while sending self sign up notification ", e);
+            if (notificationChannelVerified) {
+                return;
             }
+
+            // If account lock on creation is enabled, lock the account by persisting the account lock claim.
+            if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
+                lockUserAccount(true, true, tenantDomain,
+                                userStoreManager, userName);
+            }
+
+            boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.REGISTRATION, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED));
+
+            // If notify confirmation is enabled and both iAccountLockOnCreation &&
+            // EnableConfirmationOnCreation are disabled then send account creation notification.
+            if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isNotificationInternallyManage
+                    && isSelfRegistrationConfirmationNotify
+                    && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
+                triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
+                                                   user.getUserStoreDomain());
+                return;
+            }
+            // If notifications are externally managed, no send notifications.
+            if (isEnableConfirmationOnCreation && isNotificationInternallyManage
+                    && isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties)) {
+                userRecoveryDataStore.invalidate(user);
+
+                // Create a secret key based on the preferred notification channel.
+                String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.SELF_SIGN_UP.name(),
+                        tenantDomain, "SelfRegistration");
+
+                // Resolve event name.
+                String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
+
+                UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+
+                // Notified channel is stored in remaining setIds for recovery purposes.
+                recoveryDataDO.setRemainingSetIds(preferredChannel);
+                userRecoveryDataStore.store(recoveryDataDO);
+                SelfRegistrationUtils.triggerNotification(user, preferredChannel, secretKey,
+                                                          Utils.getArbitraryProperties(), eventName);
+            }
+        } catch (IdentityRecoveryException | FlowMgtServerException e) {
+            throw new IdentityEventException("Error while sending self sign up notification ", e);
         }
     }
 

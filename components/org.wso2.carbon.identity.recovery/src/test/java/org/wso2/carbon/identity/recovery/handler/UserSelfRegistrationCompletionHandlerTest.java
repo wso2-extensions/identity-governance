@@ -112,12 +112,14 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @Test
     public void testGetName() {
-        assertEquals(handler.getName(), "userSelfRegistration");
+
+        assertEquals(handler.getName(), "userSelfRegistrationCompletionHandler");
     }
 
     @Test
     public void testGetFriendlyName() {
-        assertEquals(handler.getFriendlyName(), "User Self Registration");
+
+        assertEquals(handler.getFriendlyName(), "User Self Registration Completion Handler");
     }
 
     @Test
