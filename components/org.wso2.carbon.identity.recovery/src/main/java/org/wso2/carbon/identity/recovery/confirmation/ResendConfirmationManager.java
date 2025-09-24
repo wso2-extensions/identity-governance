@@ -279,18 +279,14 @@ public class ResendConfirmationManager {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-        // Deprecated config.
-        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
-        // New config.
+
         boolean isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE, user.getTenantDomain()));
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
             }
-            // Honoring the both configs temporarily until the migration completed.
-            if (isSelfRegistrationSendOTPInEmailEnabled || isSelfRegistrationEmailOTPEnabled) {
+            if (isSelfRegistrationEmailOTPEnabled) {
                 properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             }
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);

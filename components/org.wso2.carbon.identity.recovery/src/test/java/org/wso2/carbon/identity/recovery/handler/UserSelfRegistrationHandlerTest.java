@@ -51,6 +51,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK;
@@ -128,7 +129,7 @@ public class UserSelfRegistrationHandlerTest {
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(ENABLE_SELF_SIGNUP, TENANT_DOMAIN)).
                 thenReturn(TRUE_STRING);
         if (isEmailOtpEnabled) {
-            utilsMockedStatic.when(() -> Utils.getConnectorConfig(SELF_REGISTRATION_SEND_OTP_IN_EMAIL, TENANT_DOMAIN)).
+            utilsMockedStatic.when(() -> Utils.getSignUpConfigs(SELF_REGISTRATION_EMAIL_OTP_ENABLE, TENANT_DOMAIN)).
                     thenReturn(TRUE_STRING);
         }
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, TENANT_DOMAIN)).
@@ -164,5 +165,4 @@ public class UserSelfRegistrationHandlerTest {
                 {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP}
         };
     }
-
 }

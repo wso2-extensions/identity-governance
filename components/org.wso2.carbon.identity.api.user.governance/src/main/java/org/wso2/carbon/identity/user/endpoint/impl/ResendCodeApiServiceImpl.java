@@ -209,20 +209,13 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
 
-            // This is deprecated and will be removed in a future release.
-            boolean isSelfRegistrationSendOTPInEmailEnabled;
-            // The newly added configuration to send OTP in email for self-registration.
             boolean isSelfRegistrationEmailOTPEnabled;
             String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
             try {
-                isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
-                                resendCodeRequestDTO.getUser().getTenantDomain()));
                 isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
                                 resendCodeRequestDTO.getUser().getTenantDomain()));
-                // Temporarily honoring both configs for backward compatibility until the migration is complete.
-                if (isSelfRegistrationSendOTPInEmailEnabled || isSelfRegistrationEmailOTPEnabled) {
+                if (isSelfRegistrationEmailOTPEnabled) {
                     notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
                 }
             } catch (IdentityRecoveryException e){
