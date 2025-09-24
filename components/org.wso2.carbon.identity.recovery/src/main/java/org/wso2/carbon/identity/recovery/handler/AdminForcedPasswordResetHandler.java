@@ -320,6 +320,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             String errorCode = null;
             String errorMsg = "User : " + user.toString();
             boolean isForcedPasswordReset = false;
+            boolean isAskPasswordBasedPasswordSet = false;
 
             if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)) {
                 errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
@@ -338,9 +339,20 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                     errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_MISMATCHED_ERROR_CODE;
                     errorMsg = errorMsg + " has given in-correct OTP";
                 }
+            } else if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario) ||
+                    RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)) {
+                String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+                isAskPasswordBasedPasswordSet = true;
+                if (userRecoveryData.getSecret().equals(credential)) {
+                    errorCode = IdentityCoreConstants.ASK_PASSWORD_SET_PASSWORD_VIA_OTP_ERROR_CODE;
+                    errorMsg = errorMsg + " has given correct OTP";
+                } else {
+                    errorCode = IdentityCoreConstants.ASK_PASSWORD_SET_PASSWORD_VIA_OTP_MISMATCHED_ERROR_CODE;
+                    errorMsg = errorMsg + " has given in-correct OTP";
+                }
             }
 
-            if (isForcedPasswordReset) {
+            if (isForcedPasswordReset || isAskPasswordBasedPasswordSet) {
                 if (log.isDebugEnabled()) {
                     log.debug(errorMsg);
                 }
