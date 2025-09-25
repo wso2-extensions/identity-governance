@@ -19,6 +19,9 @@
 package org.wso2.carbon.identity.recovery.handler;
 
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -26,16 +29,24 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.config.RealmConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -47,18 +58,37 @@ public class OTPBasedTemporaryLoginHandlerTest {
     @Mock
     private UserStoreManager userStoreManager;
     @Mock
+    private RealmConfiguration realmConfiguration;
+    @Mock
     private UserRecoveryDataStore userRecoveryDataStore;
+
+    private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
+    private MockedStatic<Utils> mockedUtils;
 
     private static final String TEST_USERNAME = "testUser";
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_USER_STORE_DOMAIN = "PRIMARY";
     private static final String TEST_DUMMY_CODE = "dummy-code";
 
-    private  OTPBasedTemporaryLoginHandler otpBasedTemporaryLoginHandler;
+    private final OTPBasedTemporaryLoginHandler otpBasedTemporaryLoginHandler = new OTPBasedTemporaryLoginHandler();;
+
     @BeforeMethod
     public void setUp() throws Exception {
 
-        otpBasedTemporaryLoginHandler = new OTPBasedTemporaryLoginHandler();
+        MockitoAnnotations.openMocks(this);
+        mockedJDBCRecoveryDataStore = mockStatic(JDBCRecoveryDataStore.class);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+        mockedUtils = mockStatic(Utils.class);
+        when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        when(realmConfiguration.getUserStoreProperty(eq(
+                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME))).thenReturn(TEST_USER_STORE_DOMAIN);
+    }
+
+    @AfterMethod
+    public void close() {
+
+        mockedJDBCRecoveryDataStore.close();
+        mockedUtils.close();
     }
 
     @DataProvider(name = "otpAuthenticateDataProvider")
@@ -83,6 +113,13 @@ public class OTPBasedTemporaryLoginHandlerTest {
             dataProvider = "otpAuthenticateDataProvider")
     public void testOTPAuthenticateEvents(UserRecoveryData recoveryData, String credential, String errorMessage)
             throws IdentityRecoveryException {
+
+        // Mock OTP configurations
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP, true);
+
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_AUTHENTICATION);
         event.getEventProperties().put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
@@ -113,5 +150,11 @@ public class OTPBasedTemporaryLoginHandlerTest {
         user.setUserStoreDomain(TEST_USER_STORE_DOMAIN);
 
         return new UserRecoveryData(user, TEST_DUMMY_CODE, recoveryScenario, recoveryStep);
+    }
+
+    private void mockGetConnectorConfig(String connectorConfig, boolean value) {
+
+        mockedUtils.when(() -> Utils.getConnectorConfig(eq(connectorConfig), anyString()))
+                .thenReturn(String.valueOf(value));
     }
 }
