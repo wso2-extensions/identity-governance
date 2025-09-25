@@ -266,12 +266,6 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
     private boolean isNotificationChannelVerified(String username, String tenantDomain, String notificationChannel,
             Map<String, Object> eventProperties) throws IdentityRecoveryClientException {
 
-        if (log.isDebugEnabled()) {
-            String message = String
-                    .format("SkipAccountLockOnVerifiedPreferredChannel is enabled for user : %s in domain : %s. "
-                            + "Checking whether the user is already verified", username, tenantDomain);
-            log.debug(message);
-        }
         // Get the notification channel which matches the given channel type.
         NotificationChannels channel = getNotificationChannel(username, notificationChannel);
 
