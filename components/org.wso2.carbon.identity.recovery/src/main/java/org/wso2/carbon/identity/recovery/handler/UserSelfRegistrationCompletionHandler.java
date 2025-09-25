@@ -157,7 +157,6 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
             if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
                 lockUserAccount(true, true, tenantDomain,
                         userStoreManager, userName);
-                return;
             }
 
             // If notifications are externally managed, no notification needs to be sent.
@@ -170,8 +169,9 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
 
             NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
 
-            // If notify confirmation is enabled then send account creation notification.
-            if (isSelfRegistrationConfirmationNotify
+            // If notify confirmation is enabled and email verification is disabled
+            // then send account creation notification.
+            if (!isEnableConfirmationOnCreation && isSelfRegistrationConfirmationNotify
                     && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
                         user.getUserStoreDomain());
