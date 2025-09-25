@@ -195,6 +195,9 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             if (isEnableConfirmationOnCreation && isAccountLockOnCreation) {
                 step.setStepType(Constants.StepTypes.VIEW);
                 step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
+            } else {
+                publishEvent(user.getClaims(), user.getUserStoreDomain(), tenantDomain,
+                        IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
             }
         } catch (WorkflowException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
@@ -508,6 +511,22 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
         Event event = new Event(IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, props);
         IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(event);
+    }
+
+    private void publishEvent(Map<String, String> claims, String userStoreDomain, String tenantDomain,
+                              String eventName) {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error while publishing event: " + eventName, e);
+        }
     }
 
     /**
