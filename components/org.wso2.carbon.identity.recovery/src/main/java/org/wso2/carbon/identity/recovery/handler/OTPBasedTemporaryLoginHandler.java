@@ -29,11 +29,13 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -70,6 +72,21 @@ public class OTPBasedTemporaryLoginHandler extends AbstractEventHandler {
                 .EventProperty.USER_STORE_MANAGER);
 
         if (!IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
+            return;
+        }
+
+        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+        boolean askPasswordEmailOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP, tenantDomain));
+        boolean askPasswordSmsOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP, tenantDomain));
+        boolean forcedPasswordResetEmailOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP, tenantDomain));
+        boolean forcedPasswordResetSmsOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP, tenantDomain));
+
+        // If none of the OTP based temporary login scenarios are enabled, skip the handler.
+        if (!askPasswordEmailOTP && !askPasswordSmsOTP && !forcedPasswordResetEmailOTP && !forcedPasswordResetSmsOTP) {
             return;
         }
 
