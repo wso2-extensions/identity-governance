@@ -161,8 +161,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
-            ExecutorResponse errorResponse =
-                    handleClientExceptionForActionFailure(e);
+            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(e);
             if (errorResponse.getResult() != null) {
                 return errorResponse;
             }
@@ -171,7 +170,6 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
                     ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
                     : context.getFlowUser().getUsername();
             LOG.error("Error while updating password for user: " + maskedUsername, e);
-
             return errorResponse(new ExecutorResponse(), e.getMessage());
         } finally {
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
