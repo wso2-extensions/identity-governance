@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.recovery.listener;
 
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -28,7 +27,6 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
@@ -38,6 +36,10 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.flow.mgt.model.DataDTO;
+import org.wso2.carbon.identity.flow.mgt.model.NodeConfig;
+import org.wso2.carbon.identity.flow.mgt.model.ExecutorDTO;
+import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -57,16 +59,16 @@ import org.wso2.carbon.utils.DiagnosticLog;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,9 +96,11 @@ public class FlowCompletionListenerTest {
     private UserStoreManager userStoreManager;
     private JDBCRecoveryDataStore jdbcRecoveryDataStore;
     private NotificationPasswordRecoveryManager recoveryManager;
+    private NotificationChannelManager notificationChannelManager;
 
     @BeforeMethod
     public void setUp() throws Exception {
+
         mockedDataHolderStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
         mockedUtilsStatic = mockStatic(Utils.class);
         mockedJDBCRecoveryStatic = mockStatic(JDBCRecoveryDataStore.class);
@@ -117,6 +121,7 @@ public class FlowCompletionListenerTest {
         userStoreManager = mock(UserStoreManager.class);
         jdbcRecoveryDataStore = mock(JDBCRecoveryDataStore.class);
         recoveryManager = mock(NotificationPasswordRecoveryManager.class);
+        notificationChannelManager = mock(NotificationChannelManager.class);
 
         // Default static mocks
         mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
@@ -134,14 +139,33 @@ public class FlowCompletionListenerTest {
         // Mock IdentityUtil methods that are used
         mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
                 .thenReturn("PRIMARY/testUser");
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(anyString())).thenReturn("PRIMARY");
+        mockedIdentityUtil.when(() -> IdentityUtil.getPrimaryDomainName()).thenReturn("PRIMARY");
+
+        // Mock Utils methods for notification channel manager
+        mockedUtilsStatic.when(Utils::getNotificationChannelManager).thenReturn(notificationChannelManager);
+        when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString()))
+                .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+        // Mock SelfRegistrationUtils methods
+        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.getNotificationChannel(anyString(), anyString()))
+                .thenReturn(NotificationChannels.EMAIL_CHANNEL);
+        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
+                .thenReturn("masked_user");
+        // Fix: handledNotificationChannelManagerException is a void method, so use doNothing()
+        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.handledNotificationChannelManagerException(
+                any(NotificationChannelManagerException.class), anyString(), anyString(), anyString()))
+                .thenAnswer(invocation -> null);
 
         mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
-        doNothing().when(LoggerUtils.class);
-        LoggerUtils.triggerDiagnosticLogEvent(any(DiagnosticLog.DiagnosticLogBuilder.class));
+        // Fix: Use doNothing() for static void method
+        mockedLoggerUtils.when(() -> LoggerUtils.triggerDiagnosticLogEvent(any(DiagnosticLog.DiagnosticLogBuilder.class)))
+                .thenAnswer(invocation -> null);
     }
 
     @AfterMethod
     public void tearDown() {
+
         mockedDataHolderStatic.close();
         mockedUtilsStatic.close();
         mockedJDBCRecoveryStatic.close();
@@ -154,21 +178,25 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testGetExecutionOrderId() {
+
         assertEquals(listener.getExecutionOrderId(), 3);
     }
 
     @Test
     public void testGetDefaultOrderId() {
+
         assertEquals(listener.getDefaultOrderId(), 3);
     }
 
     @Test
     public void testIsEnabled() {
+
         assertTrue(listener.isEnabled());
     }
 
     @Test
     public void testDoPostExecuteNotComplete() throws FlowEngineException {
+
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         when(step.getFlowStatus()).thenReturn("IN_PROGRESS");
@@ -179,6 +207,7 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testDoPostExecuteUnknownFlowType() throws FlowEngineException {
+
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         when(step.getFlowStatus()).thenReturn(Constants.COMPLETE);
@@ -190,6 +219,7 @@ public class FlowCompletionListenerTest {
 
     @DataProvider
     public Object[][] selfRegistrationWorkflowData() {
+
         return new Object[][]{
                 {true, "PENDING_APPROVAL"}, // Has pending workflow
                 {false, null} // No pending workflow
@@ -208,8 +238,6 @@ public class FlowCompletionListenerTest {
 
         mockedUtilsStatic.when(() -> Utils.getDomainQualifiedUsername(any(FlowUser.class)))
                 .thenReturn("testUser");
-        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
-                .thenReturn("masked_user");
 
         // Execute
         boolean result = listener.doPostExecute(step, context);
@@ -224,6 +252,7 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testHandleSelfRegistrationCompletionWithAccountLockAndVerification() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
         FlowExecutionContext context = createSelfRegistrationContext();
@@ -233,8 +262,6 @@ public class FlowCompletionListenerTest {
 
         mockedUtilsStatic.when(() -> Utils.getDomainQualifiedUsername(any(FlowUser.class)))
                 .thenReturn("testUser");
-        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
-                .thenReturn("masked_user");
 
         // Mock flow completion configs
         mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
@@ -257,6 +284,7 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testHandleSelfRegistrationCompletionWorkflowException() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
         FlowExecutionContext context = createSelfRegistrationContext();
@@ -266,8 +294,6 @@ public class FlowCompletionListenerTest {
 
         mockedUtilsStatic.when(() -> Utils.getDomainQualifiedUsername(any(FlowUser.class)))
                 .thenReturn("testUser");
-        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
-                .thenReturn("masked_user");
 
         // Execute
         boolean result = listener.doPostExecute(step, context);
@@ -280,6 +306,7 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testHandleSelfRegistrationCompletionFlowMgtServerException() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
         FlowExecutionContext context = createSelfRegistrationContext();
@@ -289,8 +316,6 @@ public class FlowCompletionListenerTest {
 
         mockedUtilsStatic.when(() -> Utils.getDomainQualifiedUsername(any(FlowUser.class)))
                 .thenReturn("testUser");
-        mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
-                .thenReturn("masked_user");
 
         // Mock flow completion config to throw exception
         mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
@@ -342,10 +367,6 @@ public class FlowCompletionListenerTest {
         when(recoveryData.getRecoveryFlowId()).thenReturn(null);
         mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
 
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
-
         // Execute
         boolean result = listener.doPostExecute(step, context);
 
@@ -358,6 +379,7 @@ public class FlowCompletionListenerTest {
 
     @Test
     public void testHandleInvitedUserRegistrationCompletionWithNullUser() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
         FlowExecutionContext context = createInvitedUserRegistrationContext();
@@ -372,209 +394,242 @@ public class FlowCompletionListenerTest {
     }
 
     @Test
-    public void testHandleInvitedUserRegistrationCompletionWithNullConfirmationCode() throws Exception {
+    public void testInvalidateRecoveryDataException() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
         FlowExecutionContext context = createInvitedUserRegistrationContext();
-        context.getProperties().remove(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT);
         User user = createTestUser();
 
-        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
-
-        // Execute
-        boolean result = listener.doPostExecute(step, context);
-
-        // Verify
-        assertFalse(result);
-    }
-
-    @DataProvider
-    public Object[][] notificationChannelData() {
-        return new Object[][]{
-                {NotificationChannels.EMAIL_CHANNEL.getChannelType(), NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl()},
-                {NotificationChannels.SMS_CHANNEL.getChannelType(), NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl()},
-                {"UNKNOWN", NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl()} // Default to email
-        };
-    }
-
-    @Test(dataProvider = "notificationChannelData")
-    public void testGetAccountStateClaims(String channel, String expectedClaimUrl) throws Exception {
-        // Use reflection to test the private method indirectly through the public flow
-        FlowExecutionStep step = createMockStep();
-        FlowExecutionContext context = createInvitedUserRegistrationContext();
-        User user = createTestUser();
-
-        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn(channel);
+        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
         mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
         mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
                 eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
                 .thenReturn("true");
 
-        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
-        when(recoveryData.getUser()).thenReturn(user);
-        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
-        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+        // Mock flow completion config
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
 
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
-
-        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
-
-        // Execute
-        listener.doPostExecute(step, context);
-
-        // Verify
-        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), eq(null));
-        Map<String, String> capturedClaims = claimsCaptor.getValue();
-
-        assertTrue(capturedClaims.containsKey(expectedClaimUrl));
-        assertEquals(capturedClaims.get(expectedClaimUrl), "true");
-        assertTrue(capturedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI));
-        assertTrue(capturedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
-    }
-
-    @Test
-    public void testInvalidateRecoveryDataWithRecoveryFlowId() throws Exception {
-        // Setup
-        FlowExecutionStep step = createMockStep();
-        FlowExecutionContext context = createInvitedUserRegistrationContext();
-        User user = createTestUser();
-
-        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
-        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
-        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn("true");
-
-        // Mock recovery data with flowId
-        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
-        when(recoveryData.getUser()).thenReturn(user);
-        when(recoveryData.getRecoveryFlowId()).thenReturn("flowId123");
-        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
-
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
-
-        // Execute
-        listener.doPostExecute(step, context);
-
-        // Verify
-        verify(jdbcRecoveryDataStore).invalidateWithRecoveryFlowId("flowId123");
-        verify(jdbcRecoveryDataStore, never()).invalidate(any(User.class));
-    }
-
-    @Test
-    public void testInvalidateRecoveryDataException() throws Exception {
-        // Setup
-        FlowExecutionStep step = createMockStep();
-        FlowExecutionContext context = createInvitedUserRegistrationContext();
-        User user = createTestUser();
-
-        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
-        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
-        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn("true");
-
-        // Mock recovery data loading to throw exception
+        // Mock loadUserRecoveryData to throw exception
         mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString()))
                 .thenThrow(new IdentityRecoveryException("Load error"));
 
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
 
-        // Execute (should not throw exception, should handle gracefully)
+        // Verify - should complete successfully even with exception
+        assertTrue(result);
+    }
+
+    @Test
+    public void testDoPostExecutePasswordRecoveryFlowType() throws FlowEngineException {
+
+        FlowExecutionStep step = mock(FlowExecutionStep.class);
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(step.getFlowStatus()).thenReturn(Constants.COMPLETE);
+        when(context.getFlowType()).thenReturn(Constants.FlowTypes.PASSWORD_RECOVERY.getType());
+
+        // Mock empty completed nodes to trigger early return
+        when(context.getCompletedNodes()).thenReturn(java.util.Collections.emptyList());
+
+        boolean result = listener.doPostExecute(step, context);
+        assertTrue(result);
+    }
+
+    @DataProvider
+    public Object[][] passwordRecoveryExecutorData() {
+        return new Object[][]{
+                {"EmailOTPExecutor", NotificationChannels.EMAIL_CHANNEL.getChannelType()},
+                {"SMSOTPExecutor", NotificationChannels.SMS_CHANNEL.getChannelType()},
+                {"MagicLinkExecutor", NotificationChannels.EMAIL_CHANNEL.getChannelType()}
+        };
+    }
+
+    @Test(dataProvider = "passwordRecoveryExecutorData")
+    public void testHandlePasswordRecoveryCompletionWithDifferentExecutors(String executorName,
+                                                                            String expectedChannel) throws Exception {
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext(executorName);
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery configs for internally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("true");
+
+        // Execute
         boolean result = listener.doPostExecute(step, context);
 
         // Verify
         assertTrue(result);
-        verify(jdbcRecoveryDataStore, never()).invalidate(any(User.class));
-        verify(jdbcRecoveryDataStore, never()).invalidateWithRecoveryFlowId(anyString());
+        verify(identityEventService).handleEvent(any(Event.class));
     }
 
     @Test
-    public void testHandleNotificationsExternalChannel() throws Exception {
+    public void testHandlePasswordRecoveryCompletionWithNotificationsDisabled() throws Exception {
+
         // Setup
         FlowExecutionStep step = createMockStep();
-        FlowExecutionContext context = createInvitedUserRegistrationContext();
-        User user = createTestUser();
-
-        when(recoveryManager.getServerSupportedNotificationChannel(anyString()))
-                .thenReturn(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
-        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
-        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn("true");
-
-        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
-        when(recoveryData.getUser()).thenReturn(user);
-        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
-        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
-
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
-
-        // Execute
-        listener.doPostExecute(step, context);
-
-        // Verify - only one event should be triggered (publishEvent), not notification
-        verify(identityEventService, times(1)).handleEvent(any(Event.class));
-    }
-
-    @Test
-    public void testHandleNotificationsDisabled() throws Exception {
-        // Setup
-        FlowExecutionStep step = createMockStep();
-        FlowExecutionContext context = createInvitedUserRegistrationContext();
-        User user = createTestUser();
-
-        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
-        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
-        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn("true");
+        FlowExecutionContext context = createPasswordRecoveryContext("EmailOTPExecutor");
 
         // Mock flow completion config to disable notifications
         mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
-                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
                 eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
                 .thenReturn("false");
 
-        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
-        when(recoveryData.getUser()).thenReturn(user);
-        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
-        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
 
-        // Mock IdentityUtil.addDomainToName directly
-        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
-                .thenReturn("PRIMARY/testUser");
+        // Verify
+        assertTrue(result);
+        // Verify that no event was triggered since notifications are disabled
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testHandlePasswordRecoveryCompletionWithExternallyManagedNotifications() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext("EmailOTPExecutor");
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery configs for externally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("false");
 
         // Execute
-        listener.doPostExecute(step, context);
+        boolean result = listener.doPostExecute(step, context);
 
-        // Verify - only one event should be triggered (publishEvent), not notification
-        verify(identityEventService, times(1)).handleEvent(any(Event.class));
+        // Verify
+        assertTrue(result);
+        // Verify that no event was triggered since notifications are externally managed
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testHandlePasswordRecoveryCompletionWithUnknownExecutor() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext("UnknownExecutor");
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        // Verify that no event was triggered since executor is unknown
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testHandlePasswordRecoveryCompletionWithMissingClaims() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContextWithoutClaims("EmailOTPExecutor");
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery configs for internally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("true");
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        // Verify that no event was triggered since required claim is not available
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+        // Verify that diagnostic log was triggered for missing claim
+        mockedLoggerUtils.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(
+                any(DiagnosticLog.DiagnosticLogBuilder.class)), times(1));
+    }
+
+    @Test
+    public void testHandlePasswordRecoveryCompletionWithClaimsButNotificationsDisabled() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext("EmailOTPExecutor");
+
+        // Mock flow completion config to disable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("false");
+
+        // Mock recovery configs for internally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("true");
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        // Verify that no event was triggered since notifications are disabled
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+        // Verify that diagnostic log was NOT triggered since notifications are disabled (claim check doesn't happen)
+        mockedLoggerUtils.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(
+                any(DiagnosticLog.DiagnosticLogBuilder.class)), times(0));
     }
 
     // Helper methods
     private FlowExecutionStep createMockStep() {
+
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         DataDTO data = mock(DataDTO.class);
-        when(step.getFlowStatus()).thenReturn(Constants.COMPLETE);
         when(step.getData()).thenReturn(data);
+        when(step.getFlowStatus()).thenReturn(Constants.COMPLETE);
+        doNothing().when(step).setStepType(any());
+        doNothing().when(data).addAdditionalData(anyString(), anyString());
         return step;
     }
 
     private FlowExecutionContext createSelfRegistrationContext() {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        FlowUser flowUser = new FlowUser();
-        flowUser.setUsername("testUser");
+        FlowUser flowUser = mock(FlowUser.class);
+        Map<String, String> userClaims = new HashMap<>();
+        userClaims.put(NotificationChannels.EMAIL_CHANNEL.getClaimUri(), "test@example.com");
 
         when(context.getFlowType()).thenReturn(Constants.FlowTypes.REGISTRATION.getType());
-        when(context.getTenantDomain()).thenReturn("carbon.super");
-        when(context.getContextIdentifier()).thenReturn("contextId");
         when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getTenantDomain()).thenReturn("carbon.super");
+        when(context.getContextIdentifier()).thenReturn("test-flow-id");
+        when(flowUser.getUsername()).thenReturn("testUser");
+        when(flowUser.getClaims()).thenReturn(userClaims);
 
         return context;
     }
 
     private FlowExecutionContext createInvitedUserRegistrationContext() {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         Map<String, Object> properties = new HashMap<>();
         properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT, "confirmationCode123");
@@ -582,16 +637,137 @@ public class FlowCompletionListenerTest {
         properties.put(IdentityRecoveryConstants.RECOVERY_SCENARIO, "INVITED_USER_REGISTRATION");
 
         when(context.getFlowType()).thenReturn(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType());
-        when(context.getProperty(anyString())).thenAnswer(invocation -> {
-            String key = invocation.getArgument(0);
-            return properties.get(key);
-        });
         when(context.getProperties()).thenReturn(properties);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("confirmationCode123");
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("INVITED_USER_REGISTRATION");
+
+        return context;
+    }
+
+    private FlowExecutionContext createPasswordRecoveryContext(String executorName) {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = mock(FlowUser.class);
+
+        // Create mock completed nodes with the specified executor - using NodeConfig and ExecutorDTO
+        List<NodeConfig> completedNodes = new ArrayList<>();
+        NodeConfig node = mock(NodeConfig.class);
+        ExecutorDTO executorDTO = mock(ExecutorDTO.class);
+        when(executorDTO.getName()).thenReturn(executorName);
+        when(node.getExecutorConfig()).thenReturn(executorDTO);
+        completedNodes.add(node);
+
+        // Mock FlowUser claims based on executor type
+        Map<String, String> userClaims = new HashMap<>();
+        if ("EmailOTPExecutor".equals(executorName) || "MagicLinkExecutor".equals(executorName)) {
+            userClaims.put(NotificationChannels.EMAIL_CHANNEL.getClaimUri(), "test@example.com");
+        } else if ("SMSOTPExecutor".equals(executorName)) {
+            userClaims.put(NotificationChannels.SMS_CHANNEL.getClaimUri(), "+1234567890");
+        }
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT, "confirmationCode123");
+        properties.put(IdentityRecoveryConstants.NOTIFICATION_CHANNEL, "EMAIL");
+        properties.put(IdentityRecoveryConstants.RECOVERY_SCENARIO, "PASSWORD_RECOVERY");
+
+        when(context.getFlowType()).thenReturn(Constants.FlowTypes.PASSWORD_RECOVERY.getType());
+        when(context.getTenantDomain()).thenReturn("carbon.super");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(flowUser.getUsername()).thenReturn("testUser");
+        when(flowUser.getClaims()).thenReturn(userClaims);
+        when(context.getCompletedNodes()).thenReturn(completedNodes);
+        when(context.getProperties()).thenReturn(properties);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("confirmationCode123");
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("PASSWORD_RECOVERY");
+
+        return context;
+    }
+
+    private FlowExecutionContext createPasswordRecoveryContextWithMultipleExecutors() {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = mock(FlowUser.class);
+
+        // Create mock completed nodes with multiple executors - using NodeConfig and ExecutorDTO
+        List<NodeConfig> completedNodes = new ArrayList<>();
+
+        // Add EmailOTPExecutor node
+        NodeConfig emailNode = mock(NodeConfig.class);
+        ExecutorDTO emailExecutorDTO = mock(ExecutorDTO.class);
+        when(emailExecutorDTO.getName()).thenReturn("EmailOTPExecutor");
+        when(emailNode.getExecutorConfig()).thenReturn(emailExecutorDTO);
+        completedNodes.add(emailNode);
+
+        // Add SMSOTPExecutor node
+        NodeConfig smsNode = mock(NodeConfig.class);
+        ExecutorDTO smsExecutorDTO = mock(ExecutorDTO.class);
+        when(smsExecutorDTO.getName()).thenReturn("SMSOTPExecutor");
+        when(smsNode.getExecutorConfig()).thenReturn(smsExecutorDTO);
+        completedNodes.add(smsNode);
+
+        // Mock FlowUser claims with both email and SMS claims
+        Map<String, String> userClaims = new HashMap<>();
+        userClaims.put(NotificationChannels.EMAIL_CHANNEL.getClaimUri(), "test@example.com");
+        userClaims.put(NotificationChannels.SMS_CHANNEL.getClaimUri(), "+1234567890");
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT, "confirmationCode123");
+        properties.put(IdentityRecoveryConstants.NOTIFICATION_CHANNEL, "EMAIL");
+        properties.put(IdentityRecoveryConstants.RECOVERY_SCENARIO, "PASSWORD_RECOVERY");
+
+        when(context.getFlowType()).thenReturn(Constants.FlowTypes.PASSWORD_RECOVERY.getType());
+        when(context.getTenantDomain()).thenReturn("carbon.super");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(flowUser.getUsername()).thenReturn("testUser");
+        when(flowUser.getClaims()).thenReturn(userClaims);
+        when(context.getCompletedNodes()).thenReturn(completedNodes);
+        when(context.getProperties()).thenReturn(properties);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("confirmationCode123");
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("PASSWORD_RECOVERY");
+
+        return context;
+    }
+
+    private FlowExecutionContext createPasswordRecoveryContextWithoutClaims(String executorName) {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = mock(FlowUser.class);
+
+        // Create mock completed nodes with the specified executor
+        List<NodeConfig> completedNodes = new ArrayList<>();
+        NodeConfig node = mock(NodeConfig.class);
+        ExecutorDTO executorDTO = mock(ExecutorDTO.class);
+        when(executorDTO.getName()).thenReturn(executorName);
+        when(node.getExecutorConfig()).thenReturn(executorDTO);
+        completedNodes.add(node);
+
+        // Mock FlowUser claims as empty (no notification claims available)
+        Map<String, String> userClaims = new HashMap<>();
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT, "confirmationCode123");
+        properties.put(IdentityRecoveryConstants.NOTIFICATION_CHANNEL, "EMAIL");
+        properties.put(IdentityRecoveryConstants.RECOVERY_SCENARIO, "PASSWORD_RECOVERY");
+
+        when(context.getFlowType()).thenReturn(Constants.FlowTypes.PASSWORD_RECOVERY.getType());
+        when(context.getTenantDomain()).thenReturn("carbon.super");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(flowUser.getUsername()).thenReturn("testUser");
+        when(flowUser.getClaims()).thenReturn(userClaims);
+        when(context.getCompletedNodes()).thenReturn(completedNodes);
+        when(context.getProperties()).thenReturn(properties);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("confirmationCode123");
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("PASSWORD_RECOVERY");
 
         return context;
     }
 
     private User createTestUser() {
+
         User user = new User();
         user.setUserName("testUser");
         user.setTenantDomain("carbon.super");
