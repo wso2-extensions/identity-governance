@@ -36,8 +36,11 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
@@ -53,17 +56,28 @@ import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
 import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.utils.DiagnosticLog;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
+import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.getNotificationChannel;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.handledNotificationChannelManagerException;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.maskIfRequired;
 import static org.wso2.carbon.identity.recovery.util.Utils.getDomainQualifiedUsername;
 import static org.wso2.carbon.identity.recovery.util.Utils.loadUserRecoveryData;
+import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
+import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
+import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
 import static org.wso2.carbon.utils.DiagnosticLog.ResultStatus.FAILED;
 
 /**
@@ -81,6 +95,9 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     private static final String TRIGGER_NOTIFICATION = "trigger-notification";
     private static final String FLOW_ID = "flowId";
     private static final String USER_NAME = "userName";
+    private static final String EMAIL_OTP_EXECUTOR = "EmailOTPExecutor";
+    private static final String SMS_OTP_EXECUTOR = "SMSOTPExecutor";
+    private static final String MAGIC_LINK_EXECUTOR = "MagicLinkExecutor";
 
     @Override
     public int getExecutionOrderId() {
@@ -117,6 +134,10 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             return handleSelfRegistrationCompletion(step, context);
         }
 
+        if (Constants.FlowTypes.PASSWORD_RECOVERY.getType().equalsIgnoreCase(context.getFlowType())) {
+
+            return handlePasswordRecoveryCompletion(step, context);
+        }
         return true;
     }
 
@@ -124,6 +145,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
         FlowUser user = context.getFlowUser();
         String tenantDomain = context.getTenantDomain();
+        String userStoreDomain = resolveUserStoreDomain(user.getUsername());
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         Map<String, Object> loggerInputs = new HashMap<>();
 
@@ -145,6 +167,21 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                 return true;
             }
 
+            String preferredChannel = resolveNotificationChannel(user.getUsername(), tenantDomain, userStoreDomain);
+            NotificationChannels channel = getNotificationChannel(user.getUsername(), preferredChannel);
+            boolean notificationChannelVerified = isNotificationChannelVerified(channel, user.getClaims());
+
+            if (notificationChannelVerified) {
+                if (log.isDebugEnabled()) {
+                    String message = String.format("Preferred Notification channel: %1$s is verified for the user: %2$s "
+                                            + "in domain : %3$s. Therefore, no notifications will be sent.",
+                                    preferredChannel, SelfRegistrationUtils.maskIfRequired(user.getUsername()),
+                                    tenantDomain);
+                    log.debug(message);
+                }
+                return true;
+            }
+
             boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
                     Constants.FlowTypes.REGISTRATION, tenantDomain,
                     Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED));
@@ -153,6 +190,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     Constants.FlowTypes.REGISTRATION, tenantDomain,
                     Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
+            // Even if the notification claim is not there (meaning confirmation email will not be sent)
+            // in the flow user, lock the account.
             if (isEnableConfirmationOnCreation && isAccountLockOnCreation) {
                 step.setStepType(Constants.StepTypes.VIEW);
                 step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
@@ -163,7 +202,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     " the flow: " + context.getContextIdentifier(), e);
             logDiagnostic("Error while retrieving workflow status from flow completion listener in.", FAILED,
                     TRIGGER_NOTIFICATION, loggerInputs);
-        } catch (FlowMgtServerException e) {
+        } catch (FlowMgtServerException | IdentityEventException | IdentityRecoveryClientException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             log.error("Error while retrieving flow completion configs from the registration completion listener in" +
                     " the flow: " + context.getContextIdentifier(), e);
@@ -171,6 +210,23 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     TRIGGER_NOTIFICATION, loggerInputs);
         }
         return true;
+    }
+
+    private String resolveUserStoreDomain(String username) {
+
+        int separatorIndex = username.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
+        if (separatorIndex >= 0) {
+            String domain = username.substring(0, separatorIndex);
+            if (INTERNAL_DOMAIN.equalsIgnoreCase(domain) || WORKFLOW_DOMAIN.equalsIgnoreCase(domain)
+                    || APPLICATION_DOMAIN.equalsIgnoreCase(domain)) {
+                return domain.substring(0, 1).toUpperCase(ENGLISH) + domain.substring(1).toLowerCase(ENGLISH);
+            }
+            return domain.toUpperCase(ENGLISH);
+        }
+
+        String domainName = IdentityUtil.getProperty(SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG);
+        return domainName != null ? domainName.toUpperCase(ENGLISH) :
+                IdentityUtil.getPrimaryDomainName().toUpperCase(ENGLISH);
     }
 
     private boolean handleInvitedUserRegistrationCompletion(FlowExecutionStep step, FlowExecutionContext context)
@@ -195,15 +251,82 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
             updateAccountStateClaims(tenantDomain, notificationChannel, internallyManaged, user);
             invalidateRecoveryData(confirmationCode);
-            handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
-                    tenantDomain);
+            // Send notification on successful account activation if the flow completion notification is enabled.
+            if (Boolean.parseBoolean(Utils.getFlowCompletionConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION,
+                    tenantDomain, Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED))) {
+                handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
+                        IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS);
+            }
             publishEvent(user, confirmationCode, recoveryScenario);
-        } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
+        } catch (UserStoreException | IdentityRecoveryException | IdentityEventException | FlowMgtServerException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
                     context.getFlowType(), context.getContextIdentifier());
         }
 
+        return true;
+    }
+
+    private boolean handlePasswordRecoveryCompletion(FlowExecutionStep step, FlowExecutionContext context)
+            throws FlowEngineException {
+
+        String tenantDomain = context.getTenantDomain();
+
+        List<String> executedExecutors = context.getCompletedNodes().stream()
+                .map(node -> node.getExecutorConfig().getName())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        NotificationChannels notificationChannel;
+        if (executedExecutors.contains(EMAIL_OTP_EXECUTOR) ||
+                executedExecutors.contains(MAGIC_LINK_EXECUTOR)) {
+            notificationChannel = NotificationChannels.EMAIL_CHANNEL;
+        } else if (executedExecutors.contains(SMS_OTP_EXECUTOR)) {
+            notificationChannel = NotificationChannels.SMS_CHANNEL;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("No known notification channels were used in the password recovery flow. Hence, " +
+                        "skipping notification sending.");
+            }
+            return true;
+        }
+
+        try {
+
+            FlowUser flowUser = context.getFlowUser();
+            User user = new User();
+            user.setUserName(flowUser.getUsername());
+            user.setTenantDomain(tenantDomain);
+            user.setUserStoreDomain(resolveUserStoreDomain(flowUser.getUsername()));
+
+            Map<String, Object> loggerInputs = new HashMap<>();
+
+            // Start building the input map for the diagnostic logs.
+            loggerInputs.put(FLOW_ID, context.getContextIdentifier());
+            loggerInputs.put(USER_NAME, maskIfRequired(user.getUserName()));
+
+            boolean isEnableNotificationOnPasswordReset = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.PASSWORD_RECOVERY, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED));
+
+            boolean internallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+
+            boolean isNotificationClaimAvailableInFlowUser =
+                    isNotifyingClaimAvailable(notificationChannel.getClaimUri(), context.getFlowUser().getClaims(),
+                            loggerInputs);
+
+            // Send notification on successful password reset if the flow completion notification is enabled.
+            if (isEnableNotificationOnPasswordReset && isNotificationClaimAvailableInFlowUser) {
+                handleNotifications(user, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+                        notificationChannel.getChannelType(), StringUtils.EMPTY, internallyManaged,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS);
+            }
+        } catch (FlowMgtServerException | IdentityRecoveryException e) {
+            log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
+            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
+                    context.getFlowType(), context.getContextIdentifier());
+        }
         return true;
     }
 
@@ -218,6 +341,37 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
         Object value = context.getProperty(key);
         return (value != null) ? value.toString() : null;
+    }
+
+    private boolean isNotificationChannelVerified(NotificationChannels channel, Map<String, String> userClaims) {
+
+        String verifiedClaimUri = channel.getVerifiedClaimUrl();
+        return Boolean.parseBoolean(userClaims.get(verifiedClaimUri));
+    }
+
+    private String resolveNotificationChannel(String userName, String tenantDomain, String domainName)
+            throws IdentityEventException {
+
+        NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
+        String preferredChannel = null;
+        try {
+            preferredChannel = notificationChannelManager.resolveCommunicationChannel(userName, tenantDomain,
+                    domainName);
+        } catch (NotificationChannelManagerException e) {
+            handledNotificationChannelManagerException(e, userName, domainName, tenantDomain);
+        }
+        return preferredChannel;
+    }
+
+    private boolean isNotifyingClaimAvailable(String claimUri, Map<String, String> userClaims,
+                                              Map<String, Object> loggerInputs) {
+
+        boolean isAvailable = userClaims.containsKey(claimUri);
+        if (!isAvailable) {
+            logDiagnostic("Cannot trigger notification since user claim is not available.", FAILED,
+                    TRIGGER_NOTIFICATION, loggerInputs);
+        }
+        return isAvailable;
     }
 
     /**
@@ -302,23 +456,18 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     }
 
     private void handleNotifications(User user, String recoveryScenario, String channel, String code,
-                                     boolean internallyManaged, String tenantDomain)
+                                     boolean internallyManaged, String template)
             throws IdentityRecoveryServerException {
 
+        // If the notification is not internally managed and the channel is external, skip sending notifications.
         if (!internallyManaged || NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)) {
-            // If the notification is not internally managed and the channel is external, skip sending notifications.
             return;
         }
-
-        // Send account activation notification if the configuration is enabled.
         try {
-            if (Boolean.parseBoolean(Utils.getFlowCompletionConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION,
-                    tenantDomain, Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED))) {
-                String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-                triggerNotification(user, recoveryScenario, channel,
-                        IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS, code, eventName);
-            }
-        } catch (IdentityRecoveryException | FlowMgtServerException e) {
+            String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+            triggerNotification(user, recoveryScenario, channel,
+                    template, code, eventName);
+        } catch (IdentityRecoveryException e) {
             String errorMsg = String.format("Error while sending account activation notification to user: %s",
                     user.getUserName());
             log.error(errorMsg, e);

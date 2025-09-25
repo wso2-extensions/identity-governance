@@ -32,7 +32,6 @@ import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
-import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -77,9 +76,6 @@ public class UserSelfRegistrationCompletionHandlerTest {
     private UserRecoveryDataStore userRecoveryDataStore;
 
     @Mock
-    private NotificationChannelManager notificationChannelManager;
-
-    @Mock
     private NotificationChannels notificationChannels;
 
     private MockedStatic<Utils> utilsMockedStatic;
@@ -92,6 +88,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @BeforeMethod
     public void init() {
+
         openMocks(this);
         handler = new UserSelfRegistrationCompletionHandler();
         utilsMockedStatic = mockStatic(Utils.class);
@@ -103,6 +100,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @AfterMethod
     public void tearDown() {
+
         utilsMockedStatic.close();
         jdbcRecoveryDataStoreMockedStatic.close();
         identityUtilMockedStatic.close();
@@ -124,6 +122,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @Test
     public void testHandleEventWhenSelfSignupDisabled() throws IdentityEventException {
+
         Map<String, Object> eventProperties = createBaseEventProperties();
         Event event = new Event(POST_ADD_USER, eventProperties);
 
@@ -141,6 +140,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @Test
     public void testHandleEventWhenRoleListIsNull() throws IdentityEventException {
+
         Map<String, Object> eventProperties = createBaseEventProperties();
         eventProperties.remove(IdentityEventConstants.EventProperty.ROLE_LIST);
         Event event = new Event(POST_ADD_USER, eventProperties);
@@ -158,6 +158,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @Test
     public void testHandleEventWhenSelfSignupRoleNotPresent() throws IdentityEventException {
+
         Map<String, Object> eventProperties = createBaseEventProperties();
         eventProperties.put(IdentityEventConstants.EventProperty.ROLE_LIST, new String[]{"OTHER_ROLE"});
         Event event = new Event(POST_ADD_USER, eventProperties);
@@ -175,6 +176,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     @Test
     public void testHandleEventWithFlowMgtServerException() {
+
         Map<String, Object> eventProperties = createBaseEventProperties();
         Event event = new Event(POST_ADD_USER, eventProperties);
 
@@ -189,6 +191,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
     }
 
     private Map<String, Object> createBaseEventProperties() {
+
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, USER_NAME);
         eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
@@ -204,6 +207,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
     }
 
     private Map<String, Object> createCompleteEventProperties() {
+
         Map<String, Object> eventProperties = createBaseEventProperties();
 
         // Add user claims
@@ -216,6 +220,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
     }
 
     private void setupMocksForEnabledFlowWithNotificationChannelVerified() throws Exception {
+
         FlowConfigDTO flowConfig = new FlowConfigDTO();
         flowConfig.setIsEnabled(true);
         utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
@@ -250,6 +255,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
     }
 
     private void setupFlowCompletionMocks(boolean isAccountLockOnCreation, boolean isEnableConfirmationOnCreation) {
+
         utilsMockedStatic.when(() -> Utils.getFlowCompletionConfig(
                 Constants.FlowTypes.REGISTRATION, TENANT_DOMAIN,
                 Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED))
@@ -262,6 +268,7 @@ public class UserSelfRegistrationCompletionHandlerTest {
 
     private void setupNotificationMocks(boolean isNotificationInternallyManage,
                                        boolean isSelfRegistrationConfirmationNotify) {
+
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, TENANT_DOMAIN))
                 .thenReturn(String.valueOf(isNotificationInternallyManage));
