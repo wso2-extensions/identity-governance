@@ -64,6 +64,7 @@ import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.IdentityUserMetadataMgtHandler;
 import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler;
+import org.wso2.carbon.identity.recovery.handler.OTPBasedTemporaryLoginHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
@@ -117,6 +118,8 @@ public class IdentityRecoveryServiceComponent {
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AskPasswordBasedPasswordSetupHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new OTPBasedTemporaryLoginHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new MobileNumberVerificationHandler(),
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new AdminForcedPasswordResetHandler()

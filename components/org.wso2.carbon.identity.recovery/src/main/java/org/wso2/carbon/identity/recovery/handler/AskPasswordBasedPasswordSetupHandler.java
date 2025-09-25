@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.recovery.handler;
 
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
-import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -41,8 +39,6 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.Map;
-
-import static org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants.Notification.ASK_PASSWORD;
 
 /**
  * This class handles the ask password-based password setup flow.
@@ -170,31 +166,6 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                         IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD, confirmationCode);
             }
             Utils.clearAskPasswordTemporaryClaim();
-        } else if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
-            UserStoreManager userStoreManager = (UserStoreManager) eventProperties
-                    .get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
-            User user = getUser(eventProperties, userStoreManager);
-
-            UserRecoveryData userRecoveryData = getRecoveryData(user);
-            if (userRecoveryData != null) {
-                Enum recoveryScenario = userRecoveryData.getRecoveryScenario();
-                if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario) ||
-                        RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)) {
-                    String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                    String errorCode;
-                    String errorMsg = "User : " + user.toString();
-                    if (userRecoveryData.getSecret().equals(credential)) {
-                        errorCode = IdentityCoreConstants.ASK_PASSWORD_SET_PASSWORD_VIA_OTP_ERROR_CODE;
-                        errorMsg = errorMsg + " has given correct OTP";
-                    } else {
-                        errorCode = IdentityCoreConstants.ASK_PASSWORD_SET_PASSWORD_VIA_OTP_MISMATCHED_ERROR_CODE;
-                        errorMsg = errorMsg + " has given in-correct OTP";
-                    }
-                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
-                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                    throw new IdentityEventException(errorMsg);
-                }
-            }
         }
     }
 

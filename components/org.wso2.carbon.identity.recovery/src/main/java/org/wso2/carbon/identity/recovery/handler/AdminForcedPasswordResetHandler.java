@@ -23,9 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
-import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -66,9 +63,6 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             handleClaimUpdate(eventProperties, userStoreManager);
         }
 
-        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
-            handleAuthenticate(eventProperties, userStoreManager);
-        }
         if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(eventName)) {
             handleUpdateCredentialsByAdmin(eventProperties, userStoreManager);
         }
@@ -296,60 +290,6 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.toFullQualifiedUsername(), e);
-        }
-    }
-
-    protected void handleAuthenticate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
-            IdentityEventException {
-        User user = getUser(eventProperties, userStoreManager);
-
-        if (log.isDebugEnabled()) {
-            log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for user : " + user.toString());
-        }
-
-        UserRecoveryData userRecoveryData = getRecoveryData(user);
-        if (userRecoveryData != null) {
-
-            Enum recoveryScenario = userRecoveryData.getRecoveryScenario();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Handling recovery scenario : " + recoveryScenario.toString() + " for user : " + user.toString
-                        ());
-            }
-
-            String errorCode = null;
-            String errorMsg = "User : " + user.toString();
-            boolean isForcedPasswordReset = false;
-
-            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)) {
-                errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
-                errorMsg = errorMsg + " needs to reset the password using the given link in email";
-                isForcedPasswordReset = true;
-
-            } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario) ||
-                    RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)) {
-                String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                isForcedPasswordReset = true;
-
-                if (userRecoveryData.getSecret().equals(credential)) {
-                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
-                    errorMsg = errorMsg + " has given correct OTP";
-                } else {
-                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_MISMATCHED_ERROR_CODE;
-                    errorMsg = errorMsg + " has given in-correct OTP";
-                }
-            }
-
-            if (isForcedPasswordReset) {
-                if (log.isDebugEnabled()) {
-                    log.debug(errorMsg);
-                }
-
-                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
-                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                throw new IdentityEventException(errorMsg);
-            }
-
         }
     }
 
