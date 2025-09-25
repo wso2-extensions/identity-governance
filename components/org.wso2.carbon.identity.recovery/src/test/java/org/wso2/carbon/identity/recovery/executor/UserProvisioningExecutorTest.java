@@ -368,7 +368,8 @@ public class UserProvisioningExecutorTest {
         when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
 
         AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
-        UserStoreClientException clientException = new UserStoreClientException(
+        UserActionExecutionClientException clientException = new UserActionExecutionClientException(
+                "USER-ACTION-PRE-UPDATE-PASSWORD-60001",
                 "PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED",
                 "Action failed");
         doThrow(clientException).when(userStoreManager).addUser(anyString(), anyString(),
@@ -376,7 +377,7 @@ public class UserProvisioningExecutorTest {
 
         ExecutorResponse response = executor.execute(context);
 
-        assertEquals(response.getResult(), STATUS_ERROR);
+        assertEquals(response.getResult(), STATUS_USER_ERROR);
         assertNotNull(response.getErrorCode());
     }
 

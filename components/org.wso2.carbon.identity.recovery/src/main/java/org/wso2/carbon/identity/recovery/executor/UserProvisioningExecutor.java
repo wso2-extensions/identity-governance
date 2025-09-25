@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -47,7 +48,6 @@ import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.exception.FederatedAssociationManagerException;
-import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.Permission;
@@ -67,20 +67,23 @@ import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
-
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.USER_ALREADY_EXISTING_USERNAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLICATE_CLAIMS_ERROR_CODE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLICATE_CLAIM_ERROR_CODE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
-import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.USER_ALREADY_EXISTING_USERNAME;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -134,6 +137,18 @@ public class UserProvisioningExecutor implements Executor {
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (UserStoreException e) {
+            if (e instanceof UserStoreClientException) {
+                UserStoreClientException exception = (UserStoreClientException) e;
+                boolean displayClaimAvailability = Boolean.parseBoolean(
+                        IdentityUtil.getProperty(DISPLAY_CLAIM_AVAILABILITY_CONFIG));
+                if (displayClaimAvailability && (DUPLICATE_CLAIM_ERROR_CODE.equals(exception.getErrorCode()) ||
+                        DUPLICATE_CLAIMS_ERROR_CODE.equals(exception.getErrorCode()))) {
+                    return userErrorResponse(response, ExecutorErrorMessages.ERROR_CODE_USER_CLAIM_ALREADY_EXISTS,
+                            e.getMessage());
+                }
+                return userErrorResponse(response, ERROR_CODE_USER_PROVISIONING_FAILURE,
+                        context.getContextIdentifier());
+            }
             return errorResponse(response, ERROR_CODE_USER_ONBOARD_FAILURE, e, context.getFlowUser().getUsername(),
                     context.getContextIdentifier());
         } catch (FlowEngineClientException e) {
@@ -184,8 +199,20 @@ public class UserProvisioningExecutor implements Executor {
             if (response.getResult() != null) {
                 return response;
             }
-            if (e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
+            boolean displayClaimAvailability = Boolean.parseBoolean(
+                    IdentityUtil.getProperty(DISPLAY_CLAIM_AVAILABILITY_CONFIG));
+            if (displayClaimAvailability && e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
                 return userErrorResponse(response, ERROR_CODE_USERNAME_ALREADY_EXISTS, context.getTenantDomain());
+            }
+            if (e instanceof UserStoreClientException) {
+                UserStoreClientException exception = (UserStoreClientException) e;
+                if (displayClaimAvailability && (DUPLICATE_CLAIM_ERROR_CODE.equals(exception.getErrorCode()) ||
+                        DUPLICATE_CLAIMS_ERROR_CODE.equals(exception.getErrorCode()))) {
+                    return userErrorResponse(response, ExecutorErrorMessages.ERROR_CODE_USER_CLAIM_ALREADY_EXISTS,
+                            e.getMessage());
+                }
+                return userErrorResponse(response, ERROR_CODE_USER_PROVISIONING_FAILURE,
+                        context.getContextIdentifier());
             }
             return errorResponse(response, ERROR_CODE_USER_ONBOARD_FAILURE, e, context.getFlowUser().getUsername(),
                     context.getContextIdentifier());
@@ -278,7 +305,7 @@ public class UserProvisioningExecutor implements Executor {
             return domain.toUpperCase(ENGLISH);
         }
 
-        String domainName = IdentityUtil.getProperty(SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG);
+        String domainName = IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG);
         return domainName != null ? domainName.toUpperCase(ENGLISH) :
                 IdentityUtil.getPrimaryDomainName().toUpperCase(ENGLISH);
     }
@@ -312,20 +339,20 @@ public class UserProvisioningExecutor implements Executor {
                 IdentityRecoveryServiceDataHolder.getInstance().getFederatedAssociationManager();
         user.getFederatedAssociations()
                 .forEach(LambdaExceptionUtils.rethrowBiConsumer((idpName, idpSubjectId) -> {
-            if (StringUtils.isNotBlank(idpName) && StringUtils.isNotBlank(idpSubjectId)) {
-                try {
-                    User localUser = new User();
-                    localUser.setUserName(user.getUsername());
-                    localUser.setTenantDomain(tenantDomain);
-                    localUser.setUserStoreDomain(user.getUserStoreDomain());
-                    fedAssociationManager.createFederatedAssociation(localUser, idpName, idpSubjectId);
-                } catch (FederatedAssociationManagerException e) {
-                    LOG.error("Error while creating federated association for user: " + user.getUsername()
-                            + " with IdP: " + idpName + " and subject ID: " + idpSubjectId, e);
-                    throw handleServerException(ERROR_CODE_USER_ONBOARD_FAILURE, e, user.getUsername(), flowId);
-                }
-            }
-        }));
+                    if (StringUtils.isNotBlank(idpName) && StringUtils.isNotBlank(idpSubjectId)) {
+                        try {
+                            User localUser = new User();
+                            localUser.setUserName(user.getUsername());
+                            localUser.setTenantDomain(tenantDomain);
+                            localUser.setUserStoreDomain(user.getUserStoreDomain());
+                            fedAssociationManager.createFederatedAssociation(localUser, idpName, idpSubjectId);
+                        } catch (FederatedAssociationManagerException e) {
+                            LOG.error("Error while creating federated association for user: " + user.getUsername()
+                                    + " with IdP: " + idpName + " and subject ID: " + idpSubjectId, e);
+                            throw handleServerException(ERROR_CODE_USER_ONBOARD_FAILURE, e, user.getUsername(), flowId);
+                        }
+                    }
+                }));
     }
 
     /**

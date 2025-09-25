@@ -23,6 +23,13 @@ package org.wso2.carbon.identity.recovery.executor;
  */
 public class ExecutorConstants {
 
+    public static final String USER_ALREADY_EXISTING_USERNAME = "UserAlreadyExistingUsername";
+    public static final String DUPLICATE_CLAIM_ERROR_CODE = "UCM-60001";
+    public static final String DUPLICATE_CLAIMS_ERROR_CODE = "UCM-60002";
+    public static final String DISPLAY_CLAIM_AVAILABILITY_CONFIG = "FlowExecution.Registration" +
+            ".DisplayClaimAvailability";
+    public static final String REGISTRATION_DEFAULT_USER_STORE_CONFIG = "FlowExecution.Registration.DefaultUserStore";
+
     /**
      * Enum for error messages.
      */
@@ -37,6 +44,12 @@ public class ExecutorConstants {
         ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE("60003",
                 "%s",
                 "%s"),
+        ERROR_CODE_USER_CLAIM_ALREADY_EXISTS("60004",
+                "Duplicate claim value.",
+                "%s"),
+        ERROR_CODE_USER_PROVISIONING_FAILURE("60005",
+                "Error while provisioning user.",
+                "Error occurred while provisioning user in the request of flow id: %s"),
         ERROR_CODE_USER_ONBOARD_FAILURE("65001",
                 "Error while onboarding user.",
                 "Error occurred while onboarding user: %s in the request of flow id: %s"),
