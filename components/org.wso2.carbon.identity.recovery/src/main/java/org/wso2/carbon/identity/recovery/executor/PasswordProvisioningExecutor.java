@@ -162,7 +162,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
             ExecutorResponse errorResponse =
-                    handleClientExceptionForActionFailure(new ExecutorResponse(), e);
+                    handleClientExceptionForActionFailure(e);
             if (errorResponse.getResult() != null) {
                 return errorResponse;
             }
@@ -239,7 +239,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
-            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(new ExecutorResponse(), e);
+            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(e);
             if (errorResponse.getResult() != null) {
                 return errorResponse;
             }
@@ -345,8 +345,9 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
         return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 
-    private ExecutorResponse handleClientExceptionForActionFailure(ExecutorResponse response, Exception e) {
+    private ExecutorResponse handleClientExceptionForActionFailure(Exception e) {
 
+        ExecutorResponse response = new ExecutorResponse();
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
                         .equals(((UserStoreClientException) e).getErrorCode())) {
