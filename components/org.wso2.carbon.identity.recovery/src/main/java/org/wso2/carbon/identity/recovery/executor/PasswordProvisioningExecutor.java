@@ -18,9 +18,6 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -42,9 +39,12 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED;
@@ -65,7 +66,6 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_REC
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 
 /**
  * Executor to provision the password.
@@ -161,6 +161,11 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
+            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(e);
+            if (errorResponse.getResult() != null) {
+                return errorResponse;
+            }
+
             String maskedUsername = LoggerUtils.isLogMaskingEnable
                     ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
                     : context.getFlowUser().getUsername();
@@ -232,6 +237,11 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
+            ExecutorResponse errorResponse = handleClientExceptionForActionFailure(e);
+            if (errorResponse.getResult() != null) {
+                return errorResponse;
+            }
+
             String maskedUsername = LoggerUtils.isLogMaskingEnable
                     ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
                     : context.getFlowUser().getUsername();
@@ -299,6 +309,27 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
     }
 
     /**
+     * Creates a user error response with the provided details.
+     *
+     * @param response    ExecutorResponse to be modified with user error details.
+     * @param errorCode   Error code to be set in the response.
+     * @param message     User error message to be set in the response.
+     * @param description Description of the error to be set in the response.
+     * @param throwable   Throwable associated with the error.
+     * @return Modified ExecutorResponse with user error details.
+     */
+    private ExecutorResponse userErrorResponse(ExecutorResponse response, String errorCode, String message,
+                                               String description, Throwable throwable) {
+
+        response.setErrorCode(errorCode);
+        response.setErrorMessage(message);
+        response.setErrorDescription(description);
+        response.setThrowable(throwable);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_ERROR);
+        return response;
+    }
+
+    /**
      * Retrieves the user realm for the given tenant domain.
      *
      * @param tenantDomain Tenant domain.
@@ -311,4 +342,25 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
         int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
         return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
+
+    private ExecutorResponse handleClientExceptionForActionFailure(Exception e) {
+
+        ExecutorResponse response = new ExecutorResponse();
+        if (e instanceof UserStoreClientException &&
+                UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
+                        .equals(((UserStoreClientException) e).getErrorCode())) {
+            Throwable cause = e.getCause();
+            while (cause != null) {
+                if (cause instanceof UserActionExecutionClientException) {
+                    return userErrorResponse(response,
+                            ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode(),
+                            ((UserActionExecutionClientException) cause).getError(),
+                            ((UserActionExecutionClientException) cause).getDescription(), cause);
+                }
+                cause = cause.getCause();
+            }
+        }
+        return response;
+    }
+
 }
