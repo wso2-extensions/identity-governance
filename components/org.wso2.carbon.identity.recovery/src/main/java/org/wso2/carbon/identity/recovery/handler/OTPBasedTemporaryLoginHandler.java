@@ -149,7 +149,6 @@ public class OTPBasedTemporaryLoginHandler extends AbstractEventHandler {
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(errorMsg);
             }
-
         }
     }
 
