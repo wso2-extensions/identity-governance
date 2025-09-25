@@ -64,16 +64,14 @@ public class OTPBasedTemporaryLoginHandler extends AbstractEventHandler {
     public void handleEvent(Event event) throws IdentityEventException {
 
         String eventName = event.getEventName();
+        if (!IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
+            return;
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Handling event : " + eventName);
         }
         Map<String, Object> eventProperties = event.getEventProperties();
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
-                .EventProperty.USER_STORE_MANAGER);
-
-        if (!IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
-            return;
-        }
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
         boolean askPasswordEmailOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
@@ -90,6 +88,8 @@ public class OTPBasedTemporaryLoginHandler extends AbstractEventHandler {
             return;
         }
 
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
+                .EventProperty.USER_STORE_MANAGER);
         User user = getUser(eventProperties, userStoreManager);
 
         if (log.isDebugEnabled()) {
