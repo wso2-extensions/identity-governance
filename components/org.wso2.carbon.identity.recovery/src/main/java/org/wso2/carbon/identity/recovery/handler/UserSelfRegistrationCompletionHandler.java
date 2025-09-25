@@ -154,14 +154,13 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
 
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
             // Account locking is applicable only if Confirmation on creation is enabled.
-            // If notifications are externally managed lock the account without sending any notifications.
             if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
                 lockUserAccount(true, true, tenantDomain,
                         userStoreManager, userName);
                 return;
             }
 
-            //If the Notifications are not externally no notificatio need to be sent.
+            // If notifications are externally managed, no notification needs to be sent.
             if (!isNotificationInternallyManage) {
                 return;
             }
@@ -171,9 +170,8 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
 
             NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
 
-            // If notify confirmation is enabled and both iAccountLockOnCreation &&
-            // EnableConfirmationOnCreation are disabled then send account creation notification.
-            if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isSelfRegistrationConfirmationNotify
+            // If notify confirmation is enabled then send account creation notification.
+            if (isSelfRegistrationConfirmationNotify
                     && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
                         user.getUserStoreDomain());

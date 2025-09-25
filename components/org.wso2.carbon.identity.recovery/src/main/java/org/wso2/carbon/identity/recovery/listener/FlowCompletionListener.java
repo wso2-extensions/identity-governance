@@ -190,10 +190,9 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     Constants.FlowTypes.REGISTRATION, tenantDomain,
                     Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
-            boolean isNotificationClaimAvailableInFlowUser =
-                    isNotifyingClaimAvailable(channel.getClaimUri(), user.getClaims(), loggerInputs);
-
-            if (isEnableConfirmationOnCreation && isAccountLockOnCreation && isNotificationClaimAvailableInFlowUser) {
+            // Even if the notification claim is not there (meaning confirmation email will not be sent)
+            // in the flow user, lock the account.
+            if (isEnableConfirmationOnCreation && isAccountLockOnCreation) {
                 step.setStepType(Constants.StepTypes.VIEW);
                 step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
             }
@@ -372,7 +371,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             logDiagnostic("Cannot trigger notification since user claim is not available.", FAILED,
                     TRIGGER_NOTIFICATION, loggerInputs);
         }
-        return userClaims.containsKey(claimUri);
+        return isAvailable;
     }
 
     /**
