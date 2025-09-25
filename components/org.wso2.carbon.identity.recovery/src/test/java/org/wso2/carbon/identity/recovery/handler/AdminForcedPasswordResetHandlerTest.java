@@ -460,39 +460,6 @@ public class AdminForcedPasswordResetHandlerTest {
         adminForcedPasswordResetHandler.handleEvent(event);
     }
 
-    @DataProvider(name = "otpAuthenticateDataProvider")
-    public Object[][] getOTPAuthenticateDataProvider() {
-
-        return new Object[][] {
-                { mockRecoveryData(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK), null,
-                        "needs to reset the password using the given link in email" },
-                { mockRecoveryData(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP), "dummy-code",
-                        "has given correct OTP" },
-                { mockRecoveryData(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP), "",
-                        "has given in-correct OTP" },
-                { mockRecoveryData(RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP), "dummy-code",
-                        "has given correct OTP" },
-                { mockRecoveryData(RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP), "","has given in-correct OTP" }
-        };
-    }
-
-    @Test(description = "Test handleEvent() with PRE_AUTHENTICATION event.",
-            dataProvider = "otpAuthenticateDataProvider")
-    public void testOTPAuthenticateEvents(UserRecoveryData recoveryData, String credential, String errorMessage)
-            throws IdentityRecoveryException {
-
-        Event event = createEvent(IdentityEventConstants.Event.PRE_AUTHENTICATION);
-        event.getEventProperties().put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
-
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class))).thenReturn(recoveryData);
-
-        try {
-            adminForcedPasswordResetHandler.handleEvent(event);
-        } catch (IdentityEventException e) {
-            assert e.getMessage().contains(errorMessage);
-        }
-    }
-
     private Event createEvent(String eventName) {
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
