@@ -152,6 +152,21 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
                     IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                     user.getTenantDomain()));
 
+            // Get the user preferred notification channel.
+            String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
+                    domainName);
+
+            NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
+
+            boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
+                    preferredChannel, eventProperties);
+
+            // If the preferred channel is already verified, no need to send the notifications or lock
+            // the account.
+            if (notificationChannelVerified) {
+                return;
+            }
+
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
             // Account locking is applicable only if Confirmation on creation is enabled.
             if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
@@ -163,11 +178,6 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
             if (!isNotificationInternallyManage) {
                 return;
             }
-            // Get the user preferred notification channel.
-            String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
-                    domainName);
-
-            NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
 
             // If notify confirmation is enabled and email verification is disabled
             // then send account creation notification.
@@ -175,14 +185,6 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
                     && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
                         user.getUserStoreDomain());
-                return;
-            }
-            // If the preferred channel is already verified, no need to send the notifications or lock
-            // the account.
-            boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
-                    preferredChannel, eventProperties);
-
-            if (notificationChannelVerified) {
                 return;
             }
 
