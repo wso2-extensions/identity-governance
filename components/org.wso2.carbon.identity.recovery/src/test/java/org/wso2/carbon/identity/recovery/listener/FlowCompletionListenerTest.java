@@ -152,13 +152,11 @@ public class FlowCompletionListenerTest {
                 .thenReturn(NotificationChannels.EMAIL_CHANNEL);
         mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
                 .thenReturn("masked_user");
-        // Fix: handledNotificationChannelManagerException is a void method, so use doNothing()
         mockedSelfRegistrationUtils.when(() -> SelfRegistrationUtils.handledNotificationChannelManagerException(
                 any(NotificationChannelManagerException.class), anyString(), anyString(), anyString()))
                 .thenAnswer(invocation -> null);
 
         mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
-        // Fix: Use doNothing() for static void method
         mockedLoggerUtils.when(() -> LoggerUtils.triggerDiagnosticLogEvent(any(DiagnosticLog.DiagnosticLogBuilder.class)))
                 .thenAnswer(invocation -> null);
     }
