@@ -302,18 +302,12 @@ public class SelfRegistrationUtils {
             }
         }
 
-        // Deprecated config.
-        boolean isEnableSelfRegistrationOtpInEmail =
-                Boolean.parseBoolean(
-                        Utils.getConnectorConfig(SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
-        // New config.
         boolean isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE, user.getTenantDomain()));
         String emailTemplateName = NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK;
 
         if (StringUtils.isNotBlank(code)) {
-            // Honoring the both configs temporarily until the migration completed.
-            if (isEnableSelfRegistrationOtpInEmail || isSelfRegistrationEmailOTPEnabled) {
+            if (isSelfRegistrationEmailOTPEnabled) {
                 properties.put(OTP_CODE, code);
                 emailTemplateName = NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
             } else {

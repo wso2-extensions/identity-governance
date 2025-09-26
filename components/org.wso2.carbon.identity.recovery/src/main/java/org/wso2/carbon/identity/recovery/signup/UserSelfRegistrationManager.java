@@ -1429,15 +1429,11 @@ public class UserSelfRegistrationManager {
                     user.getUserName());
         }
 
-        // Deprecated config.
-        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
-        // New config.
         boolean isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE, user.getTenantDomain()));
         String templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
-        // Honoring the both configs temporarily until the migration completed.
-        if (isSelfRegistrationSendOTPInEmailEnabled || isSelfRegistrationEmailOTPEnabled) {
+
+        if (isSelfRegistrationEmailOTPEnabled) {
             templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
         }
 
