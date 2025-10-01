@@ -61,6 +61,7 @@ import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHa
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
+import org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandler;
 import org.wso2.carbon.identity.recovery.handler.IdentityUserMetadataMgtHandler;
 import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler;
@@ -68,7 +69,6 @@ import org.wso2.carbon.identity.recovery.handler.OTPBasedTemporaryLoginHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
-import org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.listener.FlowCompletionListener;
