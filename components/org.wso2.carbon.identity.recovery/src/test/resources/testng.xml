@@ -34,7 +34,7 @@
             <class name="org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.OTPBasedTemporaryLoginHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandlerTest"/>
-            <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationCompletionHandlerTest"/>
+            <class name="org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandlerTest"/>
             <class name="org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManagerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStoreTest" />

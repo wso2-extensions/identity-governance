@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 
-public class UserSelfRegistrationCompletionHandlerTest {
+public class FlowRegistrationCompletionHandlerTest {
 
     private static final String POST_ADD_USER = "POST_ADD_USER";
     private static final String USER_NAME = "testuser";
@@ -84,13 +84,13 @@ public class UserSelfRegistrationCompletionHandlerTest {
     private MockedStatic<IdentityGovernanceUtil> identityGovernanceUtilMockedStatic;
     private MockedStatic<SelfRegistrationUtils> selfRegistrationUtilsMockedStatic;
 
-    private UserSelfRegistrationCompletionHandler handler;
+    private FlowRegistrationCompletionHandler handler;
 
     @BeforeMethod
     public void init() {
 
         openMocks(this);
-        handler = new UserSelfRegistrationCompletionHandler();
+        handler = new FlowRegistrationCompletionHandler();
         utilsMockedStatic = mockStatic(Utils.class);
         jdbcRecoveryDataStoreMockedStatic = mockStatic(JDBCRecoveryDataStore.class);
         identityUtilMockedStatic = mockStatic(IdentityUtil.class);
@@ -111,13 +111,13 @@ public class UserSelfRegistrationCompletionHandlerTest {
     @Test
     public void testGetName() {
 
-        assertEquals(handler.getName(), "userSelfRegistrationCompletionHandler");
+        assertEquals(handler.getName(), "FlowRegistrationCompletionHandler");
     }
 
     @Test
     public void testGetFriendlyName() {
 
-        assertEquals(handler.getFriendlyName(), "User Self Registration Completion Handler");
+        assertEquals(handler.getFriendlyName(), "Flow Registration Completion Handler");
     }
 
     @Test

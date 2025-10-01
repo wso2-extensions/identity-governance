@@ -67,18 +67,18 @@ import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.trigg
 /**
  * Event handler which handles post user self registration operations.
  */
-public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler {
+public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
 
-    private static final Log log = LogFactory.getLog(UserSelfRegistrationCompletionHandler.class);
+    private static final Log log = LogFactory.getLog(FlowRegistrationCompletionHandler.class);
 
     public String getName() {
 
-        return "userSelfRegistrationCompletionHandler";
+        return "FlowRegistrationCompletionHandler";
     }
 
     public String getFriendlyName() {
 
-        return "User Self Registration Completion Handler";
+        return "Flow Registration Completion Handler";
     }
 
     @Override
@@ -309,12 +309,6 @@ public class UserSelfRegistrationCompletionHandler extends AbstractEventHandler 
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
     }
-
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 60;
-    }
-
 
     protected void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
