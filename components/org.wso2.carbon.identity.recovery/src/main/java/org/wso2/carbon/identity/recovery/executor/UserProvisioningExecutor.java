@@ -203,6 +203,8 @@ public class UserProvisioningExecutor implements Executor {
                     IdentityUtil.getProperty(DISPLAY_CLAIM_AVAILABILITY_CONFIG));
             if (displayClaimAvailability && e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
                 return userErrorResponse(response, ERROR_CODE_USERNAME_ALREADY_EXISTS, context.getTenantDomain());
+            } else if (e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
+                return userErrorResponse(response, ERROR_CODE_USER_PROVISIONING_FAILURE, context.getTenantDomain());
             }
             if (e instanceof UserStoreClientException) {
                 UserStoreClientException exception = (UserStoreClientException) e;
