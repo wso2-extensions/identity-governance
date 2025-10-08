@@ -40,7 +40,7 @@ import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionCli
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreClientException;
+import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -65,11 +65,13 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 
 /**
  * Unit tests for {@link UserProvisioningExecutor}.
@@ -329,7 +331,7 @@ public class UserProvisioningExecutorTest {
     }
 
     @Test
-    public void testExecuteWithUsernameAlreadyExists() throws Exception {
+    public void testExecuteWithUsernameAlreadyExistsWithoutDisplayClaim() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = createTestFlowUser(USERNAME);
@@ -340,18 +342,42 @@ public class UserProvisioningExecutorTest {
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
         when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
         when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+        mockedIdentityTenantUtil.when(() ->
+                IdentityUtil.getProperty(DISPLAY_CLAIM_AVAILABILITY_CONFIG)).thenReturn("false");
 
         AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
-        Throwable cause  = new UserActionExecutionClientException("USER-ACTION-PRE-UPDATE-PASSWORD-60001",
-                "User already exists with user name: " + USERNAME,
-                "User name already exists");
-        doThrow(new UserStoreClientException("Username already exists", "USER-ACTION-PRE-UPDATE-PASSWORD-60001", cause))
+        doThrow(new UserStoreException("30004 - UserAlreadyExistingUsername testUser already exists in the system. " +
+                "Please pick another username."))
                 .when(userStoreManager).addUser(anyString(), anyString(), any(), any(Map.class), isNull());
 
         ExecutorResponse response = executor.execute(context);
-
         assertEquals(response.getResult(), STATUS_USER_ERROR);
-        assertNotNull(response.getErrorCode());
+        assertEquals(response.getErrorCode(), ERROR_CODE_USER_PROVISIONING_FAILURE.getCode());
+    }
+
+    @Test
+    public void testExecuteWithUsernameAlreadyExistsWithDisplayClaim() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn(REGISTRATION.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+        mockedIdentityTenantUtil.when(() ->
+                IdentityUtil.getProperty(DISPLAY_CLAIM_AVAILABILITY_CONFIG)).thenReturn("true");
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("30004 - UserAlreadyExistingUsername testUser already exists in the system. " +
+                "Please pick another username."))
+                .when(userStoreManager).addUser(anyString(), anyString(), any(), any(Map.class), isNull());
+
+        ExecutorResponse response = executor.execute(context);
+        assertEquals(response.getResult(), STATUS_USER_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_USERNAME_ALREADY_EXISTS.getCode());
     }
 
     @Test
