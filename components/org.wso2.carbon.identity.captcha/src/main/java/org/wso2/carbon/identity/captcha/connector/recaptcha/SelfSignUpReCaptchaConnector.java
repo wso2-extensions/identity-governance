@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  WSO2 LLC. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License.
  *  You may obtain a copy of the License at
@@ -48,6 +48,10 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final String SELF_REGISTRATION_URL = "/api/identity/user/v1.0/me";
 
+    private static final String SELF_REGISTRATION_SIGN_UP_URL = "/accountrecoveryendpoint/signup.do";
+
+    private static final String RECAPTCHA_RESPONSE_PARAM = "g-recaptcha-response";
+
     private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
 
     private IdentityGovernanceService identityGovernanceService;
@@ -71,7 +75,8 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         List<String> reCaptchaBypassedApiEndpoints = CaptchaDataHolder.getInstance().getReCaptchaBypassedApiEndpoints();
         if (StringUtils.isBlank(path) || reCaptchaBypassedApiEndpoints.contains(path) ||
                 (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
-                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL))) {
+                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL) &&
+                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_SIGN_UP_URL))) {
             return false;
         }
 
@@ -120,7 +125,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        String reCaptchaResponse = ((HttpServletRequest) servletRequest).getHeader("g-recaptcha-response");
+        // Extract the reCaptcha response from the request parameters or headers.
+        String reCaptchaResponse = servletRequest.getParameter(RECAPTCHA_RESPONSE_PARAM);
+        if (StringUtils.isBlank(reCaptchaResponse)) {
+            reCaptchaResponse = ((HttpServletRequest) servletRequest).getHeader(RECAPTCHA_RESPONSE_PARAM);
+        }
         if (StringUtils.isBlank(reCaptchaResponse)) {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
