@@ -172,6 +172,9 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
                 lockUserAccount(true, true, tenantDomain,
                         userStoreManager, userName);
+            } else if (isEnableConfirmationOnCreation) {
+                lockUserAccount(false, true, tenantDomain,
+                        userStoreManager, userName);
             }
 
             // If notifications are externally managed, no notification needs to be sent.
