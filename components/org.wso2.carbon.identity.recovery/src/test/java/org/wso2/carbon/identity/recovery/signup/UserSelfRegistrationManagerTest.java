@@ -60,6 +60,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
@@ -88,6 +90,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.rule.metadata.internal.config.FlowConfig;
 import org.wso2.carbon.identity.workflow.mgt.util.WorkflowErrorConstants;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
@@ -240,6 +243,7 @@ public class UserSelfRegistrationManagerTest {
     private MockedStatic<FrameworkUtils> mockedFrameworkUtils;
     private MockedStatic<MultitenantUtils> mockedMultiTenantUtils;
     private MockedStatic<UserCoreUtil> mockedUserCoreUtil;
+    private FlowConfigDTO mockedFlowConfigDTO;
 
     private final String TEST_TENANT_DOMAIN_NAME = "carbon.super";
     private final int TEST_TENANT_ID = 12;
@@ -273,6 +277,7 @@ public class UserSelfRegistrationManagerTest {
         mockedFrameworkUtils = mockStatic(FrameworkUtils.class);
         mockedMultiTenantUtils = mockStatic(MultitenantUtils.class);
         mockedUserCoreUtil = mockStatic(UserCoreUtil.class);
+        mockedFlowConfigDTO = mock(FlowConfigDTO.class);
 
         mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         mockedServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
@@ -304,6 +309,8 @@ public class UserSelfRegistrationManagerTest {
         when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
         when(privilegedCarbonContext.getOSGiService(UserWorkflowManagementService.class, null))
                 .thenReturn(userWorkflowManagementService);
+
+        when(mockedFlowConfigDTO.getIsEnabled()).thenReturn(false);
     }
 
     @AfterMethod
@@ -370,9 +377,13 @@ public class UserSelfRegistrationManagerTest {
                 .thenReturn(TEST_CLAIM_VALUE);
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
 
-        NotificationResponseBean responseBean =
-                userSelfRegistrationManager.resendConfirmationCode(user, new Property[0]);
-        assertEquals(responseBean.getNotificationChannel(), expectedChannel, errorMsg);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            NotificationResponseBean responseBean =
+                    userSelfRegistrationManager.resendConfirmationCode(user, new Property[0]);
+            assertEquals(responseBean.getNotificationChannel(), expectedChannel, errorMsg);
+        }
     }
 
     /**

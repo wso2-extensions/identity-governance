@@ -29,6 +29,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -48,11 +50,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 
@@ -85,6 +83,7 @@ public class AccountConfirmationValidationHandlerTest {
     private MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMockedStatic;
     private MockedStatic<UserSelfRegistrationManager> userSelfRegistrationManagerMockedStatic;
     private MockedStatic<IdentityUtil> identityUtilMockedStatic;
+    private FlowConfigDTO mockedFlowConfigDTO;
 
     private AccountConfirmationValidationHandler handler;
 
@@ -97,6 +96,9 @@ public class AccountConfirmationValidationHandlerTest {
         jdbcRecoveryDataStoreMockedStatic = mockStatic(JDBCRecoveryDataStore.class);
         userSelfRegistrationManagerMockedStatic = mockStatic(UserSelfRegistrationManager.class);
         identityUtilMockedStatic = mockStatic(IdentityUtil.class);
+        mockedFlowConfigDTO = mock(FlowConfigDTO.class);
+
+        when(mockedFlowConfigDTO.getIsEnabled()).thenReturn(false);
     }
 
     @AfterMethod
@@ -136,10 +138,14 @@ public class AccountConfirmationValidationHandlerTest {
                 .thenReturn("false");
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
 
-        // Then - should return early without processing
-        verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+            // Then - should return early without processing
+            verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+        }
     }
 
     @Test
@@ -151,7 +157,11 @@ public class AccountConfirmationValidationHandlerTest {
         setupAccountLocked(false);
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
 
         // Then - should return early since account is unlocked
         // No exceptions should be thrown
@@ -176,8 +186,11 @@ public class AccountConfirmationValidationHandlerTest {
                 .thenReturn(recoveryData);
 
         // When
-        handler.handleEvent(event);
-
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
         // Then - should not throw exception since user is confirmed
     }
 
@@ -194,7 +207,11 @@ public class AccountConfirmationValidationHandlerTest {
         setupUserConfirmed(false);
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
@@ -210,7 +227,11 @@ public class AccountConfirmationValidationHandlerTest {
         setupUserConfirmed(false);
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
@@ -227,7 +248,11 @@ public class AccountConfirmationValidationHandlerTest {
         setupEmailVerificationScenario();
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
@@ -243,7 +268,11 @@ public class AccountConfirmationValidationHandlerTest {
         setupSelfRegisteredUser();
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     @Test
@@ -258,10 +287,14 @@ public class AccountConfirmationValidationHandlerTest {
                 .thenReturn("true");
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
 
-        // Then
-        verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+            // Then
+            verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+        }
     }
 
     @Test
@@ -272,10 +305,14 @@ public class AccountConfirmationValidationHandlerTest {
         setupEnabledFeatures(true, false);
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
 
-        // Then - should return early for non-POST_AUTHENTICATION events
-        verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+            // Then - should return early for non-POST_AUTHENTICATION events
+            verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
+        }
     }
 
     @Test
@@ -291,21 +328,30 @@ public class AccountConfirmationValidationHandlerTest {
         
         User user = createUser();
         UserRecoveryData recoveryData = new UserRecoveryData(user, "12345", RecoveryScenarios.EMAIL_VERIFICATION);
-        
-        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance)
-                .thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
-                .thenReturn(recoveryData);
 
-        // When & Then - this should throw an exception since the email is not verified
-        try {
-            handler.handleEvent(event);
-        } catch (IdentityEventException e) {
-            // Expected exception for email not verified scenario
+        try (MockedStatic<FlowMgtConfigUtils> flowConfigMockedStatic = mockStatic(FlowMgtConfigUtils.class)){
+            jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance)
+                    .thenReturn(userRecoveryDataStore);
+
+            when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
+                    .thenReturn(recoveryData);
+
+            // FlowMgtConfigUtils mock
+            flowConfigMockedStatic.when(() ->
+                            FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
+                    .thenReturn(mockedFlowConfigDTO);
+
+            // When & Then - this should throw an exception since the email is not verified
+            try {
+                handler.handleEvent(event);
+            } catch (IdentityEventException e) {
+                // Expected exception for email not verified scenario
+            }
+
+            // Verify the recovery data store was called
+            verify(userRecoveryDataStore, times(1))
+                    .loadWithoutCodeExpiryValidation(any(User.class));
         }
-        
-        // Verify the recovery data store was called
-        verify(userRecoveryDataStore, times(1)).loadWithoutCodeExpiryValidation(any(User.class));
     }
 
     @Test
@@ -321,20 +367,28 @@ public class AccountConfirmationValidationHandlerTest {
         User user = createUser();
         UserRecoveryData recoveryData = new UserRecoveryData(user, "12345", RecoveryScenarios.SELF_SIGN_UP);
         
-        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance)
-                .thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
-                .thenReturn(recoveryData);
+        try (MockedStatic<FlowMgtConfigUtils> flowConfigMockedStatic = mockStatic(FlowMgtConfigUtils.class)){
+            jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance)
+                    .thenReturn(userRecoveryDataStore);
+            when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
+                    .thenReturn(recoveryData);
 
-        // When & Then - this should throw an exception for invalid credentials
-        try {
-            handler.handleEvent(event);
-        } catch (IdentityEventException e) {
-            // Expected exception for invalid credentials scenario
+            // FlowMgtConfigUtils mock
+            flowConfigMockedStatic.when(() ->
+                            FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
+                    .thenReturn(mockedFlowConfigDTO);
+
+            // When & Then - this should throw an exception for invalid credentials
+            try {
+                handler.handleEvent(event);
+            } catch (IdentityEventException e) {
+                // Expected exception for invalid credentials scenario
+            }
+
+            // Verify the recovery data store was called
+            verify(userRecoveryDataStore, times(1))
+                    .loadWithoutCodeExpiryValidation(any(User.class));
         }
-        
-        // Verify the recovery data store was called
-        verify(userRecoveryDataStore, times(1)).loadWithoutCodeExpiryValidation(any(User.class));
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
@@ -349,7 +403,11 @@ public class AccountConfirmationValidationHandlerTest {
                 .thenThrow(new UserStoreException("UserStore error"));
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
@@ -369,7 +427,11 @@ public class AccountConfirmationValidationHandlerTest {
                 .thenThrow(new IdentityRecoveryException("Recovery error"));
 
         // When
-        handler.handleEvent(event);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+            handler.handleEvent(event);
+        }
     }
 
     // Helper methods

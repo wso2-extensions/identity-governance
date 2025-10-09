@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
@@ -53,12 +55,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -91,6 +88,7 @@ public class JDBCRecoveryDataStoreTest {
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
     private MockedStatic<Utils> mockedUtils;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+    private FlowConfigDTO mockedFlowConfigDTO;
 
     private static final int TEST_TENANT_ID = 12;
     private static final String TEST_TENANT_DOMAIN = "test.com";
@@ -109,6 +107,7 @@ public class JDBCRecoveryDataStoreTest {
         mockedIdentityUtil = mockStatic(IdentityUtil.class);
         mockedUtils = mockStatic(Utils.class);
         mockedIdentityRecoveryServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedFlowConfigDTO = mock(FlowConfigDTO.class);
 
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
                 .thenReturn(identityRecoveryServiceDataHolder);
@@ -121,6 +120,7 @@ public class JDBCRecoveryDataStoreTest {
         mockedIdentityUtil.when(() -> IdentityUtil.isUserStoreCaseSensitive(anyString(), anyInt()))
                 .thenReturn(true);
 
+        when(mockedFlowConfigDTO.getIsEnabled()).thenReturn(false);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
     }
@@ -268,11 +268,17 @@ public class JDBCRecoveryDataStoreTest {
 
         mockExpiryTimes();
         mockUtilsErrors();
-        try {
-            userRecoveryDataStore.load(TEST_SECRET_CODE, false);
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof IdentityRecoveryClientException);
+        try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
+
+            mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
+                    .thenReturn(mockedFlowConfigDTO);
+
+            try {
+                userRecoveryDataStore.load(TEST_SECRET_CODE, false);
+                fail();
+            } catch (Exception e) {
+                assertTrue(e instanceof IdentityRecoveryClientException);
+            }
         }
     }
 
