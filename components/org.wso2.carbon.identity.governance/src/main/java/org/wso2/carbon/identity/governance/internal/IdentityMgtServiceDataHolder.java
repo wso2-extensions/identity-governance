@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance.internal;
 
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -35,6 +36,7 @@ public class IdentityMgtServiceDataHolder {
     private RealmService realmService;
     private IdentityGovernanceServiceImpl identityGovernanceService;
     private IdentityDataStoreService identityDataStoreService;
+    private ClaimMetadataManagementService claimMetadataManagementService;
 
     public static IdentityMgtServiceDataHolder getInstance() {
 
@@ -99,5 +101,15 @@ public class IdentityMgtServiceDataHolder {
     public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         this.identityDataStoreService = identityDataStoreService;
+    }
+
+    public ClaimMetadataManagementService getClaimMetadataManagementService() {
+
+        return claimMetadataManagementService;
+    }
+
+    public void setClaimMetadataManagementService(ClaimMetadataManagementService claimMetadataManagementService) {
+
+        this.claimMetadataManagementService = claimMetadataManagementService;
     }
 }
