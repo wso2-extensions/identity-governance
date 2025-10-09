@@ -466,6 +466,38 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                    if (ExpressionOperation.NE.toString().equals(operation)) {
                        usernames = identityDataStoreService.getUserNamesByClaimURINotEqualValue(condition, claimUri,
                                claimValue, userManager);
+                   } else if (ExpressionOperation.GE.toString().equals(operation)) {
+                       int tenantId = userManager.getTenantId();
+                       String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
+                       usernames = identityDataStoreService
+                               .getUserNamesMoreThanProvidedClaimValue(claimUri, claimValue, tenantId);
+                       for (String username: usernames) {
+                           if (UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME.equals(domainName)) {
+                               if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR) ) {
+                                   usernames.remove(username);
+                               }
+                           } else {
+                               if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
+                                   usernames.remove(username);
+                               }
+                           }
+                       }
+                   } else if (ExpressionOperation.LE.toString().equals(operation)) {
+                       int tenantId = userManager.getTenantId();
+                       String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
+                       usernames = identityDataStoreService
+                               .getUserNamesLessThanProvidedClaimValue(claimUri, claimValue, tenantId);
+                       for (String username: usernames) {
+                           if (UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME.equals(domainName)) {
+                               if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR) ) {
+                                   usernames.remove(username);
+                               }
+                           } else {
+                               if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
+                                   usernames.remove(username);
+                               }
+                           }
+                       }
                    } else {
                         usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
                                 getClaimValueForOperation(operation, claimValue), userManager);
