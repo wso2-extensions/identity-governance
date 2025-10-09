@@ -139,6 +139,38 @@ public class FlowRegistrationCompletionHandlerTest {
     }
 
     @Test
+    public void testHandleEventWhenAccountUnlockedButConfirmationRequire() throws IdentityEventException {
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        // Flow enabled
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        // Setup common mocks
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // isAccountLockOnCreation = false, isEnableConfirmationOnCreation = true
+        setupFlowCompletionMocks(false, true);
+
+        // Notifications internally managed and flow completion notify disabled (not relevant for this branch)
+        setupNotificationMocks(true, false);
+
+        // Run handler
+        handler.handleEvent(event);
+
+        // Verify lockUserAccount called with (false, true, tenantDomain, userStoreManager, userName)
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                false, true, TENANT_DOMAIN, userStoreManager, USER_NAME));
+    }
+
+    @Test
     public void testHandleEventWhenRoleListIsNull() throws IdentityEventException {
 
         Map<String, Object> eventProperties = createBaseEventProperties();
@@ -236,6 +268,10 @@ public class FlowRegistrationCompletionHandlerTest {
 
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.getNotificationChannel(anyString(), anyString()))
                 .thenReturn(notificationChannels);
+
+        // Ensure default notification channel is non-null so resolveNotificationChannel doesn't return null
+        identityGovernanceUtilMockedStatic.when(IdentityGovernanceUtil::getDefaultNotificationChannel)
+                .thenReturn("EMAIL");
 
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.resolveEventName(
                 anyString(), eq(USER_NAME), eq(DOMAIN_NAME), eq(TENANT_DOMAIN))).thenReturn("EVENT_NAME");
