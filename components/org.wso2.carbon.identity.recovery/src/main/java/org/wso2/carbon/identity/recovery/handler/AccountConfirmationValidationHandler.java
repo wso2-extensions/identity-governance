@@ -33,6 +33,10 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -46,6 +50,8 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.Map;
+
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
@@ -78,11 +84,23 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
+        // Get the flow control configurations for orchestrated flows.
+        FlowConfigDTO flowConfigDTO;
+        try {
+            flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(REGISTRATION.getType(), tenantDomain);
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException("Error while retrieving flow configuration for tenant: " +
+                    tenantDomain, e);
+        }
+
         boolean isSelfSignupEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()))
+                || flowConfigDTO.getIsEnabled();
 
         boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()))
+                || Boolean.parseBoolean(flowConfigDTO.getFlowCompletionConfig(
+                        Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
         boolean isEmailOTPVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP, user.getTenantDomain()));
