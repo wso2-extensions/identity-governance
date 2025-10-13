@@ -198,11 +198,27 @@ public class IdentityStoreEventListenerTest {
     }
 
     @Test(dataProvider = "getUserClaimHandler")
+    public void testDoPreGetUserClaimValues(String userName, Object pwd, String[] claimList, Map<String, String> claims,
+                                            String prof) throws Exception {
+
+        realmConfiguration = mock(RealmConfiguration.class);
+        userIdentityDataStore = mock(UserIdentityDataStore.class);
+
+        Field fieldIdentityStore = IdentityStoreEventListener.class.getDeclaredField("identityDataStore");
+        fieldIdentityStore.setAccessible(true);
+        fieldIdentityStore.set(identityStoreEventListener, userIdentityDataStore);
+
+        assertTrue(identityStoreEventListener.doPostGetUserClaimValues(userName, claimList, prof, claims,
+                userStoreManager));
+    }
+
+    @Test(dataProvider = "getUserClaimHandler")
     public void testDoPostGetUserClaimValues(String userName,
                                              Object pwd,
                                              String[] claimList,
                                              Map<String, String> claims,
                                              String prof) throws Exception {
+
         realmConfiguration = mock(RealmConfiguration.class);
         Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
         Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));

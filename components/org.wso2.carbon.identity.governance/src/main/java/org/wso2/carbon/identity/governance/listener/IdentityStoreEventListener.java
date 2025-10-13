@@ -227,6 +227,55 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     }
 
     @Override
+    public boolean doPreGetUserClaimValues(String userName, String[] claims, String profileName,
+                                           Map<String, String> claimMap,
+                                           UserStoreManager storeManager) {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("doPreGetUserClaimValues getting executed in the IdentityStoreEventListener for user: " +
+                    userName);
+        }
+
+        // No need to separately handle if identity `data store is user store based
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
+        // If hybrid data store is enabled, we need to send all claims to user store
+        if (isHybridDataStoreEnable) {
+            return true;
+        }
+        removeIdentityClaims(claims, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI);
+        return true;
+    }
+
+    /**
+     * Removes all identity claims that contain the specified identity claim URI from the given array of claims.
+     *
+     * @param claims           Array of claims to be filtered
+     * @param identityClaimURI Identity claim URI to be removed from the claims
+     */
+    private static void removeIdentityClaims(String[] claims, String identityClaimURI) {
+
+        int validCount = 0;
+
+        for (int i = 0; i < claims.length; i++) {
+            if (claims[i] != null && !claims[i].contains(identityClaimURI)) {
+                claims[validCount++] = claims[i];
+            }
+        }
+
+        // Set the remaining elements to null
+        while (validCount < claims.length) {
+            claims[validCount++] = null;
+        }
+    }
+
+    @Override
     public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName,
                                             Map<String, String> claimMap,
                                             UserStoreManager storeManager) {
