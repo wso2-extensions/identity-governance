@@ -241,7 +241,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // No need to separately handle if identity `data store is user store based
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
             return true;
         }
 
