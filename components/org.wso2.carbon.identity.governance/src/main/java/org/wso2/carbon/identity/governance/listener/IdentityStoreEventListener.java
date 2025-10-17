@@ -473,14 +473,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                        usernames = identityDataStoreService
                                .getUserNamesMoreThanProvidedClaimValue(claimUri, claimValue, tenantId);
                        String primaryDomainName = resolvePrimaryUserStoreDomainName();
-                       for (String username: usernames) {
+                       Iterator<String> iterator = usernames.iterator();
+                       while (iterator.hasNext()) {
+                           String username = iterator.next();
                            if (StringUtils.equals(primaryDomainName, domainName)) {
                                if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   usernames.remove(username);
+                                   iterator.remove();
                                }
                            } else {
                                if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   usernames.remove(username);
+                                   iterator.remove();
                                }
                            }
                        }
@@ -490,14 +492,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                        usernames = identityDataStoreService
                                .getUserNamesLessThanProvidedClaimValue(claimUri, claimValue, tenantId);
                        String primaryDomainName = resolvePrimaryUserStoreDomainName();
-                       for (String username: usernames) {
+                       Iterator<String> iterator = usernames.iterator();
+                       while (iterator.hasNext()) {
+                           String username = iterator.next();
                            if (StringUtils.equals(primaryDomainName, domainName)) {
                                if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   usernames.remove(username);
+                                   iterator.remove();
                                }
                            } else {
                                if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   usernames.remove(username);
+                                   iterator.remove();
                                }
                            }
                        }
