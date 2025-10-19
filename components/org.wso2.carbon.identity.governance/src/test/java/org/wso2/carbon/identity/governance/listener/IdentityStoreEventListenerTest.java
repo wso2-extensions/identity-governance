@@ -438,4 +438,56 @@ public class IdentityStoreEventListenerTest {
         Mockito.verify(identityDataStoreService, Mockito.times(1))
                 .getUserNamesByClaimURINotEqualValue(condition, claimUri, claimValue, userStoreManager);
     }
+
+    @DataProvider
+    public Object[][] getGreaterThanAndLessThanFilters() {
+
+        List<String> filteredUsernames = new ArrayList<>();
+        filteredUsernames.add("user1");
+        filteredUsernames.add("SECONDARY" + "/user2");
+
+        return new Object[][]{
+                {ExpressionOperation.GE.toString(), "PRIMARY", filteredUsernames, filteredUsernames.get(0)},
+                {ExpressionOperation.LE.toString(), "PRIMARY", filteredUsernames, filteredUsernames.get(0)},
+                {ExpressionOperation.GE.toString(), "SECONDARY", filteredUsernames, filteredUsernames.get(1)},
+                {ExpressionOperation.LE.toString(), "SECONDARY", filteredUsernames, filteredUsernames.get(1)}
+        };
+    }
+    @Test(dataProvider = "getGreaterThanAndLessThanFilters",
+          description = "Verify doPreGetUserList supports GE and LE operators on identity claims.")
+    public void testDoPreGetUserListWithGreaterThanAndLessThanFilters(String operation, String userStoreDomain,
+                                                                      List<String> filteredUsernames,
+                                                                      String filteredUser) throws Exception {
+
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+        final String claimUri = "http://wso2.org/claims/identity/lastPasswordUpdateTime";
+        final String claimValue = "1759196318937";
+
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(userStoreDomain);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        if (operation.equals(ExpressionOperation.GE.toString())) {
+            Mockito.doReturn(new ArrayList<>(filteredUsernames)).when(identityDataStoreService)
+                    .getUserNamesMoreThanProvidedClaimValue(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        } else if (operation.equals(ExpressionOperation.LE.toString())) {
+            Mockito.doReturn(new ArrayList<>(filteredUsernames)).when(identityDataStoreService)
+                    .getUserNamesLessThanProvidedClaimValue(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        }
+
+        List<String> filteredUserList = new ArrayList<>();
+
+        ExpressionCondition condition = new ExpressionCondition(operation, claimUri, claimValue);
+        boolean result = identityStoreEventListener.doPreGetUserList(condition, filteredUserList, userStoreManager,
+                userStoreDomain);
+
+        List<String> expectedUsernames = new ArrayList<>();
+        expectedUsernames.add(filteredUser);
+
+        assertTrue(result, "doPreGetUserList should return true on success.");
+        assertEquals(filteredUserList, expectedUsernames, "Filtered user list should match the data-store " +
+                "results for " + operation + " filtering.");
+    }
 }
