@@ -472,39 +472,13 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                        String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
                        usernames = identityDataStoreService
                                .getUserNamesMoreThanProvidedClaimValue(claimUri, claimValue, tenantId);
-                       String primaryDomainName = resolvePrimaryUserStoreDomainName();
-                       Iterator<String> iterator = usernames.iterator();
-                       while (iterator.hasNext()) {
-                           String username = iterator.next();
-                           if (StringUtils.equals(primaryDomainName, domainName)) {
-                               if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   iterator.remove();
-                               }
-                           } else {
-                               if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   iterator.remove();
-                               }
-                           }
-                       }
+                       removeDomainNotMatchedUsers(usernames, domainName);
                    } else if (ExpressionOperation.LE.toString().equals(operation)) {
                        int tenantId = userManager.getTenantId();
                        String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
                        usernames = identityDataStoreService
                                .getUserNamesLessThanProvidedClaimValue(claimUri, claimValue, tenantId);
-                       String primaryDomainName = resolvePrimaryUserStoreDomainName();
-                       Iterator<String> iterator = usernames.iterator();
-                       while (iterator.hasNext()) {
-                           String username = iterator.next();
-                           if (StringUtils.equals(primaryDomainName, domainName)) {
-                               if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   iterator.remove();
-                               }
-                           } else {
-                               if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
-                                   iterator.remove();
-                               }
-                           }
-                       }
+                       removeDomainNotMatchedUsers(usernames, domainName);
                    } else {
                         usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
                                 getClaimValueForOperation(operation, claimValue), userManager);
@@ -528,6 +502,24 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             filterUsers(leftCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
             Condition rightCondition = ((OperationalCondition) condition).getRightCondition();
             filterUsers(rightCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
+        }
+    }
+
+    private void removeDomainNotMatchedUsers(List<String> usernames, String domainName) {
+
+        String primaryDomainName = resolvePrimaryUserStoreDomainName();
+        Iterator<String> iterator = usernames.iterator();
+        while (iterator.hasNext()) {
+            String username = iterator.next();
+            if (StringUtils.equals(primaryDomainName, domainName)) {
+                if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+                    iterator.remove();
+                }
+            } else {
+                if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
+                    iterator.remove();
+                }
+            }
         }
     }
 
