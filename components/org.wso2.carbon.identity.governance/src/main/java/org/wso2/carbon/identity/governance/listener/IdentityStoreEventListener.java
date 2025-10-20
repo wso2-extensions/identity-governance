@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -466,6 +467,18 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                    if (ExpressionOperation.NE.toString().equals(operation)) {
                        usernames = identityDataStoreService.getUserNamesByClaimURINotEqualValue(condition, claimUri,
                                claimValue, userManager);
+                   } else if (ExpressionOperation.GE.toString().equals(operation)) {
+                       int tenantId = userManager.getTenantId();
+                       String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
+                       usernames = identityDataStoreService
+                               .getUserNamesMoreThanProvidedClaimValue(claimUri, claimValue, tenantId);
+                       removeDomainNotMatchedUsers(usernames, domainName);
+                   } else if (ExpressionOperation.LE.toString().equals(operation)) {
+                       int tenantId = userManager.getTenantId();
+                       String domainName = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
+                       usernames = identityDataStoreService
+                               .getUserNamesLessThanProvidedClaimValue(claimUri, claimValue, tenantId);
+                       removeDomainNotMatchedUsers(usernames, domainName);
                    } else {
                         usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
                                 getClaimValueForOperation(operation, claimValue), userManager);
@@ -489,6 +502,24 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             filterUsers(leftCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
             Condition rightCondition = ((OperationalCondition) condition).getRightCondition();
             filterUsers(rightCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
+        }
+    }
+
+    private void removeDomainNotMatchedUsers(List<String> usernames, String domainName) {
+
+        String primaryDomainName = resolvePrimaryUserStoreDomainName();
+        Iterator<String> iterator = usernames.iterator();
+        while (iterator.hasNext()) {
+            String username = iterator.next();
+            if (StringUtils.equals(primaryDomainName, domainName)) {
+                if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+                    iterator.remove();
+                }
+            } else {
+                if (!username.startsWith(domainName + UserCoreConstants.DOMAIN_SEPARATOR)) {
+                    iterator.remove();
+                }
+            }
         }
     }
 
@@ -823,5 +854,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private boolean isUserStoreBasedIdentityDataStore() {
 
         return identityDataStoreService.isUserStoreBasedIdentityDataStore();
+    }
+
+    private String resolvePrimaryUserStoreDomainName() {
+
+        RealmConfiguration realmConfiguration = IdentityMgtServiceDataHolder.getInstance().getRealmService().
+                getBootstrapRealmConfiguration();
+        if (realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME) != null) {
+            return realmConfiguration.getUserStoreProperty(
+                    UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME).toUpperCase();
+        }
+        return UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
     }
 }
