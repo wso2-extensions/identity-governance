@@ -382,77 +382,115 @@ public class UserEmailVerificationHandlerTest {
             throws IdentityEventException, UserStoreException {
 
         /*
-        Case 1:Try to update the verified email list with a new email.
-        Expected: IdentityEventClientException should be thrown.
+        Case 1.1: Try to update the verified email list with a new email when primary email is verified
+        and NOT in the verified email list.
+        Expected: New email should go to pending. Primary email should be added to verified list.
         */
-        String newVerifiedEmails = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        String newVerifiedEmails1 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
         Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                newVerifiedEmails, null, null);
+                newVerifiedEmails1, null, null);
 
-        mockUtilMethods(true, true, false,
-                false);
-        List<String> existingEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
-        mockExistingEmailAddressesList(existingEmails);
+        mockUtilMethods(true, true, false, false);
+        List<String> existingEmails1 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
+        mockExistingEmailAddressesList(existingEmails1);
 
-        List<String> existingVerifiedEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
-        mockExistingVerifiedEmailAddressesList(existingVerifiedEmails);
+        // Primary email is verified but NOT in the verified list
+        List<String> existingVerifiedEmails1 = new ArrayList<>();
+        mockExistingVerifiedEmailAddressesList(existingVerifiedEmails1);
+        mockPrimaryEmail(EXISTING_EMAIL_1);
+        mockPrimaryEmailVerificationStatus(true);
 
         userEmailVerificationHandler.handleEvent(event1);
         Map<String, String> userClaims1 = getUserClaimsFromEvent(event1);
+
+        // New email should be in pending
         Assert.assertEquals(userClaims1.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
 
-        /*
-         Case 2: Update verified email list with the existing verified primary email which is not in the verified
-         email list.
-         Expected: Email should be added to the updated verified email list only if primary email is verified.
-         */
-        String newVerifiedEmails2 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        // Primary email should be added to verified list since it's verified
+        String updatedVerifiedEmails1 = userClaims1.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        Assert.assertTrue(StringUtils.contains(updatedVerifiedEmails1, EXISTING_EMAIL_1));
+        Assert.assertFalse(StringUtils.contains(updatedVerifiedEmails1, NEW_EMAIL));
 
-        mockUtilMethods(true, true, false,
-                false);
+        /*
+        Case 1.2: Try to update the verified email list with a new email when primary email is verified
+        and ALREADY in the verified email list.
+        Expected: New email should go to pending. Verified list should remain unchanged (primary already there).
+        */
+        String newVerifiedEmails2 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                newVerifiedEmails2, null, null);
+
+        mockUtilMethods(true, true, false, false);
         List<String> existingEmails2 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingEmailAddressesList(existingEmails2);
 
+        // Primary email is verified and ALREADY in the verified list
         List<String> existingVerifiedEmails2 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingVerifiedEmailAddressesList(existingVerifiedEmails2);
-
-        mockPrimaryEmail(NEW_EMAIL);
-
-        // Case 2.1: Test when primary email is already verified.
-        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                newVerifiedEmails2, null, null);
+        mockPrimaryEmail(EXISTING_EMAIL_1);
         mockPrimaryEmailVerificationStatus(true);
 
         userEmailVerificationHandler.handleEvent(event2);
         Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
-        String updatedVerifiedEmails = userClaims2.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        Assert.assertTrue(StringUtils.contains(updatedVerifiedEmails, NEW_EMAIL));
 
-        // Case 2.2: Test when primary email is not verified.
+        // New email should be in pending
+        Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+
+        // Verified list should still contain primary, but not the new email
+        String updatedVerifiedEmails2 = userClaims2.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        Assert.assertTrue(StringUtils.contains(updatedVerifiedEmails2, EXISTING_EMAIL_1));
+        Assert.assertFalse(StringUtils.contains(updatedVerifiedEmails2, NEW_EMAIL));
+
+        /*
+        Case 2: Update verified email list with a NEW email set as primary.
+        Expected: Email should be added to the updated verified email list only if primary email is verified.
+        */
+        String newVerifiedEmails3 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+
+        mockUtilMethods(true, true, false, false);
+        List<String> existingEmails3 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
+        mockExistingEmailAddressesList(existingEmails3);
+
+        List<String> existingVerifiedEmails3 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
+        mockExistingVerifiedEmailAddressesList(existingVerifiedEmails3);
+
+        mockPrimaryEmail(NEW_EMAIL);
+
+        // Case 2.1: Test when primary email is already verified.
         Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                newVerifiedEmails2, null, null);
-        mockPrimaryEmailVerificationStatus(false);
+                newVerifiedEmails3, null, null);
+        mockPrimaryEmailVerificationStatus(true);
 
         userEmailVerificationHandler.handleEvent(event3);
         Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
         String updatedVerifiedEmails3 = userClaims3.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        Assert.assertFalse(StringUtils.contains(updatedVerifiedEmails3, NEW_EMAIL));
+        Assert.assertTrue(StringUtils.contains(updatedVerifiedEmails3, NEW_EMAIL));
 
-        /*
-         Case 3: Add multiple new emails to verified emails list.
-         Expected: Error should be thrown.
-         */
-        String newVerifiedEmails3 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        // Case 2.2: Test when primary email is not verified.
         Event event4 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 newVerifiedEmails3, null, null);
+        mockPrimaryEmailVerificationStatus(false);
 
-        mockUtilMethods(true, true, false,
-                false);
+        userEmailVerificationHandler.handleEvent(event4);
+        Map<String, String> userClaims4 = getUserClaimsFromEvent(event4);
+        String updatedVerifiedEmails4 = userClaims4.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        Assert.assertFalse(StringUtils.contains(updatedVerifiedEmails4, NEW_EMAIL));
+
+    /*
+     Case 3: Add multiple new emails to verified emails list.
+     Expected: Error should be thrown.
+     */
+        String newVerifiedEmails5 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        Event event5 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                newVerifiedEmails5, null, null);
+
+        mockUtilMethods(true, true, false, false);
         mockExistingEmailAddressesList(new ArrayList<>());
         mockExistingVerifiedEmailAddressesList(new ArrayList<>());
 
         try {
-            userEmailVerificationHandler.handleEvent(event4);
+            userEmailVerificationHandler.handleEvent(event5);
+            Assert.fail("Expected IdentityEventClientException to be thrown");
         } catch (IdentityEventClientException e) {
             Assert.assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.
                     ERROR_CODE_VERIFY_MULTIPLE_EMAILS.getCode());
