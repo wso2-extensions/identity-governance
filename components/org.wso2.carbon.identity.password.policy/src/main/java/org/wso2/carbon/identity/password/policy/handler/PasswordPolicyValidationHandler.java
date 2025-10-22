@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.password.policy.handler;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -80,6 +81,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         String pwMinLength = "6";
         String pwMaxLength = "12";
         String pwPattern = "^((?=.*\\\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%&*])).{0,100}$";
+        String pwUsernameCheckMode = "equal";
         String errorMsg = "Password pattern policy violated. Password should contain a digit[0-9], a lower case " +
                 "letter[a-z], an upper case letter[A-Z], one of !@#$%&* characters";
 
@@ -124,6 +126,13 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 } else {
                     log.warn("Password Policy Error Msg cannot be Empty hence using default Msg: " + errorMsg);
                 }
+            } else if (PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE.equals(propertyName)) {
+                if (StringUtils.isNotBlank(propertyValue)) {
+                    pwUsernameCheckMode = propertyValue;
+                } else {
+                    log.warn("Password Policy Username Check Mode cannot be empty hence using default value: "
+                            + pwUsernameCheckMode);
+                }
             }
         }
 
@@ -139,7 +148,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
             if (StringUtils.isNotBlank(pwLengthPolicyCls)) {
                 DefaultPasswordLengthPolicy defaultPasswordLengthPolicy = (DefaultPasswordLengthPolicy) Class.
                         forName(pwLengthPolicyCls).newInstance();
-                HashMap pwPolicyLengthParams = new HashMap<String, String>();
+                HashMap<String, String> pwPolicyLengthParams = new HashMap<>();
                 pwPolicyLengthParams.put("min.length", pwMinLength);
                 pwPolicyLengthParams.put("max.length", pwMaxLength);
                 defaultPasswordLengthPolicy.init(pwPolicyLengthParams);
@@ -149,13 +158,16 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
             if (StringUtils.isNotBlank(pwNamePolicyCls)) {
                 DefaultPasswordNamePolicy defaultPasswordNamePolicy = (DefaultPasswordNamePolicy) Class.
                         forName(pwNamePolicyCls).newInstance();
+                HashMap<String, String> pwPolicyNameParams = new HashMap<>();
+                pwPolicyNameParams.put("username.check.mode", pwUsernameCheckMode);
+                defaultPasswordNamePolicy.init(pwPolicyNameParams);
                 policyRegistry.addPolicy(defaultPasswordNamePolicy);
             }
 
             if (StringUtils.isNotBlank(pwPatternPolicyCls)) {
                 DefaultPasswordPatternPolicy defaultPasswordPatternPolicy = (DefaultPasswordPatternPolicy) Class.
                         forName(pwPatternPolicyCls).newInstance();
-                HashMap pwPolicyPatternParams = new HashMap<String, String>();
+                HashMap<String, String> pwPolicyPatternParams = new HashMap<>();
                 pwPolicyPatternParams.put("pattern", pwPattern);
                 pwPolicyPatternParams.put("errorMsg", errorMsg);
                 defaultPasswordPatternPolicy.init(pwPolicyPatternParams);
@@ -217,6 +229,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         nameMapping.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, "Maximum number of characters");
         nameMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Password pattern regex");
         nameMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Error message on pattern violation");
+        nameMapping.put(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE,
+                "Check if password contains or equals to username");
         return nameMapping;
     }
 
@@ -250,6 +264,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         properties.add(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH);
         properties.add(PasswordPolicyConstants.PW_POLICY_PATTERN);
         properties.add(PasswordPolicyConstants.PW_POLICY_ERROR_MSG);
+        properties.add(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE);
         return properties.toArray(new String[0]);
     }
 
@@ -266,6 +281,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 .getProperty(PasswordPolicyConstants.PW_POLICY_PATTERN));
         defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, configs.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_ERROR_MSG));
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE, configs.getModuleProperties()
+                .getProperty(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE));
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
