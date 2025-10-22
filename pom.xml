@@ -548,7 +548,7 @@
             </dependency>
             <!-- Pax Logging -->
             <dependency>
-                <groupId>org.ops4j.pax.logging</groupId>
+                <groupId>org.wso2.org.ops4j.pax.logging</groupId>
                 <artifactId>pax-logging-api</artifactId>
                 <version>${pax.logging.api.version}</version>
             </dependency>
@@ -797,7 +797,7 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
 
         <!-- Pax Logging Version -->
-        <pax.logging.api.version>1.10.9</pax.logging.api.version>
+        <pax.logging.api.version>2.1.0-wso2v5</pax.logging.api.version>
 
         <carbon.analytics.common.version>5.2.50</carbon.analytics.common.version>
         <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
