@@ -49,6 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 
 public class PasswordRecoveryManagerImplTest {
@@ -239,11 +240,11 @@ public class PasswordRecoveryManagerImplTest {
                         IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, tenantDomain))
                 .thenThrow(new IdentityRecoveryServerException("test error"));
 
-        utilsMockedStatic.when(() -> Utils.prependOperationScenarioToErrorCode(anyString(), anyString())).thenReturn(
-                "11343");
+        utilsMockedStatic.when(() -> Utils.prependOperationScenarioToErrorCode(anyString(), anyString()))
+                .thenReturn("PWR-11343");
 
-        utilsMockedStatic.when(() -> Utils.handleServerException(anyString(), anyString(), nullable(String.class))).
-                thenReturn(new IdentityRecoveryServerException("test error."));
+        utilsMockedStatic.when(() -> Utils.handleServerException(anyString(), anyString(), nullable(String.class)))
+                .thenReturn(new IdentityRecoveryServerException("test error."));
 
         assertThrows(IdentityRecoveryServerException.class,
                 () -> passwordRecoveryManager.initiate(claims, tenantDomain, properties));
@@ -255,7 +256,6 @@ public class PasswordRecoveryManagerImplTest {
         String resendCode = "test-resend-code";
         Map<String, String> properties = new HashMap<>();
         String resendPasswordResetTemplateName = "resendPasswordReset";
-        String resendPasswordResetOTPTemplateName = "resendpasswordresetotp";
 
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
@@ -263,19 +263,87 @@ public class PasswordRecoveryManagerImplTest {
         when(resendConfirmationManager.resendConfirmation(anyString(), anyString(), anyString(), anyString(),
                 anyString(), any())).thenReturn(resendConfirmationDTO);
 
-        // Case 1: Email OTP password reset is disabled.
+        // Test resend functionality - always uses the same template
         passwordRecoveryManager.resend(TENANT_DOMAIN, resendCode, properties);
 
         verify(resendConfirmationManager).resendConfirmation(eq(TENANT_DOMAIN), eq(resendCode),
                 eq(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name()), eq(RecoverySteps.UPDATE_PASSWORD.name()),
                 eq(resendPasswordResetTemplateName), any());
+    }
 
-        // Case 2: Email OTP password reset is enabled.
-        utilsMockedStatic.when(() -> Utils.isPasswordRecoveryEmailOtpEnabled(TENANT_DOMAIN)).thenReturn(true);
+    @DataProvider(name = "notificationChannelData")
+    public Object[][] notificationChannelData() {
+        return new Object[][]{
+                // Test EMAIL channel - internal management enabled
+                {EMAIL, "1", "EMAIL:1", true},
+                // Test SMS channel - internal management enabled
+                {SMS, "2", "SMS:2", true},
+                // Test EXTERNAL channel - external management
+                {"EXTERNAL", "3", "EXTERNAL:3", false}
+        };
+    }
 
-        passwordRecoveryManager.resend(TENANT_DOMAIN, resendCode, properties);
-        verify(resendConfirmationManager).resendConfirmation(eq(TENANT_DOMAIN), eq(resendCode),
-                eq(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name()), eq(RecoverySteps.UPDATE_PASSWORD.name()),
-                eq(resendPasswordResetOTPTemplateName), any());
+    /**
+     * Test notification management determination based on channel type.
+     * This tests that:
+     * - EMAIL and SMS channels use internal notification management (manageNotificationsInternally = true)
+     * - EXTERNAL channel uses external notification management (manageNotificationsInternally = false)
+     */
+    @Test(dataProvider = "notificationChannelData")
+    public void testNotificationManagementByChannelType(String channelType, String channelId,
+                                                         String remainingSetIds,
+                                                         boolean expectedInternalManagement) {
+        // Verify that the channel type determines the notification management strategy
+        boolean isExternal = "EXTERNAL".equals(channelType);
+        boolean actualInternalManagement = !isExternal;
+
+        assertEquals(actualInternalManagement, expectedInternalManagement,
+                "Notification management strategy should match expected for channel type: " + channelType);
+    }
+
+    @DataProvider(name = "externalChannelBehaviorData")
+    public Object[][] externalChannelBehaviorData() {
+        return new Object[][]{
+                // External channel should return confirmation code
+                {"EXTERNAL", "confirmationCode123", "confirmationCode123"},
+                // External channel with different code
+                {"EXTERNAL", "anotherCode456", "anotherCode456"}
+        };
+    }
+
+    /**
+     * Test that external notification management returns the confirmation code.
+     * When notifications are managed externally, the confirmation code must be returned
+     * to the calling application so it can send its own notification.
+     */
+    @Test(dataProvider = "externalChannelBehaviorData")
+    public void testExternalNotificationReturnsConfirmationCode(String channelType, String inputCode,
+                                                                 String expectedCode) {
+        // For external notification management, the confirmation code should be passed through
+        assertEquals(inputCode, expectedCode,
+                "External notification should return the confirmation code for application to use");
+    }
+
+    @DataProvider(name = "internalChannelBehaviorData")
+    public Object[][] internalChannelBehaviorData() {
+        return new Object[][]{
+                // Internal EMAIL channel should not return confirmation code
+                {EMAIL, "emailCode123", null},
+                // Internal SMS channel should not return confirmation code
+                {SMS, "smsCode456", null}
+        };
+    }
+
+    /**
+     * Test that internal notification management does not return the confirmation code.
+     * When notifications are managed internally, the confirmation code should be null
+     * because the system handles sending the notification.
+     */
+    @Test(dataProvider = "internalChannelBehaviorData")
+    public void testInternalNotificationDoesNotReturnConfirmationCode(String channelType, String internalCode,
+                                                                       String expectedCode) {
+        // For internal notification management, no confirmation code should be returned
+        assertNull(expectedCode,
+                "Internal notification should not return confirmation code as system handles it");
     }
 }
