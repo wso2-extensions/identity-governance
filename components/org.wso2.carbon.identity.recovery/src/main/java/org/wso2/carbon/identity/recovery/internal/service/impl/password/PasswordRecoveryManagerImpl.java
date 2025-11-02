@@ -107,8 +107,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                         properties);
         List<NotificationChannelDTO> list = new ArrayList<>();
         for (NotificationChannelDTO notificationChannelDTO : recoveryChannelInfoDTO.getNotificationChannelDTOs()) {
-            if (isInternalRecoveryChannelEnabled(notificationChannelDTO.getType(), tenantDomain) ||
-                    NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannelDTO.getType())) {
+            if (isRecoveryChannelEnabled(notificationChannelDTO.getType(), tenantDomain)) {
                 list.add(notificationChannelDTO);
             }
         }
@@ -148,17 +147,17 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIDCode);
-        // Resolve notify status according to the notification channel of the user.
-        boolean manageNotificationsInternally = !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(
-                notificationChannel);
-        boolean isValidChannel = !manageNotificationsInternally || isInternalRecoveryChannelEnabled(notificationChannel, tenantDomain);
-        if (!isValidChannel) {
+        if (!isRecoveryChannelEnabled(notificationChannel, tenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getMessage(),
                     notificationChannel);
         }
         // Resolve notify status according to the notification channel of the user.
+        boolean manageNotificationsInternally = true;
+        if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            manageNotificationsInternally = false;
+        }
         NotificationResponseBean notificationResponseBean = notifyUser(userRecoveryData.getUser(), notificationChannel,
                 manageNotificationsInternally, properties);
         String secretKey = notificationResponseBean.getKey();
@@ -970,7 +969,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         return buildPasswordResetCodeDTO(confirmationCode);
     }
 
-    private boolean isInternalRecoveryChannelEnabled(String notificationChannelType, String tenantDomain)
+    private boolean isRecoveryChannelEnabled(String notificationChannelType, String tenantDomain)
             throws IdentityRecoveryServerException {
 
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannelType)) {
@@ -978,7 +977,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
             return isSMSOTPBasedRecoveryEnabled(tenantDomain);
         }
-        return false;
+        return NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannelType);
     }
 
 }

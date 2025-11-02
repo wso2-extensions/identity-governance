@@ -100,21 +100,22 @@ public class PasswordRecoveryManagerImplTest {
 
         return new Object[][]{
 
-                {true, false, false, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(true, false)},
-                {true, true, false, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(true, false)},
-                {false, true, false, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(true, false)},
-                {false, false, true, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(false, true)},
-                {true, false, true, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(true, true)},
-                {false, true, true, generateRecoveryChannelInfoDTO(true, true),
-                        generateRecoveryChannelInfoDTO(true, true)}};
+                {true, false, false, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(true, false, false)},
+                {true, true, false, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(true, false, false)},
+                {false, true, false, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(true, false, false)},
+                {false, false, true, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(false, true, false)},
+                {true, false, true, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(true, true, false)},
+                {false, true, true, generateRecoveryChannelInfoDTO(true, true, false),
+                        generateRecoveryChannelInfoDTO(true, true, false)}};
     }
 
-    private RecoveryChannelInfoDTO generateRecoveryChannelInfoDTO(boolean isIncludeEmail, boolean isIncludeSMS) {
+    private RecoveryChannelInfoDTO generateRecoveryChannelInfoDTO(boolean isIncludeEmail, boolean isIncludeSMS,
+                                                                   boolean isIncludeExternal) {
 
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
         recoveryChannelInfoDTO.setUsername(USERNAME);
@@ -131,14 +132,25 @@ public class PasswordRecoveryManagerImplTest {
         notificationChannelDTOSms.setType(SMS);
         notificationChannelDTOSms.setValue(TEST_MOBILE);
 
-        if (isIncludeEmail && isIncludeSMS) {
+        NotificationChannelDTO notificationChannelDTOExternal = new NotificationChannelDTO();
+        notificationChannelDTOExternal.setId(3);
+        notificationChannelDTOExternal.setType("EXTERNAL");
+        notificationChannelDTOExternal.setValue("");
+
+        java.util.List<NotificationChannelDTO> channels = new java.util.ArrayList<>();
+        if (isIncludeEmail) {
+            channels.add(notificationChannelDTOEmail);
+        }
+        if (isIncludeSMS) {
+            channels.add(notificationChannelDTOSms);
+        }
+        if (isIncludeExternal) {
+            channels.add(notificationChannelDTOExternal);
+        }
+
+        if (!channels.isEmpty()) {
             recoveryChannelInfoDTO.setNotificationChannelDTOs(
-                    new NotificationChannelDTO[]{notificationChannelDTOEmail, notificationChannelDTOSms});
-        } else if (isIncludeEmail) {
-            recoveryChannelInfoDTO.setNotificationChannelDTOs(
-                    new NotificationChannelDTO[]{notificationChannelDTOEmail});
-        } else if (isIncludeSMS) {
-            recoveryChannelInfoDTO.setNotificationChannelDTOs(new NotificationChannelDTO[]{notificationChannelDTOSms});
+                    channels.toArray(new NotificationChannelDTO[0]));
         }
 
         return recoveryChannelInfoDTO;
@@ -271,79 +283,237 @@ public class PasswordRecoveryManagerImplTest {
                 eq(resendPasswordResetTemplateName), any());
     }
 
-    @DataProvider(name = "notificationChannelData")
-    public Object[][] notificationChannelData() {
+    @DataProvider(name = "externalChannelInitiateData")
+    public Object[][] externalChannelInitiateData() {
+
         return new Object[][]{
-                // Test EMAIL channel - internal management enabled
-                {EMAIL, "1", "EMAIL:1", true},
-                // Test SMS channel - internal management enabled
-                {SMS, "2", "SMS:2", true},
-                // Test EXTERNAL channel - external management
-                {"EXTERNAL", "3", "EXTERNAL:3", false}
+                // EXTERNAL channel only - should always be included.
+                {false, false, false, generateRecoveryChannelInfoDTO(false, false, true),
+                        generateRecoveryChannelInfoDTO(false, false, true)},
+                // EXTERNAL with EMAIL (email link enabled).
+                {true, false, false, generateRecoveryChannelInfoDTO(true, false, true),
+                        generateRecoveryChannelInfoDTO(true, false, true)},
+                // EXTERNAL with SMS (sms enabled).
+                {false, false, true, generateRecoveryChannelInfoDTO(false, true, true),
+                        generateRecoveryChannelInfoDTO(false, true, true)},
+                // EXTERNAL with both EMAIL and SMS (all enabled).
+                {true, true, true, generateRecoveryChannelInfoDTO(true, true, true),
+                        generateRecoveryChannelInfoDTO(true, true, true)},
+                // EXTERNAL only when EMAIL and SMS configs are disabled.
+                {false, false, false, generateRecoveryChannelInfoDTO(true, true, true),
+                        generateRecoveryChannelInfoDTO(false, false, true)}
         };
     }
 
     /**
-     * Test notification management determination based on channel type.
-     * This tests that:
-     * - EMAIL and SMS channels use internal notification management (manageNotificationsInternally = true)
-     * - EXTERNAL channel uses external notification management (manageNotificationsInternally = false)
+     * Test that EXTERNAL channel is always included in recovery options regardless of configuration.
+     * EXTERNAL channel doesn't require any configuration to be enabled - it's always valid.
      */
-    @Test(dataProvider = "notificationChannelData")
-    public void testNotificationManagementByChannelType(String channelType, String channelId,
-                                                         String remainingSetIds,
-                                                         boolean expectedInternalManagement) {
-        // Verify that the channel type determines the notification management strategy
-        boolean isExternal = "EXTERNAL".equals(channelType);
-        boolean actualInternalManagement = !isExternal;
+    @Test(dataProvider = "externalChannelInitiateData")
+    public void testInitiateWithExternalChannel(boolean isEmailLinkEnabled, boolean isEmailOtpEnabled,
+                                                 boolean isSmsOtpEnabled,
+                                                 RecoveryChannelInfoDTO recoveryChannelInfoDTO,
+                                                 RecoveryChannelInfoDTO expectedRecoveryChannelInfo)
+            throws IdentityRecoveryException {
 
-        assertEquals(actualInternalManagement, expectedInternalManagement,
-                "Notification management strategy should match expected for channel type: " + channelType);
+        HashMap<String, String> claims = new HashMap<>();
+        HashMap<String, String> properties = new HashMap<>();
+
+        if (isEmailLinkEnabled) {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, TENANT_DOMAIN))
+                    .thenReturn(TRUE_STRING);
+        } else {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, TENANT_DOMAIN))
+                    .thenReturn(FALSE_STRING);
+        }
+
+        if (isEmailOtpEnabled) {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, TENANT_DOMAIN))
+                    .thenReturn(TRUE_STRING);
+        } else {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, TENANT_DOMAIN))
+                    .thenReturn(FALSE_STRING);
+        }
+
+        if (isSmsOtpEnabled) {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, TENANT_DOMAIN))
+                    .thenReturn(TRUE_STRING);
+        } else {
+            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, TENANT_DOMAIN))
+                    .thenReturn(FALSE_STRING);
+        }
+
+        PasswordRecoveryManagerImpl passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+
+        utilsMockedStatic.when(
+                () -> Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                        TENANT_DOMAIN)).thenReturn(TRUE_STRING);
+
+        userAccountRecoveryManagerMockedStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(userAccountRecoveryManager);
+
+        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, TENANT_DOMAIN,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, properties)).thenReturn(recoveryChannelInfoDTO);
+
+        RecoveryInformationDTO recoveryInformationDTO =
+                passwordRecoveryManager.initiate(claims, TENANT_DOMAIN, properties);
+
+        assertEquals(recoveryInformationDTO.getUsername(), expectedRecoveryChannelInfo.getUsername());
+        assertEquals(recoveryInformationDTO.getRecoveryFlowId(), expectedRecoveryChannelInfo.getRecoveryFlowId());
+
+        NotificationChannelDTO[] expectedChannels = expectedRecoveryChannelInfo.getNotificationChannelDTOs();
+        NotificationChannelDTO[] actualChannels =
+                recoveryInformationDTO.getRecoveryChannelInfoDTO().getNotificationChannelDTOs();
+        assertEquals(actualChannels.length, expectedChannels.length,
+                "Array lengths do not match. Expected: " + expectedChannels.length + ", Actual: " + actualChannels.length);
+
+        for (int i = 0; i < expectedChannels.length; i++) {
+            assertEquals(actualChannels[i].getId(), expectedChannels[i].getId(), "Mismatch at channel id: " + i);
+            assertEquals(actualChannels[i].getType(), expectedChannels[i].getType(), "Mismatch at channel type: " + i);
+            assertEquals(actualChannels[i].getValue(), expectedChannels[i].getValue(), "Mismatch at channel value: " + i);
+        }
     }
 
-    @DataProvider(name = "externalChannelBehaviorData")
-    public Object[][] externalChannelBehaviorData() {
+    @DataProvider(name = "isRecoveryChannelEnabledData")
+    public Object[][] isRecoveryChannelEnabledData() {
+
         return new Object[][]{
-                // External channel should return confirmation code
-                {"EXTERNAL", "confirmationCode123", "confirmationCode123"},
-                // External channel with different code
-                {"EXTERNAL", "anotherCode456", "anotherCode456"}
+                // EMAIL channel - email link enabled only.
+                {EMAIL, true, false, false, true},
+                // EMAIL channel - email OTP enabled only.
+                {EMAIL, false, true, false, true},
+                // EMAIL channel - both enabled.
+                {EMAIL, true, true, false, true},
+                // EMAIL channel - both disabled.
+                {EMAIL, false, false, false, false},
+                // SMS channel - enabled.
+                {SMS, false, false, true, true},
+                // SMS channel - disabled.
+                {SMS, false, false, false, false},
+                // EXTERNAL channel - always enabled regardless of config.
+                {"EXTERNAL", false, false, false, true},
+                {"EXTERNAL", true, true, true, true},
+                // Unknown channel type.
+                {"UNKNOWN", false, false, false, false}
         };
     }
 
     /**
-     * Test that external notification management returns the confirmation code.
-     * When notifications are managed externally, the confirmation code must be returned
-     * to the calling application so it can send its own notification.
+     * Test the isRecoveryChannelEnabled method logic through the initiate flow.
+     * This validates that:
+     * - EMAIL channel requires email link OR email OTP to be enabled
+     * - SMS channel requires SMS OTP to be enabled.
+     * - EXTERNAL channel is always enabled (no config check).
+     * - Unknown channel types return false.
      */
-    @Test(dataProvider = "externalChannelBehaviorData")
-    public void testExternalNotificationReturnsConfirmationCode(String channelType, String inputCode,
-                                                                 String expectedCode) {
-        // For external notification management, the confirmation code should be passed through
-        assertEquals(inputCode, expectedCode,
-                "External notification should return the confirmation code for application to use");
+    @Test(dataProvider = "isRecoveryChannelEnabledData")
+    public void testIsRecoveryChannelEnabledLogic(String channelType, boolean isEmailLinkEnabled,
+                                                   boolean isEmailOtpEnabled, boolean isSmsOtpEnabled,
+                                                   boolean expectedEnabled) throws IdentityRecoveryException {
+
+        HashMap<String, String> claims = new HashMap<>();
+        HashMap<String, String> properties = new HashMap<>();
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, TENANT_DOMAIN))
+                .thenReturn(isEmailLinkEnabled ? TRUE_STRING : FALSE_STRING);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, TENANT_DOMAIN))
+                .thenReturn(isEmailOtpEnabled ? TRUE_STRING : FALSE_STRING);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, TENANT_DOMAIN))
+                .thenReturn(isSmsOtpEnabled ? TRUE_STRING : FALSE_STRING);
+
+        utilsMockedStatic.when(
+                () -> Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                        TENANT_DOMAIN)).thenReturn(TRUE_STRING);
+
+        userAccountRecoveryManagerMockedStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(userAccountRecoveryManager);
+
+        // Create recovery channel with the specific channel type.
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
+        recoveryChannelInfoDTO.setUsername(USERNAME);
+        recoveryChannelInfoDTO.setRecoveryFlowId(FLOW_ID);
+        recoveryChannelInfoDTO.setRecoveryCode(RECOVERY_CODE);
+
+        NotificationChannelDTO notificationChannelDTO = new NotificationChannelDTO();
+        notificationChannelDTO.setId(1);
+        notificationChannelDTO.setType(channelType);
+        notificationChannelDTO.setValue("test-value");
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(new NotificationChannelDTO[]{notificationChannelDTO});
+
+        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, TENANT_DOMAIN,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, properties)).thenReturn(recoveryChannelInfoDTO);
+
+        PasswordRecoveryManagerImpl passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+        RecoveryInformationDTO recoveryInformationDTO =
+                passwordRecoveryManager.initiate(claims, TENANT_DOMAIN, properties);
+
+        NotificationChannelDTO[] resultChannels =
+                recoveryInformationDTO.getRecoveryChannelInfoDTO().getNotificationChannelDTOs();
+
+        if (expectedEnabled) {
+            assertEquals(resultChannels.length, 1,
+                    "Channel " + channelType + " should be enabled but was filtered out");
+            assertEquals(resultChannels[0].getType(), channelType,
+                    "Channel type should match");
+        } else {
+            assertEquals(resultChannels.length, 0,
+                    "Channel " + channelType + " should be disabled but was included");
+        }
     }
 
-    @DataProvider(name = "internalChannelBehaviorData")
-    public Object[][] internalChannelBehaviorData() {
-        return new Object[][]{
-                // Internal EMAIL channel should not return confirmation code
-                {EMAIL, "emailCode123", null},
-                // Internal SMS channel should not return confirmation code
-                {SMS, "smsCode456", null}
-        };
-    }
+    @Test
+    public void testExternalChannelDoesNotRequireConfiguration() throws IdentityRecoveryException {
 
-    /**
-     * Test that internal notification management does not return the confirmation code.
-     * When notifications are managed internally, the confirmation code should be null
-     * because the system handles sending the notification.
-     */
-    @Test(dataProvider = "internalChannelBehaviorData")
-    public void testInternalNotificationDoesNotReturnConfirmationCode(String channelType, String internalCode,
-                                                                       String expectedCode) {
-        // For internal notification management, no confirmation code should be returned
-        assertNull(expectedCode,
-                "Internal notification should not return confirmation code as system handles it");
+        // Verify EXTERNAL channel works even when all recovery configs are disabled.
+        HashMap<String, String> claims = new HashMap<>();
+        HashMap<String, String> properties = new HashMap<>();
+
+        // Disable all recovery methods.
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, TENANT_DOMAIN))
+                .thenReturn(FALSE_STRING);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, TENANT_DOMAIN))
+                .thenReturn(FALSE_STRING);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, TENANT_DOMAIN))
+                .thenReturn(FALSE_STRING);
+
+        utilsMockedStatic.when(
+                () -> Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                        TENANT_DOMAIN)).thenReturn(TRUE_STRING);
+
+        userAccountRecoveryManagerMockedStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(userAccountRecoveryManager);
+
+        // Create recovery channel with EXTERNAL channel only.
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO = generateRecoveryChannelInfoDTO(false, false, true);
+
+        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, TENANT_DOMAIN,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, properties)).thenReturn(recoveryChannelInfoDTO);
+
+        PasswordRecoveryManagerImpl passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+        RecoveryInformationDTO recoveryInformationDTO =
+                passwordRecoveryManager.initiate(claims, TENANT_DOMAIN, properties);
+
+        NotificationChannelDTO[] resultChannels =
+                recoveryInformationDTO.getRecoveryChannelInfoDTO().getNotificationChannelDTOs();
+
+        assertEquals(resultChannels.length, 1, "EXTERNAL channel should be available");
+        assertEquals(resultChannels[0].getType(), "EXTERNAL", "Should be EXTERNAL channel");
     }
 }
+
