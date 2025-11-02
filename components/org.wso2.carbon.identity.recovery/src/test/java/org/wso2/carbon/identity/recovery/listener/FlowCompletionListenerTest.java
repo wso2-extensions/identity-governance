@@ -597,6 +597,317 @@ public class FlowCompletionListenerTest {
                 any(DiagnosticLog.DiagnosticLogBuilder.class)), times(0));
     }
 
+    // Tests for Internal and External Managed Notifications
+
+    @DataProvider
+    public Object[][] internallyManagedNotificationData() {
+        return new Object[][]{
+                {"EMAIL", true, NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl()},
+                {"SMS", true, NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl()},
+                {"EXTERNAL", true, null}, // External channel - no verified claim even if internally managed
+                {"EMAIL", false, null},   // Externally managed - no verified claim
+                {"SMS", false, null},     // Externally managed - no verified claim
+        };
+    }
+
+    @Test(dataProvider = "internallyManagedNotificationData")
+    public void testInvitedUserRegistrationWithInternalExternalManagedNotifications(
+            String channel, boolean internallyManaged, String expectedVerifiedClaimUrl) throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createInvitedUserRegistrationContext();
+        User user = createTestUser();
+
+        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn(channel);
+        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn(String.valueOf(internallyManaged));
+
+        // Mock flow completion config
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery data
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getUser()).thenReturn(user);
+        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
+        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+
+        // Capture the claims being set
+        org.mockito.ArgumentCaptor<Map> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), eq(null));
+        verify(jdbcRecoveryDataStore).invalidate(user);
+
+        // Verify claims based on internal/external management
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+        if (expectedVerifiedClaimUrl != null) {
+            // For internally managed notifications (except EXTERNAL channel), verified claim should be set
+            assertTrue(capturedClaims.containsKey(expectedVerifiedClaimUrl),
+                    "Expected verified claim URL: " + expectedVerifiedClaimUrl);
+            assertEquals(capturedClaims.get(expectedVerifiedClaimUrl), Boolean.TRUE.toString());
+        } else {
+            // For externally managed or EXTERNAL channel, verified claim should NOT be set
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)) {
+                assertFalse(capturedClaims.containsKey(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl()),
+                        "Email verified claim should not be set for externally managed");
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
+                assertFalse(capturedClaims.containsKey(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl()),
+                        "SMS verified claim should not be set for externally managed");
+            }
+        }
+
+        // Verify account state claims are always set
+        assertTrue(capturedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI));
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI),
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+
+        // Verify notification event triggering
+        if (internallyManaged && !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(channel)) {
+            // For internally managed notifications (except EXTERNAL channel), notification event should be triggered
+            verify(identityEventService, times(2)).handleEvent(any(Event.class));
+        } else {
+            // For externally managed or EXTERNAL channel, only the POST_ADD_NEW_PASSWORD event should be triggered
+            verify(identityEventService, times(1)).handleEvent(any(Event.class));
+        }
+    }
+
+    @DataProvider
+    public Object[][] passwordRecoveryManagedNotificationData() {
+        return new Object[][]{
+                {"EmailOTPExecutor", true},   // Internally managed with email
+                {"SMSOTPExecutor", true},     // Internally managed with SMS
+                {"EmailOTPExecutor", false},  // Externally managed with email
+                {"SMSOTPExecutor", false},    // Externally managed with SMS
+        };
+    }
+
+    @Test(dataProvider = "passwordRecoveryManagedNotificationData")
+    public void testPasswordRecoveryWithInternalExternalManagedNotifications(
+            String executorName, boolean internallyManaged) throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext(executorName);
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery configs for internally/externally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn(String.valueOf(internallyManaged));
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+
+        // Verify notification event triggering based on internal/external management
+        if (internallyManaged) {
+            // For internally managed notifications, event should be triggered
+            verify(identityEventService).handleEvent(any(Event.class));
+        } else {
+            // For externally managed notifications, no event should be triggered
+            verify(identityEventService, times(0)).handleEvent(any(Event.class));
+        }
+    }
+
+    @Test
+    public void testPasswordRecoveryWithExternalChannelSkipsNotification() throws Exception {
+
+        // Setup - Create a context with EMAIL executor but EXTERNAL channel
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createPasswordRecoveryContext("EmailOTPExecutor");
+
+        // Override the notification channel to EXTERNAL
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL))
+                .thenReturn(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.PASSWORD_RECOVERY), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery configs for internally managed (but should still skip due to EXTERNAL channel)
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("true");
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        // Even though internally managed is true, EXTERNAL channel should prevent notification
+        verify(identityEventService, times(0)).handleEvent(any(Event.class));
+    }
+
+    @DataProvider
+    public Object[][] accountStateClaimsData() {
+        return new Object[][]{
+                {"EMAIL", true, true},   // Internally managed, Email channel - should have verified claim
+                {"SMS", true, true},     // Internally managed, SMS channel - should have verified claim
+                {"EMAIL", false, false}, // Externally managed, Email channel - no verified claim
+                {"SMS", false, false},   // Externally managed, SMS channel - no verified claim
+                {"UNKNOWN", true, true}, // Internally managed, Unknown channel - defaults to email verified claim
+        };
+    }
+
+    @Test(dataProvider = "accountStateClaimsData")
+    public void testAccountStateClaimsForInternalExternalManagement(
+            String channel, boolean internallyManaged, boolean shouldHaveVerifiedClaim) throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createInvitedUserRegistrationContext();
+        User user = createTestUser();
+
+        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn(channel);
+        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn(String.valueOf(internallyManaged));
+
+        // Mock flow completion config - disable notification to focus on claims only
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("false");
+
+        // Mock recovery data
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getUser()).thenReturn(user);
+        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
+        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+
+        // Capture the claims being set
+        org.mockito.ArgumentCaptor<Map> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), eq(null));
+
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+
+        // Verify account state claims are always present
+        assertTrue(capturedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI));
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI),
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+        assertTrue(capturedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM), Boolean.FALSE.toString());
+
+        // Verify verified claim presence based on internal/external management
+        if (shouldHaveVerifiedClaim) {
+            boolean hasVerifiedClaim = capturedClaims.containsKey(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl())
+                    || capturedClaims.containsKey(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl());
+            assertTrue(hasVerifiedClaim, "Verified claim should be present for internally managed notifications");
+        } else {
+            assertFalse(capturedClaims.containsKey(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl()),
+                    "Email verified claim should not be present for externally managed notifications");
+            assertFalse(capturedClaims.containsKey(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl()),
+                    "SMS verified claim should not be present for externally managed notifications");
+        }
+    }
+
+    @Test
+    public void testInvitedUserRegistrationWithExternallyManagedNotificationsDoesNotTriggerEvent() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createInvitedUserRegistrationContext();
+        User user = createTestUser();
+
+        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
+        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
+        
+        // Set externally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("false");
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery data
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getUser()).thenReturn(user);
+        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
+        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        verify(userStoreManager).setUserClaimValues(anyString(), any(), eq(null));
+        verify(jdbcRecoveryDataStore).invalidate(user);
+        
+        // For externally managed notifications, only POST_ADD_NEW_PASSWORD event should be triggered
+        // TRIGGER_NOTIFICATION event should NOT be triggered
+        verify(identityEventService, times(1)).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testInvitedUserRegistrationWithInternallyManagedNotificationsTriggersEvent() throws Exception {
+
+        // Setup
+        FlowExecutionStep step = createMockStep();
+        FlowExecutionContext context = createInvitedUserRegistrationContext();
+        User user = createTestUser();
+
+        when(recoveryManager.getServerSupportedNotificationChannel(anyString())).thenReturn("EMAIL");
+        mockedUtilsStatic.when(() -> Utils.resolveUserFromContext(context)).thenReturn(user);
+        
+        // Set internally managed
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(
+                eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                .thenReturn("true");
+
+        // Mock flow completion config to enable notifications
+        mockedUtilsStatic.when(() -> Utils.getFlowCompletionConfig(
+                eq(Constants.FlowTypes.INVITED_USER_REGISTRATION), anyString(),
+                eq(Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED)))
+                .thenReturn("true");
+
+        // Mock recovery data
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getUser()).thenReturn(user);
+        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
+        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
+
+        // Execute
+        boolean result = listener.doPostExecute(step, context);
+
+        // Verify
+        assertTrue(result);
+        verify(userStoreManager).setUserClaimValues(anyString(), any(), eq(null));
+        verify(jdbcRecoveryDataStore).invalidate(user);
+        
+        // For internally managed notifications, both TRIGGER_NOTIFICATION and POST_ADD_NEW_PASSWORD events should be triggered
+        verify(identityEventService, times(2)).handleEvent(any(Event.class));
+    }
+
     // Helper methods
     private FlowExecutionStep createMockStep() {
 
