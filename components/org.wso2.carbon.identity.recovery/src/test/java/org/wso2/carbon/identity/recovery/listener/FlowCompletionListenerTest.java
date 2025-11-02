@@ -638,7 +638,7 @@ public class FlowCompletionListenerTest {
         mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
 
         // Capture the claims being set
-        org.mockito.ArgumentCaptor<Map> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
+        org.mockito.ArgumentCaptor<Map<String, String>> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
 
         // Execute
         boolean result = listener.doPostExecute(step, context);
@@ -796,7 +796,7 @@ public class FlowCompletionListenerTest {
         mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(anyString())).thenReturn(recoveryData);
 
         // Capture the claims being set
-        org.mockito.ArgumentCaptor<Map> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
+        org.mockito.ArgumentCaptor<Map<String, String>> claimsCaptor = org.mockito.ArgumentCaptor.forClass(Map.class);
 
         // Execute
         boolean result = listener.doPostExecute(step, context);
