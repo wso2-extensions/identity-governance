@@ -147,7 +147,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIDCode);
-        if(!isRecoveryChannelEnabled(notificationChannel, tenantDomain)) {
+        if (!isRecoveryChannelEnabled(notificationChannel, tenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getMessage(),
@@ -977,7 +977,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
             return isSMSOTPBasedRecoveryEnabled(tenantDomain);
         }
-        return false;
+        return NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannelType);
     }
 
 }
