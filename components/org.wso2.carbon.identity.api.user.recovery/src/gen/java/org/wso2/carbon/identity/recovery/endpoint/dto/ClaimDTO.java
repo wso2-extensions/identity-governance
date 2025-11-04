@@ -12,33 +12,35 @@ import javax.validation.constraints.NotNull;
 
 @ApiModel(description = "")
 public class ClaimDTO  {
-  
-  
-  
+
+
+
   private String uri = null;
-  
-  
+
+
   private String value = null;
-  
-  
+
+
   private String description = null;
-  
-  
+
+
   private String displayName = null;
-  
-  
+
+
   private String dialect = null;
-  
-  
+
+
   private String validationRegex = null;
-  
-  
+
+
   private Boolean required = null;
-  
-  
+
+
   private Boolean readOnly = null;
 
-  
+
+  private String displayOrder = null;
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -50,7 +52,7 @@ public class ClaimDTO  {
     this.uri = uri;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -62,7 +64,7 @@ public class ClaimDTO  {
     this.value = value;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -74,7 +76,7 @@ public class ClaimDTO  {
     this.description = description;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -86,7 +88,7 @@ public class ClaimDTO  {
     this.displayName = displayName;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -98,7 +100,7 @@ public class ClaimDTO  {
     this.dialect = dialect;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -110,7 +112,7 @@ public class ClaimDTO  {
     this.validationRegex = validationRegex;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -122,7 +124,7 @@ public class ClaimDTO  {
     this.required = required;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -134,13 +136,26 @@ public class ClaimDTO  {
     this.readOnly = readOnly;
   }
 
-  
+
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("display-order")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public String getDisplayOrder() {
+    return displayOrder;
+  }
+  public void setDisplayOrder(String displayOrder) {
+    this.displayOrder = displayOrder;
+  }
+
+
 
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
     sb.append("class ClaimDTO {\n");
-    
+
     sb.append("  uri: ").append(uri).append("\n");
     sb.append("  value: ").append(value).append("\n");
     sb.append("  description: ").append(description).append("\n");
@@ -149,6 +164,7 @@ public class ClaimDTO  {
     sb.append("  validationRegex: ").append(validationRegex).append("\n");
     sb.append("  required: ").append(required).append("\n");
     sb.append("  readOnly: ").append(readOnly).append("\n");
+    sb.append("  displayOrder: ").append(displayOrder).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

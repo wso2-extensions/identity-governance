@@ -228,6 +228,10 @@ public class RecoveryUtil {
         claimDTO.setRequired(claim.isRequired());
         claimDTO.setDisplayName(claim.getDisplayTag());
         claimDTO.setValidationRegex(claim.getRegEx());
+        // Add the display order property based on a config to preserve backward compatibility.
+        if (Boolean.parseBoolean(IdentityUtil.getProperty(Constants.INCLUDE_DISPLAY_ORDER_CONFIG_ELEMENT))) {
+            claimDTO.setDisplayOrder(Integer.toString(claim.getDisplayOrder()));
+        }
         return claimDTO;
     }
 
@@ -257,6 +261,10 @@ public class RecoveryUtil {
             claimDTO.setRequired(Boolean.parseBoolean(claimProperties.get(ClaimConstants.REQUIRED_PROPERTY)));
             claimDTO.setReadOnly(Boolean.parseBoolean(claimProperties.get(ClaimConstants.READ_ONLY_PROPERTY)));
             claimDTO.setValidationRegex(claimProperties.get(ClaimConstants.REGULAR_EXPRESSION_PROPERTY));
+            // Add the display order property based on a config to preserve backward compatibility.
+            if (Boolean.parseBoolean(IdentityUtil.getProperty(Constants.INCLUDE_DISPLAY_ORDER_CONFIG_ELEMENT))) {
+                claimDTO.setDisplayOrder(claimProperties.get(ClaimConstants.DISPLAY_ORDER_PROPERTY));
+            }
         }
         return claimDTO;
     }
