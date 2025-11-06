@@ -57,6 +57,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.wso2.carbon.identity.governance.IdentityMgtConstants.IS_USER_SELF_REGISTRATION_FLOW;
+
 /**
  * This is an implementation of UserOperationEventListener. This defines
  * additional operations
@@ -243,6 +245,13 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         properties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
         properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profile);
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
+
+        if (IdentityUtil.threadLocalProperties.get().containsKey(IS_USER_SELF_REGISTRATION_FLOW)) {
+            boolean isSelfRegistrationFlow = (boolean) IdentityUtil.threadLocalProperties.get()
+                    .get(IS_USER_SELF_REGISTRATION_FLOW);
+            properties.put(IS_USER_SELF_REGISTRATION_FLOW, isSelfRegistrationFlow);
+            IdentityUtil.threadLocalProperties.get().remove(IS_USER_SELF_REGISTRATION_FLOW);
+        }
 
         // Get additional event properties.
         properties = addEventProperties(userName, properties);
@@ -1247,6 +1256,13 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         properties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
         properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
         properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profile);
+
+        if (IdentityUtil.threadLocalProperties.get().containsKey(IS_USER_SELF_REGISTRATION_FLOW)) {
+            boolean isSelfRegistrationFlow = (boolean) IdentityUtil.threadLocalProperties.get()
+                    .get(IS_USER_SELF_REGISTRATION_FLOW);
+            properties.put(IS_USER_SELF_REGISTRATION_FLOW, isSelfRegistrationFlow);
+            IdentityUtil.threadLocalProperties.get().remove(IS_USER_SELF_REGISTRATION_FLOW);
+        }
 
         handleEvent(eventName, properties, userStoreManager);
         return true;
