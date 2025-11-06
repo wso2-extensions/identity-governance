@@ -279,4 +279,7 @@ public class IdentityMgtConstants {
         public static final String OTP_GENERATE_NUMERIC_CHAR_SET_WITH_ZERO = "0123456789";
         public static final String OTP_GENERATE_NUMERIC_CHAR_SET_WITHOUT_ZERO = "123456789";
     }
+
+    // Self registration constants
+    public static final String IS_USER_SELF_REGISTRATION_FLOW = "isUserSelfRegistrationFlow";
 }

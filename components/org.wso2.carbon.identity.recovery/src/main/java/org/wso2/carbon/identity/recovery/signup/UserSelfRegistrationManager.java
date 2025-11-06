@@ -122,6 +122,7 @@ import java.util.stream.Collectors;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.governance.IdentityMgtConstants.IS_USER_SELF_REGISTRATION_FLOW;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
 import static org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes.ERROR_CODE_DUPLICATE_CLAIM_VALUE;
@@ -263,6 +264,7 @@ public class UserSelfRegistrationManager {
                                     .isNotEmpty(preferredChannel)) {
                         claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                     }
+                    IdentityUtil.threadLocalProperties.get().put(IS_USER_SELF_REGISTRATION_FLOW, true);
                     org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
                             .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
                                     password, userRoles, claimsMap, null);
@@ -307,6 +309,7 @@ public class UserSelfRegistrationManager {
                 // Build the notification response.
                 notificationResponseBean = buildNotificationResponseBean(resolvedUser, preferredChannel, claimsMap);
             } finally {
+                IdentityUtil.threadLocalProperties.get().remove(IS_USER_SELF_REGISTRATION_FLOW);
                 Utils.clearArbitraryProperties();
                 PrivilegedCarbonContext.endTenantFlow();
             }
@@ -817,6 +820,7 @@ public class UserSelfRegistrationManager {
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
         eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
 
         if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
             triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_USER_ACCOUNT_CONFIRMATION);
@@ -937,6 +941,8 @@ public class UserSelfRegistrationManager {
                                 "value for the user : " + user.getUserName(), e);
                     }
                 } else {
+                    // TODO: Retrieve verified mobile constant value as a event property constant
+                    eventProperties.put("VERIFIED_MOBILE", pendingMobileClaimValue);
                     userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
                 }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
@@ -945,16 +951,26 @@ public class UserSelfRegistrationManager {
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
+
+        // Get verifiedChannelURI before updating the user claims as it might be removed during the update.
+        String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
+
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
+        eventProperties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                recoveryData.getRecoveryScenario().name());
+        eventProperties.put(IdentityEventConstants.EventProperty.CONFIRMATION_CODE, code);
+
         if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) ||
                 RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
-            String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
         } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
+        } else if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            // TODO: Retrieve POST_MOBILE_CHANGE_VERIFICATION constant value as an event constant.
+            triggerEvent(eventProperties, "POST_MOBILE_CHANGE_VERIFICATION");
         }
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
@@ -1100,6 +1116,17 @@ public class UserSelfRegistrationManager {
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
 
+        // Trigger an event to publish mobile number verified event.
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        eventProperties.put(IdentityEventConstants.EventProperty.CONFIRMATION_CODE, code);
+        eventProperties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                recoveryData.getRecoveryScenario().name());
+        // TODO: Retrieve VERIFIED_MOBILE constant value as an event property constant.
+        eventProperties.put("VerifiedByEndUser", true);
+
         boolean supportMultipleEmailsAndMobileNumbers =
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
@@ -1157,6 +1184,10 @@ public class UserSelfRegistrationManager {
             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+
+            // Trigger post verification event for mobile update.
+            // TODO: Retrieve POST_MOBILE_CHANGE_VERIFICATION constant value as an event constant.
+            triggerEvent(eventProperties, "POST_MOBILE_CHANGE_VERIFICATION");
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
