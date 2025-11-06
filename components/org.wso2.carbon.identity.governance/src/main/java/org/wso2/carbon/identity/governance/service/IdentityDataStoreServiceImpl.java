@@ -19,6 +19,9 @@
 package org.wso2.carbon.identity.governance.service;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -26,11 +29,13 @@ import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
+import org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +47,8 @@ import java.util.Map;
 public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
     private UserIdentityDataStore identityDataStore;
+
+    private static final Log log = LogFactory.getLog(IdentityDataStoreServiceImpl.class);
 
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
@@ -80,11 +87,6 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
-        // No need to separately handle if data identityDataStore is user store based.
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
-            return true;
-        }
-
         // Top level try and finally blocks are used to unset thread local variables.
         try {
             if (!IdentityUtil.threadLocalProperties.get().containsKey(operationType)) {
@@ -100,6 +102,12 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
+                boolean isUserStoreBasedIdentityDataStore = isUserStoreBasedIdentityDataStore();
+                boolean isStoreIdentityClaimsInUserStoreEnabled =
+                        isStoreIdentityClaimsInUserStoreEnabled(userStoreManager);
+                String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+                String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+
                 Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
 
                 while (claimsIterator.hasNext()) {
@@ -109,7 +117,15 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     if (StringUtils.isEmpty(key)) {
                         continue;
                     }
-                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
+
+                    boolean managedInIdentityDataStore =
+                            IdentityDataStoreUtil.isManagedInIdentityDataStore(claim.getKey(), tenantDomain,
+                                    userStoreDomain, isUserStoreBasedIdentityDataStore,
+                                    isStoreIdentityClaimsInUserStoreEnabled);
+                    if (managedInIdentityDataStore) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Managing identity claim : " + key + " in identity data store.");
+                        }
                         userIdentityClaim.setUserIdentityDataClaim(key, value);
                         claimsIterator.remove();
                     }

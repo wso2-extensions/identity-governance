@@ -19,9 +19,11 @@ package org.wso2.carbon.identity.governance.store;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
+import org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -130,9 +132,15 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
                             null);
             // select the security questions and identity claims
             if (claims != null) {
+                String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+
                 for (Claim claim : claims) {
                     String claimUri = claim.getClaimUri();
-                    if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX) ||
+
+                    boolean isManagedInUserStoreBasedIdentityStore =
+                            IdentityDataStoreUtil.isManagedInUserStoreBasedIdentityDataStore(claimUri, tenantDomain);
+
+                    if (isManagedInUserStoreBasedIdentityStore ||
                             claimUri.contains(UserCoreConstants.ClaimTypeURIs.CHALLENGE_QUESTION_URI)) {
                         if (log.isDebugEnabled()) {
                             log.debug("Adding UserIdentityClaim : " + claimUri + " with the value : " + claim.getValue());
