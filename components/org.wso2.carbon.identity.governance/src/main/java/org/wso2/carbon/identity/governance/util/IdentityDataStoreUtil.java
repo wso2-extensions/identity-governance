@@ -76,15 +76,15 @@ public class IdentityDataStoreUtil {
             return false;
         }
 
-        boolean isIdentityClaim = isIdentityClaim(claimUri);
-        if (isIdentityClaim && isStoreIdentityClaimsInUserStoreEnabled) {
+        if (isStoreIdentityClaimsInUserStoreEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Managing identity claim: " + claimUri + " in user store as storing identity claims " +
+                log.debug("Managing claim: " + claimUri + " in user store as storing claims " +
                         "in user store is enabled.");
             }
             return false;
         }
 
+        boolean isIdentityClaim = isIdentityClaim(claimUri);
         Optional<LocalClaim> localClaim = getLocalClaim(claimUri, tenantDomain);
         if (!localClaim.isPresent()) {
             if (log.isDebugEnabled()) {
