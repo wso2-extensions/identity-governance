@@ -26,6 +26,7 @@
             <class name="org.wso2.carbon.identity.governance.IdentityGovernanceServiceImplTest"/>
             <class name="org.wso2.carbon.identity.governance.listener.IdentityMgtEventListenerTest"/>
             <class name="org.wso2.carbon.identity.governance.listener.IdentityStoreEventListenerTest"/>
+            <class name="org.wso2.carbon.identity.governance.util.IdentityDataStoreUtilTest"/>
             <class name="org.wso2.carbon.identity.governance.store.JDBCIdentityDataStoreTest"/>
             <class name="org.wso2.carbon.identity.governance.listener.NotificationTemplateManagerTest"></class>
             <class name="org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManagerTest"/>

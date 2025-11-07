@@ -54,33 +54,13 @@ public class IdentityDataStoreUtil {
      * @param claimUri     Claim URI under evaluation.
      * @param tenantDomain Tenant domain.
      * @param userStoreDomain User store domain.
-     * @param isUserStoreBasedIdentityDataStore Indicates whether the identity data store is user store based.
-     * @param isStoreIdentityClaimsInUserStoreEnabled Indicates whether storing identity claims in user store is enabled.
      * @return {@code true} if the claim should be stored in the identity data store, {@code false} otherwise.
      */
     public static boolean isManagedInIdentityDataStore(String claimUri,
                                                            String tenantDomain,
-                                                           String userStoreDomain,
-                                                           boolean isUserStoreBasedIdentityDataStore,
-                                                           boolean isStoreIdentityClaimsInUserStoreEnabled) {
+                                                           String userStoreDomain) {
 
         if (StringUtils.isBlank(claimUri) || StringUtils.isBlank(tenantDomain)) {
-            return false;
-        }
-
-        if (isUserStoreBasedIdentityDataStore) {
-            if (log.isDebugEnabled()) {
-                log.debug("Identity data store is user store based. Hence, claim: " + claimUri +
-                        " will be managed in user store.");
-            }
-            return false;
-        }
-
-        if (isStoreIdentityClaimsInUserStoreEnabled) {
-            if (log.isDebugEnabled()) {
-                log.debug("Managing claim: " + claimUri + " in user store as storing claims " +
-                        "in user store is enabled.");
-            }
             return false;
         }
 

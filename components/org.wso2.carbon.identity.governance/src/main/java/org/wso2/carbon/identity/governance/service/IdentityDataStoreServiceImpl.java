@@ -87,6 +87,11 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
+            return true;
+        }
+
         // Top level try and finally blocks are used to unset thread local variables.
         try {
             if (!IdentityUtil.threadLocalProperties.get().containsKey(operationType)) {
@@ -102,12 +107,8 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
-                boolean isUserStoreBasedIdentityDataStore = isUserStoreBasedIdentityDataStore();
-                boolean isStoreIdentityClaimsInUserStoreEnabled =
-                        isStoreIdentityClaimsInUserStoreEnabled(userStoreManager);
                 String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
                 String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
-
                 Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
 
                 while (claimsIterator.hasNext()) {
@@ -120,8 +121,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
                     boolean managedInIdentityDataStore =
                             IdentityDataStoreUtil.isManagedInIdentityDataStore(claim.getKey(), tenantDomain,
-                                    userStoreDomain, isUserStoreBasedIdentityDataStore,
-                                    isStoreIdentityClaimsInUserStoreEnabled);
+                                    userStoreDomain);
                     if (managedInIdentityDataStore) {
                         if (log.isDebugEnabled()) {
                             log.debug("Managing identity claim : " + key + " in identity data store.");
