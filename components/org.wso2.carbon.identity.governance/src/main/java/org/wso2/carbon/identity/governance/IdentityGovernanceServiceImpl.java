@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.governance;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
@@ -339,6 +340,11 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     public ConnectorConfig getConnectorWithConfigs(String tenantDomain,
                                                    String connectorName) throws IdentityGovernanceException {
 
+        String appResidentOrgId = PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getApplicationResidentOrganizationId();
+        if (StringUtils.isNotBlank(appResidentOrgId)) {
+            tenantDomain = getAppResidentTenantDomain(appResidentOrgId);
+        }
         List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
 
         for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
@@ -564,6 +570,20 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE, FALSE_STRING);
                 configurationDetails.put(USERNAME_RECOVERY_SMS_ENABLE, FALSE_STRING);
             }
+        }
+    }
+
+    private String getAppResidentTenantDomain(String appResidentOrgId) throws IdentityGovernanceException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving tenant domain for application resident organization ID : " + appResidentOrgId);
+        }
+        try {
+            return IdentityMgtServiceDataHolder.getInstance().getOrganizationManager()
+                    .resolveTenantDomain(appResidentOrgId);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityGovernanceException("Error while resolving tenant domain for " +
+                    "application resident organization ID : " + appResidentOrgId, e);
         }
     }
 }

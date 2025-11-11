@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
@@ -65,6 +66,7 @@ public class IdentityRecoveryServiceDataHolder {
     private ApplicationManagementService applicationManagementService;
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     private WorkflowManagementService workflowService;
+    private OrganizationManager organizationManager;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -366,5 +368,15 @@ public class IdentityRecoveryServiceDataHolder {
     public WorkflowManagementService getWorkflowManagementService() {
 
         return this.workflowService;
+    }
+
+    public OrganizationManager getOrganizationManager() {
+
+        return organizationManager;
+    }
+
+    public void setOrganizationManager(OrganizationManager organizationManager) {
+
+        this.organizationManager = organizationManager;
     }
 }

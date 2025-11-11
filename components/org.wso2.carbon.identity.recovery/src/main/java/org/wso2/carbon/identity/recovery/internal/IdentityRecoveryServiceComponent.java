@@ -47,6 +47,7 @@ import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockSe
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementServiceImpl;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.LiteRegistrationConfigImpl;
@@ -538,5 +539,23 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetWorkflowService(WorkflowManagementService workflowManagementService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setWorkflowManagementService(null);
+    }
+
+    @Reference(
+            name = "organization.manager",
+            service = OrganizationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetOrganizationManager")
+    protected void setOrganizationManager(OrganizationManager organizationManager) {
+
+        log.debug("Setting the Organization Manager");
+        IdentityRecoveryServiceDataHolder.getInstance().setOrganizationManager(organizationManager);
+    }
+
+    protected void unsetOrganizationManager(OrganizationManager organizationManager) {
+
+        log.debug("UnSetting the Organization Manager");
+        IdentityRecoveryServiceDataHolder.getInstance().setOrganizationManager(null);
     }
 }

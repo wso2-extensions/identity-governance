@@ -21,15 +21,20 @@ package org.wso2.carbon.identity.governance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
+import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -55,6 +60,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertThrows;
 import static org.testng.AssertJUnit.assertEquals;
 
+@WithCarbonHome
 public class IdentityGovernanceServiceImplTest {
 
     // Constants.
@@ -70,6 +76,8 @@ public class IdentityGovernanceServiceImplTest {
     private static final String PASSWORD_RECOVERY_EMAIL_OTP_ENABLE =
             "Recovery.Notification.Password.OTP.SendOTPInEmail";
     private static final String PASSWORD_RECOVERY_SMS_OTP_ENABLE = "Recovery.Notification.Password.smsOtp.Enable";
+    private static final String APP_RESIDENT_ORG_ID = "bc365db3-5644-4207-9fee-86f82544d388";
+    private static final String APP_RESIDENT_TENANT_DOMAIN = "app-resident.org";
 
     @Mock
     IdentityMgtServiceDataHolder identityMgtServiceDataHolder;
@@ -80,9 +88,16 @@ public class IdentityGovernanceServiceImplTest {
     @Mock
     IdentityProvider identityProvider;
 
+    @Mock
+    PrivilegedCarbonContext privilegedCarbonContext;
+
+    @Mock
+    OrganizationManager organizationManager;
+
     MockedStatic<IdentityMgtServiceDataHolder> identityMgtServiceDataHolderMockedStatic;
     MockedStatic<OrganizationManagementUtil> organizationManagementUtilMockedStatic;
     MockedStatic<IdentityMgtConstants.INHERITED_MASKED_CONNECTORS> inheritedMaskedConnectorsMockedStatic;
+    MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
 
     private IdentityGovernanceServiceImpl identityGovernanceService;
 
@@ -94,6 +109,7 @@ public class IdentityGovernanceServiceImplTest {
         identityMgtServiceDataHolderMockedStatic.when(IdentityMgtServiceDataHolder::
                 getInstance).thenReturn(identityMgtServiceDataHolder);
         when(identityMgtServiceDataHolder.getIdpManager()).thenReturn(idpManager);
+        when(identityMgtServiceDataHolder.getOrganizationManager()).thenReturn(organizationManager);
         when(idpManager.getResidentIdP(TENANT_DOMAIN)).thenReturn(identityProvider);
 
         organizationManagementUtilMockedStatic = mockStatic(OrganizationManagementUtil.class);
@@ -106,6 +122,8 @@ public class IdentityGovernanceServiceImplTest {
         when(identityProvider.getFederatedAuthenticatorConfigs()).thenReturn(authenticatorConfigs);
 
         identityGovernanceService = new IdentityGovernanceServiceImpl();
+
+        mockedPrivilegedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
     }
 
     @AfterMethod
@@ -114,6 +132,7 @@ public class IdentityGovernanceServiceImplTest {
         identityMgtServiceDataHolderMockedStatic.close();
         organizationManagementUtilMockedStatic.close();
         inheritedMaskedConnectorsMockedStatic.close();
+        mockedPrivilegedCarbonContext.close();
     }
 
     @Test(dataProvider = "updateConfigurations")
@@ -230,6 +249,50 @@ public class IdentityGovernanceServiceImplTest {
         }
         assertTrue(maskablePropFound, "Maskable property was not found in the result.");
         assertTrue(unmaskedPropFound, "Unmasked property was not found in the result.");
+    }
+
+    @Test
+    public void testGetConnectorWithConfigsForSubOrgApps() throws Exception {
+
+        mockPrivilegedCarbonContext();
+
+        IdentityConnectorConfig mockConnector = mock(IdentityConnectorConfig.class);
+        when(mockConnector.getName()).thenReturn("TestConnector");
+        when(mockConnector.getFriendlyName()).thenReturn("Test Connector");
+        when(mockConnector.getCategory()).thenReturn("Security");
+        when(mockConnector.getSubCategory()).thenReturn("Masking");
+        when(mockConnector.getOrder()).thenReturn(1);
+        when(mockConnector.getPropertyNames()).thenReturn(new String[]{"maskableProp1", "unmaskedProp2"});
+
+        when(mockConnector.getMetaData()).thenReturn(Collections.emptyMap());
+        when(mockConnector.getConfidentialPropertyValues(TENANT_DOMAIN)).thenReturn(Collections.emptyList());
+
+        List<IdentityConnectorConfig> connectorConfigList = Collections.singletonList(mockConnector);
+        when(identityMgtServiceDataHolder.getIdentityGovernanceConnectorList()).thenReturn(connectorConfigList);
+
+        // Only email link is true. Preconditions: all configs are false.
+        IdentityProviderProperty[] passwordIdentityProps1 = getPasswordRecoveryIdentityProviderProperties(false,
+                false, false, false);
+
+        when(idpManager.getResidentIdP(APP_RESIDENT_TENANT_DOMAIN)).thenReturn(identityProvider);
+        when(identityProvider.getIdpProperties()).thenReturn(passwordIdentityProps1);
+
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID)).thenReturn(APP_RESIDENT_TENANT_DOMAIN);
+        ConnectorConfig connectorConfig = identityGovernanceService.getConnectorWithConfigs(
+                APP_RESIDENT_TENANT_DOMAIN, "TestConnector");
+        assertNotNull(connectorConfig, "Connector config should not be null");
+        assertEquals("Connector name mismatch", "TestConnector", connectorConfig.getName());
+    }
+
+    @Test(expectedExceptions = IdentityGovernanceException.class, expectedExceptionsMessageRegExp = "Error while " +
+            "resolving tenant domain for application resident organization ID : bc365db3-5644-4207-9fee-86f82544d388")
+    public void testGetConnectorWithConfigsForSubOrgAppsWithTenantResolvingException() throws Exception {
+
+        mockPrivilegedCarbonContext();
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID)).thenThrow(
+                OrganizationManagementException.class);
+        ConnectorConfig connectorConfig = identityGovernanceService.getConnectorWithConfigs(
+                APP_RESIDENT_TENANT_DOMAIN, "TestConnector");
     }
 
     @DataProvider(name = "updateConfigurations")
@@ -505,5 +568,12 @@ public class IdentityGovernanceServiceImplTest {
         expected.put(PASSWORD_RECOVERY_SMS_OTP_ENABLE, passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
 
         return expected;
+    }
+
+    private void mockPrivilegedCarbonContext() {
+
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(privilegedCarbonContext);
+        when(privilegedCarbonContext.getApplicationResidentOrganizationId()).thenReturn(APP_RESIDENT_ORG_ID);
     }
 }

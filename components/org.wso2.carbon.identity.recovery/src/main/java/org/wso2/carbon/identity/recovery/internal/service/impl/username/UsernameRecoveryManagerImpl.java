@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.slf4j.MDC;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -31,6 +32,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -86,6 +88,11 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
     public RecoveryInformationDTO initiate(Map<String, String> claims, String tenantDomain,
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
+        String appResidentOrgId = PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getApplicationResidentOrganizationId();
+        if (StringUtils.isNotBlank(appResidentOrgId)) {
+            tenantDomain = getAppResidentTenantDomain(appResidentOrgId);
+        }
         validateTenantDomain(tenantDomain);
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
@@ -185,6 +192,11 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
     public UsernameRecoverDTO notify(String recoveryCode, String channelId, String tenantDomain,
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
+        String appResidentOrgId = PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getApplicationResidentOrganizationId();
+        if (StringUtils.isNotBlank(appResidentOrgId)) {
+            tenantDomain = getAppResidentTenantDomain(appResidentOrgId);
+        }
         validateTenantDomain(tenantDomain);
         int channelIdCode = validateChannelID(channelId);
         validateConfigurations(tenantDomain);
@@ -565,6 +577,21 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                     .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
                             e.getErrorCode());
             throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+
+    private String getAppResidentTenantDomain(String appResidentOrgId) throws IdentityRecoveryServerException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving tenant domain for application resident organization ID : " + appResidentOrgId);
+        }
+        try {
+            return IdentityRecoveryServiceDataHolder.getInstance().getOrganizationManager()
+                    .resolveTenantDomain(appResidentOrgId);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityRecoveryServerException("Error while resolving tenant domain for " +
+                    "application resident organization ID : " + appResidentOrgId, e);
         }
     }
 }

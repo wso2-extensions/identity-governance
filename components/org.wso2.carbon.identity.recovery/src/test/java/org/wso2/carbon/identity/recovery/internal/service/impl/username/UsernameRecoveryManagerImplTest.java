@@ -22,13 +22,18 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
@@ -42,7 +47,6 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,11 +67,14 @@ import static org.testng.Assert.assertNull;
 /**
  * Test class for UsernameRecoveryManagerImpl.
  */
+@WithCarbonHome
 public class UsernameRecoveryManagerImplTest {
 
     private static final String TENANT_DOMAIN = "carbon.super";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
+    private static final String APP_RESIDENT_ORG_ID = "e7bafb1c-be18-46d8-a127-cb076b7e3daa";
+    private static final String APP_RESIDENT_TENANT_DOMAIN = "app-resident-tenant-domain";
 
     @Mock
     private UserAccountRecoveryManager mockUserAccountRecoveryManager;
@@ -84,6 +91,9 @@ public class UsernameRecoveryManagerImplTest {
     @Mock
     private IdentityEventService identityEventService;
 
+    @Mock
+    private OrganizationManager organizationManager;
+
     @InjectMocks
     private UsernameRecoveryManagerImpl usernameRecoveryManager;
 
@@ -93,6 +103,7 @@ public class UsernameRecoveryManagerImplTest {
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
     private MockedStatic<URLDecoder> mockURLDecoder;
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
 
     /**
      * Set up the test environment.
@@ -107,6 +118,7 @@ public class UsernameRecoveryManagerImplTest {
         mockedIdentityRecoveryServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
         mockURLDecoder = mockStatic(URLDecoder.class);
         mockedIdentityUtil = mockStatic(IdentityUtil.class);
+        mockedPrivilegedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
     }
 
     /**
@@ -121,6 +133,7 @@ public class UsernameRecoveryManagerImplTest {
         mockedIdentityRecoveryServiceDataHolder.close();
         mockURLDecoder.close();
         mockedIdentityUtil.close();
+        mockedPrivilegedCarbonContext.close();
     }
 
     /**
@@ -131,6 +144,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
     public void testTenantDomainValidation() throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         when(Utils.handleClientException(
                 IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN.getCode(),
                 IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN.getMessage(),
@@ -146,6 +160,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
     public void testConfigValidation() throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(FALSE);
         when(Utils.handleClientException(
                 IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED, null))
@@ -176,6 +191,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test(dataProvider = "channelIDProvider", expectedExceptions = IdentityRecoveryClientException.class)
     public void testChannelIDValidation(String channelId) throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
@@ -194,6 +210,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testInvalidateRecoveryCode_whenValidRecoveryCodeProvided_shouldTriggerNotificationAndReturnUsernameRecoverDTO()
             throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
@@ -228,6 +245,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testNotify_withInvalidChannelId_shouldThrowIdentityRecoveryClientException()
             throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
@@ -259,6 +277,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
     public void testExtractChannelDetails() throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
@@ -282,6 +301,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test
     public void testNotifyUser() throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
@@ -304,6 +324,68 @@ public class UsernameRecoveryManagerImplTest {
     }
 
     /**
+     * Test to notify user from sub org apps.
+     *
+     * @throws IdentityRecoveryException if an error occurs during notification.
+     */
+    @Test
+    public void testNotifyUserFromSubOrgApps() throws Exception {
+
+        mockOrganizationManager();
+        String recoveryCode = UUID.randomUUID().toString();
+        Map<String, String> properties = new HashMap<>();
+        properties.put("useLegacyAPI", FALSE);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
+        when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
+                .thenReturn(mockUserRecoveryData);
+        when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("EXTERNAL,EXTERNAL");
+        when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
+
+        // Mock PrivilegedCarbonContext.
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+        when(carbonContext.getApplicationResidentOrganizationId()).thenReturn(APP_RESIDENT_ORG_ID);
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID)).thenReturn(APP_RESIDENT_TENANT_DOMAIN);
+
+        User mockUser = new User();
+        mockUser.setUserName("user1,user2");
+        mockUser.setTenantDomain(APP_RESIDENT_TENANT_DOMAIN);
+        when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
+        when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null))
+                .thenReturn(new IdentityRecoveryClientException(null));
+        UsernameRecoverDTO code = usernameRecoveryManager.notify(recoveryCode, "2", APP_RESIDENT_TENANT_DOMAIN,
+                properties);
+        assertEquals(code.getCode(), "UNR-02002");
+        assertEquals(code.getUsername(), String.format("user1@%s,user2@%s", APP_RESIDENT_TENANT_DOMAIN,
+                APP_RESIDENT_TENANT_DOMAIN));
+    }
+
+    @Test(expectedExceptions = IdentityRecoveryServerException.class, expectedExceptionsMessageRegExp = "Error " +
+            "while resolving tenant domain for application resident organization ID : " +
+            "e7bafb1c-be18-46d8-a127-cb076b7e3daa")
+    public void testNotifyUserFromSubOrgAppsWithTenantResolvingException() throws Exception {
+
+        mockOrganizationManager();
+        String recoveryCode = UUID.randomUUID().toString();
+        Map<String, String> properties = new HashMap<>();
+        properties.put("useLegacyAPI", FALSE);
+
+        // Mock PrivilegedCarbonContext.
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+        when(carbonContext.getApplicationResidentOrganizationId()).thenReturn(APP_RESIDENT_ORG_ID);
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID))
+                .thenThrow(OrganizationManagementException.class);
+
+        UsernameRecoverDTO code = usernameRecoveryManager.notify(recoveryCode, "2", APP_RESIDENT_TENANT_DOMAIN,
+                properties);
+    }
+
+    /**
      * Test to notify user with exception.
      *
      * @throws IdentityRecoveryException if an error occurs during notification.
@@ -312,6 +394,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testNotifyUserException() throws IdentityRecoveryException {
 
         mockIdentityEventService();
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
@@ -342,6 +425,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testCallbackURLValidation() throws IdentityRecoveryException {
 
         mockIdentityEventService();
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String callbackURL = "http://localhost:8080";
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
@@ -374,6 +458,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testNotify_withEncodedCallbackURL_shouldDecodeAndTriggerNotification() throws IdentityRecoveryException {
 
         mockIdentityEventService();
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         String callbackURL = "https://example.com/callback?param=value";
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
@@ -410,6 +495,7 @@ public class UsernameRecoveryManagerImplTest {
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
     public void testInitiateRecoveryWithNullUsername() throws IdentityRecoveryException {
 
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         org.wso2.carbon.user.core.common.User testUser = mock(org.wso2.carbon.user.core.common.User.class);
         testUser.setUserID("123");
         testUser.setTenantDomain(TENANT_DOMAIN);
@@ -438,6 +524,7 @@ public class UsernameRecoveryManagerImplTest {
     public void testInitiateRecoveryValidUsername() throws IdentityRecoveryException {
 
         mockIdentityEventService();
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         org.wso2.carbon.user.core.common.User testUser = mock(org.wso2.carbon.user.core.common.User.class);
         when(testUser.getDomainQualifiedUsername()).thenReturn("testUser");
         ArrayList<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
@@ -458,6 +545,76 @@ public class UsernameRecoveryManagerImplTest {
     }
 
     /**
+     * Test to initiate recovery from sub org apps if username is null and return a valid result.
+     *
+     * @throws IdentityRecoveryException if an error occurs during initiation.
+     * @throws OrganizationManagementException if an error occurs during organization management.
+     */
+    @Test
+    public void testInitiateRecoveryValidUsernameFromSubOrgApps() throws IdentityRecoveryException,
+            OrganizationManagementException {
+
+        mockIdentityEventService();
+        mockOrganizationManager();
+        org.wso2.carbon.user.core.common.User testUser = mock(org.wso2.carbon.user.core.common.User.class);
+        when(testUser.getDomainQualifiedUsername()).thenReturn("testUser");
+        ArrayList<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
+        userList.add(testUser);
+        Map<String, String> properties = new HashMap<>();
+        properties.put("useLegacyAPI", TRUE);
+
+        // Mock PrivilegedCarbonContext.
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+        when(carbonContext.getApplicationResidentOrganizationId()).thenReturn(APP_RESIDENT_ORG_ID);
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID)).thenReturn(APP_RESIDENT_TENANT_DOMAIN);
+
+        when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
+        when(mockUserAccountRecoveryManager.getUserListByClaims(null, APP_RESIDENT_TENANT_DOMAIN)).thenReturn(userList);
+        when(IdentityUtil.getProperty(anyString())).thenReturn(TRUE);
+        when(Utils.isNotificationsInternallyManaged(APP_RESIDENT_TENANT_DOMAIN, properties)).thenReturn(true);
+        when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null))
+                .thenReturn(new IdentityRecoveryClientException(null));
+        RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, APP_RESIDENT_TENANT_DOMAIN, properties);
+        assertEquals(result.getUsername(), "testUser");
+    }
+
+    /**
+     * Test to trigger exception when initiating a recovery from sub org apps if username is null and return
+     * a valid result.
+     *
+     * @throws Exception if an error occurs during initiation.
+     */
+    @Test(expectedExceptions = IdentityRecoveryServerException.class, expectedExceptionsMessageRegExp = "Error " +
+            "while resolving tenant domain for application resident organization ID : " +
+            "e7bafb1c-be18-46d8-a127-cb076b7e3daa")
+    public void testInitiateRecoveryValidUsernameFromSubOrgAppsWithTenantResolvingException() throws Exception {
+
+        mockIdentityEventService();
+        mockOrganizationManager();
+        org.wso2.carbon.user.core.common.User testUser = mock(org.wso2.carbon.user.core.common.User.class);
+        when(testUser.getDomainQualifiedUsername()).thenReturn("testUser");
+        ArrayList<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
+        userList.add(testUser);
+        Map<String, String> properties = new HashMap<>();
+        properties.put("useLegacyAPI", TRUE);
+
+        // Mock PrivilegedCarbonContext.
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+        when(carbonContext.getApplicationResidentOrganizationId()).thenReturn(APP_RESIDENT_ORG_ID);
+        when(organizationManager.resolveTenantDomain(APP_RESIDENT_ORG_ID))
+                .thenThrow(OrganizationManagementException.class);
+
+        RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, APP_RESIDENT_TENANT_DOMAIN, properties);
+    }
+
+    /**
      * Test to initiate recovery with useLegacyAPI false.
      *
      * @throws IdentityRecoveryException if an error occurs during initiation.
@@ -467,6 +624,7 @@ public class UsernameRecoveryManagerImplTest {
 
         String TEST_USER = "testUser";
         mockIdentityEventService();
+        mockPrivilegedCarbonContextForNullAppResidentOrgId();
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
         recoveryChannelInfoDTO.setUsername("testUser");
         List<NotificationChannelDTO> notificationChannelDTOList = new ArrayList<>();
@@ -530,5 +688,26 @@ public class UsernameRecoveryManagerImplTest {
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
                 identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+    }
+
+    /**
+     * Mock the OrganizationManager.
+     */
+    private void mockOrganizationManager() {
+
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
+                identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getOrganizationManager()).thenReturn(organizationManager);
+    }
+
+    /**
+     * Mock PrivilegedCarbonContext for null application resident org ID.
+     */
+    private void mockPrivilegedCarbonContextForNullAppResidentOrgId() {
+
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+        when(carbonContext.getApplicationResidentOrganizationId()).thenReturn(null);
     }
 }

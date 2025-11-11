@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -168,5 +169,23 @@ public class IdentityMgtServiceComponent {
 
         log.debug("UnSetting the Realm Service");
         IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+    }
+
+    @Reference(
+            name = "OrganizationManager",
+            service = OrganizationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetOrganizationManager")
+    protected void setOrganizationManager(OrganizationManager organizationManager) {
+
+        log.debug("Setting the Organization Manager");
+        IdentityMgtServiceDataHolder.getInstance().setOrganizationManager(organizationManager);
+    }
+
+    protected void unsetOrganizationManager(OrganizationManager organizationManager) {
+
+        log.debug("UnSetting the Organization Manager");
+        IdentityMgtServiceDataHolder.getInstance().setOrganizationManager(null);
     }
 }
