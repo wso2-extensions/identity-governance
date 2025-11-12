@@ -23,12 +23,12 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.11.150</version>
+        <version>1.11.151-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
 
     <artifactId>org.wso2.carbon.identity.api.user.recovery</artifactId>
-    <version>1.11.150</version>
+    <version>1.11.151-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>WSO2 Carbon - Identity Management Recovery Rest API</name>
     <description>WSO2 Carbon - Identity Management Recovery Rest API</description>
