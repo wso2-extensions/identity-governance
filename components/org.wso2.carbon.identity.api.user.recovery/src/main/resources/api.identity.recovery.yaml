@@ -493,6 +493,8 @@ definitions:
         type: boolean
       read-only:
         type: boolean
+      display-order:
+        type: string
   #-----------------------------------------------------
   # Link object
   #-----------------------------------------------------
