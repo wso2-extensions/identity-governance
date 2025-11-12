@@ -67,9 +67,9 @@ import java.util.stream.Collectors;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.getNotificationChannel;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.handledNotificationChannelManagerException;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.maskIfRequired;
@@ -227,7 +227,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             return domain.toUpperCase(ENGLISH);
         }
 
-        String domainName = IdentityUtil.getProperty(SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG);
+        String domainName = IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG);
         return domainName != null ? domainName.toUpperCase(ENGLISH) :
                 IdentityUtil.getPrimaryDomainName().toUpperCase(ENGLISH);
     }
