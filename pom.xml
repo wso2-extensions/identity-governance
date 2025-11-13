@@ -18,7 +18,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.11.151</version>
+    <version>1.11.152-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -37,7 +37,7 @@
         <url>https://github.com/wso2-extensions/identity-governance.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-governance.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-governance.git</connection>
-        <tag>v1.11.151</tag>
+        <tag>v1.1.0-SNAPSHOT</tag>
     </scm>
 
 
