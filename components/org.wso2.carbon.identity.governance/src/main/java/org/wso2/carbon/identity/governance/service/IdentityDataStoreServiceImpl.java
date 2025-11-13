@@ -31,8 +31,8 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.identity.governance.IdentityMgtUtil;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -80,10 +80,9 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
-        // No need to separately handle if data identityDataStore is user store based.
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
-            return true;
-        }
+        // Extract the claims to be stored in identity DB.
+        String[] identityStorePersistentClaims = IdentityMgtUtil.filterIdentityDataStoreManagedClaims(
+                claims.keySet().toArray(new String[0]), userStoreManager);
 
         // Top level try and finally blocks are used to unset thread local variables.
         try {
@@ -100,18 +99,13 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
-                Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
-
-                while (claimsIterator.hasNext()) {
-                    Map.Entry<String, String> claim = claimsIterator.next();
-                    String key = claim.getKey();
-                    String value = claim.getValue();
-                    if (StringUtils.isEmpty(key)) {
-                        continue;
-                    }
-                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
-                        userIdentityClaim.setUserIdentityDataClaim(key, value);
-                        claimsIterator.remove();
+                // Add the claim values from the claim map to be stored in the identity data store.
+                for (String claimURI: identityStorePersistentClaims){
+                    String value = claims.get(claimURI);
+                    if (StringUtils.isNotEmpty(value)) {
+                        userIdentityClaim.setUserIdentityDataClaim(claimURI, value);
+                        // Remove the claim from the claims map to avoid storing it in user store.
+                        claims.remove(claimURI);
                     }
                 }
 
