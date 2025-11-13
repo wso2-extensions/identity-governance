@@ -49,6 +49,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig;
+import static org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled;
+
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
     private static final Log log = LogFactory.getLog(IdentityStoreEventListener.class);
@@ -64,7 +67,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
     private static final String USER_IDENTITY_CLAIMS_MAP = "UserIdentityClaimsMap";
-    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
 
     public IdentityStoreEventListener() {
 
@@ -121,21 +123,29 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         Map<String, String> userDataMap = new HashMap<>();
 
-        Iterator<Map.Entry<String, String>> it = claims.entrySet().iterator();
-        while (it.hasNext()) {
+        boolean isUserStoreBasedIdentityDataStore = isUserStoreBasedIdentityDataStore();
+        boolean isStoreIdentityClaimsInUserStoreEnabled =
+                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager);
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
 
-            Map.Entry<String, String> claim = it.next();
-            if (claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)
-                    && !(isUserStoreBasedIdentityDataStore() ||
-                    isStoreIdentityClaimsInUserStoreEnabled(userStoreManager))) {
-                // add the identity claim to temp map
-                userDataMap.put(claim.getKey(), claim.getValue());
-                // we remove the identity claims to prevent it from getting stored in user store
-                // before the user is successfully added
-                if (log.isDebugEnabled()) {
-                    log.debug(claim.getKey() + " claim added to thread local for user: " + userName + " in preUserAdd");
+        if (!isUserStoreBasedIdentityDataStore && !isStoreIdentityClaimsInUserStoreEnabled) {
+            Iterator<Map.Entry<String, String>> it = claims.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, String> claim = it.next();
+
+                boolean storeInIdentityDataStore =
+                        isManagedInIdentityDataStoreByClaimConfig(claim.getKey(), tenantDomain, userStoreDomain);
+                if (storeInIdentityDataStore) {
+                    // add the identity claim to temp map
+                    userDataMap.put(claim.getKey(), claim.getValue());
+                    // we remove the identity claims to prevent it from getting stored in user store
+                    // before the user is successfully added
+                    if (log.isDebugEnabled()) {
+                        log.debug(claim.getKey() + " claim added to thread local for user: " + userName + " in preUserAdd");
+                    }
+                    it.remove();
                 }
-                it.remove();
             }
         }
 
@@ -235,36 +245,45 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     userName);
         }
 
-        // No need to separately handle if identity `data store is user store based
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
-            return true;
-        }
-
         // If hybrid data store is enabled, we need to send all claims to user store
         if (isHybridDataStoreEnable) {
             return true;
         }
-        removeIdentityClaims(claims, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI);
+
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
+            return true;
+        }
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = UserCoreUtil.getDomainName(storeManager.getRealmConfiguration());
+
+        removeClaimsManagedInIdentityDataStore(claims, tenantDomain, userStoreDomain);
         return true;
     }
 
     /**
-     * Removes all identity claims that contain the specified identity claim URI from the given array of claims.
+     * Removes the claims which are managed in identity data store from the given claims array.
      *
-     * @param claims           Array of claims to be filtered
-     * @param identityClaimURI Identity claim URI to be removed from the claims
+     * @param claims           Array of claims to be filtered.
+     * @param tenantDomain     Tenant domain.
+     * @param userStoreDomain  User store domain.
      */
-    private static void removeIdentityClaims(String[] claims, String identityClaimURI) {
+    private static void removeClaimsManagedInIdentityDataStore(String[] claims, String tenantDomain,
+                                                               String userStoreDomain) {
 
         int validCount = 0;
 
         for (int i = 0; i < claims.length; i++) {
-            if (claims[i] != null && !claims[i].contains(identityClaimURI)) {
+            boolean shouldBeManagedInIdentityDataStore = isManagedInIdentityDataStoreByClaimConfig(claims[i],
+                    tenantDomain, userStoreDomain);
+
+            if (claims[i] != null && !shouldBeManagedInIdentityDataStore) {
                 claims[validCount++] = claims[i];
             }
         }
 
-        // Set the remaining elements to null
+        // Set the remaining elements to null.
         while (validCount < claims.length) {
             claims[validCount++] = null;
         }
@@ -284,14 +303,17 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     userName);
         }
 
-        // No need to separately handle if identity `data store is user store based
         if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
             return true;
         }
 
         if (claimMap == null) {
             claimMap = new HashMap<>();
         }
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = UserCoreUtil.getDomainName(storeManager.getRealmConfiguration());
 
         if (!isHybridDataStoreEnable) {
             /*
@@ -300,13 +322,14 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             for identity claims.
              */
             claimMap.entrySet().removeIf(
-                    entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
+                    entry -> isManagedInIdentityDataStoreByClaimConfig(entry.getKey(),
+                            tenantDomain, userStoreDomain));
         }
 
         // check if there are identity claims
         boolean containsIdentityClaims = false;
         for (String claim : claims) {
-            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
+            if (isManagedInIdentityDataStoreByClaimConfig(claim, tenantDomain, userStoreDomain)) {
                 containsIdentityClaims = true;
                 break;
             }
@@ -373,7 +396,14 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        if (!StringUtils.contains(claimUri, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
+            return true;
+        }
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+        if (!isManagedInIdentityDataStoreByClaimConfig(claimUri, tenantDomain, userStoreDomain)) {
             return true;
         }
 
@@ -388,7 +418,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
             // If this is the primary domain, all the users will be retrieved since the primary domain is not appended
             // to the user name in the IDN table. So we have to filter users belongs to primary in Java level.
-            String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
             if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
                 for (String userId : userIds) {
                     if (!StringUtils.contains(userId, UserCoreConstants.DOMAIN_SEPARATOR) ||
@@ -428,8 +457,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        // No need to separately handle if identity data store is user store based.
         if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
             return true;
         }
 
@@ -458,7 +487,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (condition instanceof ExpressionCondition) {
             ExpressionCondition expressionCondition = (ExpressionCondition) condition;
             String claimUri = expressionCondition.getAttributeName();
-            if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            String userStoreDomain = UserCoreUtil.getDomainName(userManager.getRealmConfiguration());
+
+            if (isManagedInIdentityDataStoreByClaimConfig(claimUri, tenantDomain, userStoreDomain)) {
                 String claimValue = expressionCondition.getAttributeValue();
                 String operation = expressionCondition.getOperation();
 
@@ -588,15 +621,15 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        // No need to separately handle if identity data store is user store based.
         if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
             return true;
         }
 
         List<ExpressionCondition> identityClaimFilterConditions = new ArrayList<>();
         try {
             // Extract identity Claim filter-conditions from the given conditions.
-            extractIdentityClaimFilterConditions(condition, identityClaimFilterConditions);
+            extractIdentityClaimFilterConditions(condition, identityClaimFilterConditions, domain);
             if (!identityClaimFilterConditions.isEmpty()) {
                 identityDataStoreService.listPaginatedUsersByClaimURIAndValue(identityClaimFilterConditions,
                         identityClaimFilteredUserNames, domain, userStoreManager, limit, offset);
@@ -609,13 +642,15 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     }
 
     private void extractIdentityClaimFilterConditions(Condition condition,
-                                                      List<ExpressionCondition> expressionConditions) {
+                                                      List<ExpressionCondition> expressionConditions,
+                                                      String userStoreDomain) {
 
         if (condition instanceof ExpressionCondition) {
             ExpressionCondition expressionCondition = (ExpressionCondition) condition;
             String claimUri = expressionCondition.getAttributeName();
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 
-            if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            if (isManagedInIdentityDataStoreByClaimConfig(claimUri, tenantDomain, userStoreDomain)) {
                 ExpressionCondition expressionConditionWithIdentityClaimFilter =
                         new ExpressionCondition(expressionCondition.getOperation(),
                                 expressionCondition.getAttributeName(), expressionCondition.getAttributeValue());
@@ -624,16 +659,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 expressionConditions.add(expressionConditionWithIdentityClaimFilter);
 
                 // Remove expression conditions with identity claims from the condition.
-                expressionCondition.setAttributeName(null);
-                expressionCondition.setAttributeValue(null);
-                expressionCondition.setOperation(null);
+                 expressionCondition.setAttributeName(null);
+                 expressionCondition.setAttributeValue(null);
+                 expressionCondition.setOperation(null);
             }
 
         } else if (condition instanceof OperationalCondition) {
             Condition leftCondition = ((OperationalCondition) condition).getLeftCondition();
-            extractIdentityClaimFilterConditions(leftCondition, expressionConditions);
+            extractIdentityClaimFilterConditions(leftCondition, expressionConditions, userStoreDomain);
             Condition rightCondition = ((OperationalCondition) condition).getRightCondition();
-            extractIdentityClaimFilterConditions(rightCondition, expressionConditions);
+            extractIdentityClaimFilterConditions(rightCondition, expressionConditions, userStoreDomain);
         }
     }
 
@@ -684,8 +719,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                                              String operationType,
                                              Map<String, String> claims) throws UserStoreException {
 
-        // No need to separately handle if data identityDataStore is user store based
         if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
             return true;
         }
 
@@ -704,13 +739,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
+                String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+                String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+
                 Iterator<Map.Entry<String, String>> it = claims.entrySet().iterator();
 
                 while (it.hasNext()) {
                     Map.Entry<String, String> claim = it.next();
                     String key = claim.getKey();
                     String value = claim.getValue();
-                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
+                    if (isManagedInIdentityDataStoreByClaimConfig(key, tenantDomain, userStoreDomain)) {
                         userIdentityClaim.setUserIdentityDataClaim(key, value);
                         it.remove();
                     }
@@ -746,23 +784,23 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
         UserStoreManager userStoreManager = getUserStoreManager();
-
-        // No need to separately handle if identity data store is user store based.
         if (isUserStoreBasedIdentityDataStore()) {
             return true;
         }
 
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+
         // Check if there are identity claims.
-        boolean containsIdentityClaims = false;
+        boolean containsIdentityStoreManagedClaims = false;
         for (String claim : claims) {
-            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
-                containsIdentityClaims = true;
+            if (isManagedInIdentityDataStoreByClaimConfig(claim, tenantDomain, null)) {
+                containsIdentityStoreManagedClaims = true;
                 break;
             }
         }
 
         // If there are no identity claims, let it go.
-        if (!containsIdentityClaims) {
+        if (!containsIdentityStoreManagedClaims) {
             return true;
         }
 
@@ -778,7 +816,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 continue;
             }
 
-            // No need to separately handle if identity data store is user store based for the users' userstore domain.
             if (isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
                     .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
                 continue;
@@ -793,6 +830,9 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 userClaimSearchEntry.setClaims(new HashMap<String, String>());
             }
 
+            // Get user store domain for this specific user.
+            String userStoreDomain = UserCoreUtil.extractDomainFromName(username);
+
             if (!isHybridDataStoreEnable) {
                 /*
                 If hybrid data store is disabled, we need to use the identity claim value only from the identity data
@@ -800,7 +840,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 user store for identity claims.
                  */
                 userClaimSearchEntry.getClaims().entrySet().removeIf(
-                        entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
+                        entry -> isManagedInIdentityDataStoreByClaimConfig(entry.getKey(),
+                                tenantDomain, userStoreDomain));
             }
 
             // There is/are identity claim/s load the dto.
@@ -836,19 +877,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             throw new UserStoreException("Error occurred while retrieving user realm.", e);
         }
         return userRealm.getUserStoreManager();
-    }
-
-    /**
-     * Check weather the given user store has enabled the property "StoreIdentityClaims" to store identity claims
-     * in the user store.
-     *
-     * @param userStoreManager User Store manager.
-     * @return Weather identity claims are stored in user store or not.
-     */
-    private boolean isStoreIdentityClaimsInUserStoreEnabled(UserStoreManager userStoreManager) {
-
-        return Boolean.parseBoolean(userStoreManager.getRealmConfiguration().
-                getUserStoreProperty(STORE_IDENTITY_CLAIMS));
     }
 
     private boolean isUserStoreBasedIdentityDataStore() {
