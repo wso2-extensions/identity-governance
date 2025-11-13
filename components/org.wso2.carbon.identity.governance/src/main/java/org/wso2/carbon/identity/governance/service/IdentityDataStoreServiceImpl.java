@@ -120,8 +120,8 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     }
 
                     boolean managedInIdentityDataStore =
-                            IdentityDataStoreUtil.isManagedInIdentityDataStore(claim.getKey(), tenantDomain,
-                                    userStoreDomain);
+                            IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(claim.getKey(),
+                                    tenantDomain, userStoreDomain);
                     if (managedInIdentityDataStore) {
                         if (log.isDebugEnabled()) {
                             log.debug("Managing identity claim : " + key + " in identity data store.");

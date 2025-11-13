@@ -49,14 +49,18 @@ public class IdentityDataStoreUtil {
     private IdentityDataStoreUtil() {}
 
     /**
-     * Determine whether the given claim needs to be managed in the identity data store.
+     * Evaluates whether the specified claim should be managed within the identity data store
+     * based on its claim properties.
+     * Note: This method alone can not be used to decide whether to store a claim in the identity data store.
+     * The result should be interpreted together with the `isStoreIdentityClaimsInUserStoreEnabled` and the
+     *  user store–based identity data store configuration.
      *
      * @param claimUri     Claim URI under evaluation.
      * @param tenantDomain Tenant domain.
      * @param userStoreDomain User store domain.
      * @return {@code true} if the claim should be stored in the identity data store, {@code false} otherwise.
      */
-    public static boolean isManagedInIdentityDataStore(String claimUri,
+    public static boolean isManagedInIdentityDataStoreByClaimConfig(String claimUri,
                                                            String tenantDomain,
                                                            String userStoreDomain) {
 
@@ -112,6 +116,7 @@ public class IdentityDataStoreUtil {
             return false;
         }
 
+        // Check if the given user store is in the excluded user stores list. If so, manage in identity data store.
         Set<String> excludedDomains = Arrays.stream(excludedUserStores.split(EXCLUDED_USER_STORE_DELIMITER))
                 .map(String::trim)
                 .filter(StringUtils::isNotBlank)
@@ -121,6 +126,16 @@ public class IdentityDataStoreUtil {
         return excludedDomains.contains(userStoreDomain.toUpperCase());
     }
 
+    /**
+     * Evaluates whether the specified claim should be managed within the user store based identity data store
+     * on its claim properties. This method is used only when the identity data store is configured to be
+     * user store based.
+     *
+     * @param claimUri     Claim URI under evaluation.
+     * @param tenantDomain Tenant domain.
+     * @return {@code true} if the claim should be stored in the user store based identity data store,
+     * {@code false} otherwise.
+     */
     public static boolean isManagedInUserStoreBasedIdentityDataStore(String claimUri, String tenantDomain) {
 
         if (StringUtils.isBlank(claimUri) || StringUtils.isBlank(tenantDomain)) {

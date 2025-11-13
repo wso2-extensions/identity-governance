@@ -81,76 +81,79 @@ public class IdentityDataStoreUtilTest {
     }
 
     @Test(description = "Test with blank claim URI.")
-    public void testIsManagedInIdentityDataStore_BlankClaimUri() {
+    public void testisManagedInIdentityDataStoreByClaimConfig_BlankClaimUri() {
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 "", TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(result, "Should return false for blank claim URI.");
     }
 
     @Test(description = "Test with null claim URI.")
-    public void testIsManagedInIdentityDataStore_NullClaimUri() {
+    public void testisManagedInIdentityDataStoreByClaimConfig_NullClaimUri() {
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 null, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(result, "Should return false for null claim URI.");
     }
 
     @Test(description = "Test with blank tenant domain.")
-    public void testIsManagedInIdentityDataStore_BlankTenantDomain() {
+    public void testisManagedInIdentityDataStoreByClaimConfig_BlankTenantDomain() {
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 IDENTITY_CLAIM_URI, "", USER_STORE_DOMAIN);
         assertFalse(result, "Should return false for blank tenant domain.");
     }
 
     @Test(description = "Test identity claim with no claim metadata - defaults to true.")
-    public void testIsManagedInIdentityDataStore_IdentityClaimNoMetadata() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_IdentityClaimNoMetadata() throws ClaimMetadataException {
 
         when(claimMetadataManagementService.getLocalClaim(IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.empty());
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Identity claim with no metadata should default to managed in identity data store.");
     }
 
     @Test(description = "Test non-identity claim with no claim metadata - defaults to false.")
-    public void testIsManagedInIdentityDataStore_NonIdentityClaimNoMetadata() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_NonIdentityClaimNoMetadata()
+            throws ClaimMetadataException {
 
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.empty());
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(result, "Non-identity claim with no metadata should default to managed in user store.");
     }
 
     @Test(description = "Test when ClaimMetadataException occurs.")
-    public void testIsManagedInIdentityDataStore_ClaimMetadataException() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_ClaimMetadataException() throws ClaimMetadataException {
 
         when(claimMetadataManagementService.getLocalClaim(IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenThrow(new ClaimMetadataException("Test exception"));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Should default based on claim type when exception occurs.");
     }
 
     @Test(description = "Test claim with ManagedInUserStore property not defined.")
-    public void testIsManagedInIdentityDataStore_ManagedInUserStorePropertyNotDefined() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_ManagedInUserStorePropertyNotDefined()
+            throws ClaimMetadataException {
 
         LocalClaim localClaim = createLocalClaim(IDENTITY_CLAIM_URI, new HashMap<>());
         when(claimMetadataManagementService.getLocalClaim(IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Identity claim without ManagedInUserStore property should default to identity data store.");
     }
 
     @Test(description = "Test claim marked to be managed in identity data store (ManagedInUserStore=false).")
-    public void testIsManagedInIdentityDataStore_MarkedForIdentityDataStore() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_MarkedForIdentityDataStore()
+            throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "false");
@@ -159,13 +162,14 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Claim with ManagedInUserStore=false should be managed in identity data store.");
     }
 
     @Test(description = "Test claim marked to be managed in user store with blank user store domain.")
-    public void testIsManagedInIdentityDataStore_UserStoreClaimWithBlankDomain() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_UserStoreClaimWithBlankDomain()
+            throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -174,13 +178,13 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, "");
         assertTrue(result, "Should manage in identity data store when user store domain is blank.");
     }
 
     @Test(description = "Test claim with no excluded user stores - should be managed in user store.")
-    public void testIsManagedInIdentityDataStore_NoExcludedUserStores() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_NoExcludedUserStores() throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -189,13 +193,13 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(result, "Claim with no excluded stores should be managed in user store.");
     }
 
     @Test(description = "Test claim with excluded user store matching current domain.")
-    public void testIsManagedInIdentityDataStore_ExcludedUserStoreMatches() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_ExcludedUserStoreMatches() throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -205,13 +209,14 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Claim should be managed in identity data store for excluded user store domain.");
     }
 
     @Test(description = "Test claim with excluded user store not matching current domain.")
-    public void testIsManagedInIdentityDataStore_ExcludedUserStoreDoesNotMatch() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_ExcludedUserStoreDoesNotMatch()
+            throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -221,13 +226,14 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(result, "Claim should be managed in user store when domain is not in excluded list.");
     }
 
     @Test(description = "Test claim with excluded user stores with whitespace.")
-    public void testIsManagedInIdentityDataStore_ExcludedUserStoresWithWhitespace() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_ExcludedUserStoresWithWhitespace()
+            throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -237,13 +243,14 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(result, "Should handle whitespace in excluded user stores correctly.");
     }
 
     @Test(description = "Test claim with case-insensitive user store domain matching.")
-    public void testIsManagedInIdentityDataStore_CaseInsensitiveDomainMatching() throws ClaimMetadataException {
+    public void testisManagedInIdentityDataStoreByClaimConfig_CaseInsensitiveDomainMatching()
+            throws ClaimMetadataException {
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ClaimConstants.MANAGED_IN_USER_STORE_PROPERTY, "true");
@@ -253,7 +260,7 @@ public class IdentityDataStoreUtilTest {
         when(claimMetadataManagementService.getLocalClaim(NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN))
                 .thenReturn(Optional.of(localClaim));
 
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, "PRIMARY");
         assertTrue(result, "Should match user store domains case-insensitively.");
     }
@@ -422,9 +429,10 @@ public class IdentityDataStoreUtilTest {
     public Object[][] getClaimMetadataScenarios() {
 
         return new Object[][]{
-            // Scenario, ClaimURI, TenantDomain, UserStoreDomain, ExpectedResult.
-            {"Identity claim with no metadata", IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN, true},
-            {"Non-identity claim with no metadata", NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN, false},
+                // Scenario, ClaimURI, TenantDomain, UserStoreDomain, ExpectedResult.
+                {"Identity claim with no metadata", IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN, true},
+                {"Non-identity claim with no metadata", NON_IDENTITY_CLAIM_URI, TENANT_DOMAIN, USER_STORE_DOMAIN,
+                        false},
         };
     }
 
@@ -435,7 +443,7 @@ public class IdentityDataStoreUtilTest {
 
         when(claimMetadataManagementService.getLocalClaim(claimUri, tenantDomain))
                 .thenReturn(Optional.empty());
-        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStore(
+        boolean result = IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
                 claimUri, tenantDomain, userStoreDomain);
 
         if (expectedResult) {
