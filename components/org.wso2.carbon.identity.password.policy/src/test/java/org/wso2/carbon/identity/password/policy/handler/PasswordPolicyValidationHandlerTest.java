@@ -1,18 +1,21 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.wso2.carbon.identity.password.policy.handler;
 
 import org.testng.annotations.BeforeMethod;
@@ -25,12 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertFalse;
 
 public class PasswordPolicyValidationHandlerTest {
 
-    private static final String PW_POLICY_DISABLE = "passwordPolicy.disable";
     PasswordPolicyValidationHandler passwordPolicyValidationHandler;
 
     @BeforeMethod
@@ -83,6 +83,8 @@ public class PasswordPolicyValidationHandlerTest {
         expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, "Maximum number of characters");
         expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Password pattern regex");
         expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Error message on pattern violation");
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE,
+                "Check if password contains or equals to username");
         assertEquals(passwordPolicyValidationHandler.getPropertyNameMapping(), expectedNameMapping,
                 "getPropertyNameMapping() has been changed.");
     }
@@ -114,6 +116,7 @@ public class PasswordPolicyValidationHandlerTest {
         expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH);
         expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_PATTERN);
         expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_ERROR_MSG);
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_USERNAME_CHECK_MODE);
         assertEquals(passwordPolicyValidationHandler.getPropertyNames().length, expectedPropertyName.size(),
                 "getPropertyNames() has been changed.");
     }
