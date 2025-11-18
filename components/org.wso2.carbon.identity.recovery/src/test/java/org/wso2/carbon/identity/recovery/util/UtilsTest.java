@@ -1433,7 +1433,11 @@ public class UtilsTest {
                 .thenReturn("false");
 
         boolean isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean isEmailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean isMobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+        assertFalse(isEmailsEnabled);
+        assertFalse(isMobilesEnabled);
 
         // Case 2: When support_multi_emails_and_mobile_numbers_per_user config is true.
         mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
@@ -1446,7 +1450,11 @@ public class UtilsTest {
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties2));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEmailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isMobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(isEnabled);
+        assertTrue(isEmailsEnabled);
+        assertTrue(isMobilesEnabled);
 
         // Case 3: When support by default is disabled for feature related claims.
         Map<String, String> claimProperties3 = new HashMap<>();
@@ -1455,7 +1463,11 @@ public class UtilsTest {
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties3));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean emailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean mobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+        assertFalse(emailsEnabled);
+        assertFalse(mobilesEnabled);
 
         // Case 4: When user store domain is excluded for feature related claims.
         Map<String, String> claimProperties4 = new HashMap<>();

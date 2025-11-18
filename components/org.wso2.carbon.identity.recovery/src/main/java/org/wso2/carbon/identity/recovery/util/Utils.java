@@ -1524,8 +1524,20 @@ public class Utils {
      */
     public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
 
-        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
+        return isMultiEmailAddressesPerUserEnabled(tenantDomain, userStoreDomain)
+                && isMultiMobileNumbersPerUserEnabled(tenantDomain, userStoreDomain);
+    }
+
+    /**
+     * Check if multiple email addresses are supported for the given tenant and user store.
+     *
+     * @param tenantDomain    Tenant domain.
+     * @param userStoreDomain User store domain.
+     * @return True if multiple email addresses are supported.
+     */
+    public static boolean isMultiEmailAddressesPerUserEnabled(String tenantDomain, String userStoreDomain) {
+
+        if (!isMultiEmailOrMobileConfigEnabled()) {
             return false;
         }
 
@@ -1538,19 +1550,61 @@ public class Utils {
                     IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                             .getLocalClaims(tenantDomain);
 
-            List<String> requiredClaims = Arrays.asList(
-                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+            List<String> requiredEmailClaims = Arrays.asList(
                     IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
                     IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
 
-            // Check if all required claims are valid for the user store.
-            return requiredClaims.stream().allMatch(claimUri ->
-                            isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
+            return areClaimsSupportedForUserStore(localClaims, requiredEmailClaims, userStoreDomain);
         } catch (ClaimMetadataException e) {
-            log.error("Error while retrieving multiple emails and mobiles config.", e);
+            log.error("Error while retrieving multiple emails config.", e);
             return false;
         }
+    }
+
+    /**
+     * Check if multiple mobile numbers are supported for the given tenant and user store.
+     *
+     * @param tenantDomain    Tenant domain.
+     * @param userStoreDomain User store domain.
+     * @return True if multiple mobile numbers are supported.
+     */
+    public static boolean isMultiMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
+
+        if (!isMultiEmailOrMobileConfigEnabled()) {
+            return false;
+        }
+
+        if (StringUtils.isBlank(tenantDomain) || StringUtils.isBlank(userStoreDomain)) {
+            return false;
+        }
+
+        try {
+            List<LocalClaim> localClaims =
+                    IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                            .getLocalClaims(tenantDomain);
+
+            List<String> requiredMobileClaims = Arrays.asList(
+                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+
+            return areClaimsSupportedForUserStore(localClaims, requiredMobileClaims, userStoreDomain);
+        } catch (ClaimMetadataException e) {
+            log.error("Error while retrieving multiple mobile numbers config.", e);
+            return false;
+        }
+    }
+
+    private static boolean isMultiEmailOrMobileConfigEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+    }
+
+    private static boolean areClaimsSupportedForUserStore(List<LocalClaim> localClaims, List<String> claimUris,
+                                                          String userStoreDomain) {
+
+        return claimUris.stream().allMatch(claimUri ->
+                isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
     }
 
     /**

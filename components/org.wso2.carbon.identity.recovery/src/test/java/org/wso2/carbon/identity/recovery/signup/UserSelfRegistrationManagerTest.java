@@ -1034,6 +1034,10 @@ public class UserSelfRegistrationManagerTest {
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailAddressesPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -1064,6 +1068,10 @@ public class UserSelfRegistrationManagerTest {
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailAddressesPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -1086,6 +1094,10 @@ public class UserSelfRegistrationManagerTest {
         // Case 3: Throws user store exception while getting user claim values.
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailAddressesPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
