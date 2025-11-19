@@ -120,7 +120,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
 
         boolean supportMultipleMobileNumbers =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+                Utils.isMultiMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         boolean enable = isMobileVerificationOnUpdateEnabled(user.getTenantDomain());
 
@@ -342,7 +342,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
 
         boolean supportMultipleMobileNumbers =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+                Utils.isMultiMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         // Update multiple mobile numbers only if they’re in the claims map.
         // This avoids issues with updating the primary mobile number due to user store limitations on multiple
