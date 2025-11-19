@@ -2046,7 +2046,24 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                 eq(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER)))
                 .thenReturn(isEnabled.toString());
-        if (!isEnabled) return;
+
+        org.wso2.carbon.identity.application.common.model.Property emailVerificationOnUpdate =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        emailVerificationOnUpdate.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        emailVerificationOnUpdate.setValue(Boolean.toString(isEnabled));
+        try {
+            when(identityGovernanceService.getConfiguration(
+                    eq(new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE}),
+                    eq(TEST_TENANT_DOMAIN_NAME))).thenReturn(
+                            new org.wso2.carbon.identity.application.common.model.Property[]{emailVerificationOnUpdate});
+        } catch (IdentityGovernanceException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (!isEnabled) {
+            return;
+        }
+
         // Mock ClaimMetadataManagementService.
         ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())

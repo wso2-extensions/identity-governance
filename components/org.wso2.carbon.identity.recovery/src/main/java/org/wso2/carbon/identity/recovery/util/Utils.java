@@ -694,7 +694,10 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, tenantDomain);
+            if (connectorConfigs == null || connectorConfigs.length == 0 || connectorConfigs[0] == null) {
+                return null;
+            }
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(
@@ -708,7 +711,10 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, tenantDomain);
+            if (connectorConfigs == null || connectorConfigs.length == 0 || connectorConfigs[0] == null) {
+                return null;
+            }
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw new IdentityEventException("Error while getting connector configurations", e);
@@ -1550,9 +1556,20 @@ public class Utils {
                     IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                             .getLocalClaims(tenantDomain);
 
-            List<String> requiredEmailClaims = Arrays.asList(
-                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+            List<String> requiredEmailClaims = new ArrayList<>();
+            requiredEmailClaims.add(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+            boolean isEmailVerificationOnUpdateEnabled;
+            try {
+                isEmailVerificationOnUpdateEnabled = isEmailVerificationOnUpdateEnabled(tenantDomain);
+            } catch (IdentityEventException e) {
+                log.error("Error while retrieving email verification on update config.", e);
+                return false;
+            }
+
+            if (isEmailVerificationOnUpdateEnabled) {
+                requiredEmailClaims.add(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+            }
 
             return areClaimsSupportedForUserStore(localClaims, requiredEmailClaims, userStoreDomain);
         } catch (ClaimMetadataException e) {
@@ -1583,9 +1600,20 @@ public class Utils {
                     IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                             .getLocalClaims(tenantDomain);
 
-            List<String> requiredMobileClaims = Arrays.asList(
-                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+            List<String> requiredMobileClaims = new ArrayList<>();
+            requiredMobileClaims.add(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+
+            boolean isMobileVerificationOnUpdateEnabled;
+            try {
+                isMobileVerificationOnUpdateEnabled = isMobileVerificationOnUpdateEnabled(tenantDomain);
+            } catch (IdentityEventException e) {
+                log.error("Error while retrieving mobile verification on update config.", e);
+                return false;
+            }
+
+            if (isMobileVerificationOnUpdateEnabled) {
+                requiredMobileClaims.add(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+            }
 
             return areClaimsSupportedForUserStore(localClaims, requiredMobileClaims, userStoreDomain);
         } catch (ClaimMetadataException e) {
@@ -1598,6 +1626,20 @@ public class Utils {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+    }
+
+    private static boolean isEmailVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
+
+        String configValue = Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain);
+        return Boolean.parseBoolean(configValue);
+    }
+
+    private static boolean isMobileVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
+
+        String configValue = Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, tenantDomain);
+        return Boolean.parseBoolean(configValue);
     }
 
     private static boolean areClaimsSupportedForUserStore(List<LocalClaim> localClaims, List<String> claimUris,
