@@ -204,13 +204,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
         // If the notifications are externally managed we do not need to send notifications internally.
         if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-            String eventName;
-            if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
-                eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + notificationChannel
-                        + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
-            } else {
-                eventName = Utils.resolveEventName(notificationChannel);
-            }
+            String eventName = Utils.resolveEventName(notificationChannel);
             validateCallbackURL(properties, userRecoveryData.getUser());
             triggerNotification(userRecoveryData.getUser(), notificationChannel, eventName, properties);
         }
