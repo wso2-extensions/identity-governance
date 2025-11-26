@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.governance.util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
@@ -181,6 +182,17 @@ public class IdentityDataStoreUtil {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Mask sensitive values in logs if masking is enabled.
+     *
+     * @param value Value to be masked.
+     * @return Masked or original value depending on configuration.
+     */
+    public static String maskIfRequired(String value) {
+
+        return LoggerUtils.isLogMaskingEnable ? LoggerUtils.getMaskedContent(value) : value;
     }
 
     /**
