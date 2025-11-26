@@ -51,6 +51,7 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig;
 import static org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled;
+import static org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil.maskIfRequired;
 
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
@@ -353,6 +354,69 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     && isManagedInIdentityDataStoreByClaimConfig(claim, tenantDomain, userStoreDomain)
             ) {
                 claimMap.put(claim, value);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean doPostGetUserClaimValue(String userName, String claim, List<String> claimValue, String profileName,
+                                           UserStoreManager storeManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("doPostGetUserClaimValue getting executed in the IdentityStoreEventListener for user: " +
+                    maskIfRequired(userName) + " and claim: " + claim);
+        }
+
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
+            log.debug("All claims are managed in user store. Hence no need to filter identity claims.");
+            return true;
+        }
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = UserCoreUtil.getDomainName(storeManager.getRealmConfiguration());
+        if (!isManagedInIdentityDataStoreByClaimConfig(claim, tenantDomain, userStoreDomain)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Claim: " + claim + " is not managed in identity data store. Hence returning.");
+            }
+            return true;
+        }
+
+        if (!isHybridDataStoreEnable) {
+            /*
+            If hybrid data store is disabled, we need to use the identity claim value only from the identity data store.
+            Hence, we need to clear the claim value from user store to avoid use of values from user store
+            for identity claims.
+             */
+            if (log.isDebugEnabled()) {
+                log.debug("Clearing the claim value retrieved from user store for identity claim: " + claim);
+            }
+            claimValue.clear();
+        }
+
+        UserIdentityClaim identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
+        // If no user identity data found, just continue.
+        if (identityDTO == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("No identity claim data found in identity data store for user: " + maskIfRequired(userName));
+            }
+            return true;
+        }
+
+        // Data found, add the value for the identity claim.
+        if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
+            String value = identityDTO.getUserIdentityDataMap().get(claim);
+            if (StringUtils.isNotBlank(value)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Setting the identity claim value retrieved from identity data store " +
+                            "for claim: " + claim);
+                }
+                claimValue.clear();
+                claimValue.add(value);
             }
         }
         return true;
