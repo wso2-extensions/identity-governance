@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.governance.internal.service.impl.otp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 
@@ -28,6 +29,13 @@ import java.security.SecureRandom;
 /**
  * Default class to generate OTP.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.governance.service.otp.OTPGenerator",
+                "service.scope=singleton"
+        }
+)
 public class OTPGeneratorImpl implements OTPGenerator {
 
     private static final Log log = LogFactory.getLog(OTPGeneratorImpl.class);
