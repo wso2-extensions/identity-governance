@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.auth.attribute.handler;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.AuthenticationStep;
 import org.wso2.carbon.identity.application.common.model.LocalAuthenticatorConfig;
@@ -42,6 +43,13 @@ import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandl
  * Service class responsible for handling Auth Attribute Handlers.
  * Capabilities provided by the Auth Attribute Handlers are accessed through this class.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager",
+                "service.scope=singleton"
+        }
+)
 public class AuthAttributeHandlerManager {
 
     private static final Log LOG = LogFactory.getLog(AuthAttributeHandlerManager.class);
