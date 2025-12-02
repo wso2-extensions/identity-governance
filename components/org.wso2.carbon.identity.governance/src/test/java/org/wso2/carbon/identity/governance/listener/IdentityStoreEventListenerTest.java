@@ -24,9 +24,11 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.model.IdentityEventListenerConfig;
 import org.wso2.carbon.identity.core.model.IdentityEventListenerConfigKey;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
@@ -37,9 +39,12 @@ import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreServiceImpl;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
+import org.wso2.carbon.identity.governance.util.IdentityDataStoreUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 import org.wso2.carbon.user.core.model.ExpressionOperation;
@@ -69,6 +74,14 @@ public class IdentityStoreEventListenerTest {
     private static final String IDENTITY_DATA_STORE_TYPE = "org.wso2.carbon.identity." +
             "governance.store.JDBCIdentityDataStore";
     private static final int TENANT_ID = 1234;
+    private static final String TEST_TENANT_DOMAIN = "carbon.super";
+    private static final String TEST_USER_STORE_DOMAIN = "PRIMARY";
+    private static final String CLAIM_ACCOUNT_LOCKED = "http://wso2.org/claims/identity/accountLocked";
+    private static final String CLAIM_FAILED_LOGIN_ATTEMPTS = "http://wso2.org/claims/identity/failedLoginAttempts";
+    private static final String CLAIM_CUSTOM = "http://wso2.org/claims/customClaim";
+    private static final String CLAIM_EMAIL_ADDRESS = "http://wso2.org/claims/emailaddress";
+    private static final String TEST_USERNAME = "testUser";
+    private static final String DEFAULT_PROFILE = "default";
 
     @Mock
     UserIdentityDataStore identityDataStore;
@@ -106,6 +119,27 @@ public class IdentityStoreEventListenerTest {
 
         IdentityUtil.populateProperties();
         identityStoreEventListener = spy(new IdentityStoreEventListener());
+    }
+
+    @AfterMethod
+    public void cleanupAfterTest() {
+
+        // End any tenant flow that might have been started.
+        try {
+            PrivilegedCarbonContext.endTenantFlow();
+        } catch (Exception e) {
+            // Ignore if no tenant flow was started.
+        }
+
+        // Clean up RealmService if it was set.
+        try {
+            IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+        } catch (Exception e) {
+            // Ignore cleanup errors.
+        }
+
+        // Reset spy stubbings to avoid interference between tests.
+        Mockito.reset(identityStoreEventListener);
     }
 
     @AfterClass
@@ -292,8 +326,9 @@ public class IdentityStoreEventListenerTest {
         Assert.assertTrue(preGetUserClaims);
     }
 
-    @Test(expectedExceptions = UserStoreException.class)
+    @Test(expectedExceptions = UserStoreException.class, priority = 1)
     public void testDoPreGetUserClaimValueException() throws Exception {
+        // This test expects an exception - run with high priority before static mocking tests
         Assert.assertTrue(identityStoreEventListener.doPreGetUserClaimValue("admin",
                 "http://wso2.org/claims/identity/email", "myprofile", userStoreManager));
     }
@@ -317,7 +352,7 @@ public class IdentityStoreEventListenerTest {
                 claimValue, profileName, userStoreManager));
     }
 
-    @Test(expectedExceptions = UserStoreException.class)
+    @Test(expectedExceptions = UserStoreException.class, priority = 1)
     public void testDoPreSetUserClaimValueException() throws Exception {
         Assert.assertTrue(identityStoreEventListener.doPreSetUserClaimValue("admin",
                 "http://wso2.org/claims/identity/email", "admin@wso2.com", "foo", userStoreManager));
@@ -425,18 +460,25 @@ public class IdentityStoreEventListenerTest {
                         Mockito.any(UserStoreManager.class));
         Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
 
-        List<String> filteredUserList = new ArrayList<>();
-        boolean result = identityStoreEventListener.doPreGetUserList(
-                condition, filteredUserList, userStoreManager, "SECONDARY");
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            mockedUtil.when(() -> IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
+                    Mockito.anyString(), Mockito.any(), Mockito.anyString())).thenReturn(true);
+            mockedUtil.when(() -> IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled(
+                    Mockito.any())).thenReturn(false);
 
-        // Assert that the method returns true and the filtered user list matches the expected usernames.
-        assertTrue(result, "doPreGetUserList should return true on success.");
-        assertEquals(filteredUserList, expectedUsernames,
-                "Filtered user list should match the data-store results for NE filtering.");
+            List<String> filteredUserList = new ArrayList<>();
+            boolean result = identityStoreEventListener.doPreGetUserList(
+                    condition, filteredUserList, userStoreManager, domainName);
 
-        // Verify that the identity-data-store was actually queried with NE.
-        Mockito.verify(identityDataStoreService, Mockito.times(1))
-                .getUserNamesByClaimURINotEqualValue(condition, claimUri, claimValue, userStoreManager);
+            // Assert that the method returns true and the filtered user list matches the expected usernames.
+            assertTrue(result, "doPreGetUserList should return true on success.");
+            assertEquals(filteredUserList, expectedUsernames,
+                    "Filtered user list should match the data-store results for NE filtering.");
+
+            // Verify that the identity-data-store was actually queried with NE.
+            Mockito.verify(identityDataStoreService, Mockito.times(1))
+                    .getUserNamesByClaimURINotEqualValue(condition, claimUri, claimValue, userStoreManager);
+        }
     }
 
     @DataProvider
@@ -461,10 +503,18 @@ public class IdentityStoreEventListenerTest {
 
         userStoreManager = mock(UserStoreManager.class);
         realmConfiguration = mock(RealmConfiguration.class);
+        RealmService realmService = mock(RealmService.class);
+        RealmConfiguration bootstrapRealmConfig = mock(RealmConfiguration.class);
         final String claimUri = "http://wso2.org/claims/identity/lastPasswordUpdateTime";
         final String claimValue = "1759196318937";
 
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(realmService);
+        Mockito.when(realmService.getBootstrapRealmConfiguration()).thenReturn(bootstrapRealmConfig);
+        Mockito.when(bootstrapRealmConfig.getUserStoreProperty(
+                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME)).thenReturn("PRIMARY");
+
         Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(userStoreManager.getTenantId()).thenReturn(-1234);
         Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(userStoreDomain);
         Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
         Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
@@ -477,17 +527,242 @@ public class IdentityStoreEventListenerTest {
                     .getUserNamesLessThanProvidedClaimValue(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
         }
 
-        List<String> filteredUserList = new ArrayList<>();
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            // Accept any tenant domain and return true for identity claims
+            mockedUtil.when(() -> IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
+                    Mockito.anyString(), Mockito.any(), Mockito.anyString())).thenReturn(true);
+            mockedUtil.when(() -> IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled(
+                    Mockito.any())).thenReturn(false);
 
-        ExpressionCondition condition = new ExpressionCondition(operation, claimUri, claimValue);
-        boolean result = identityStoreEventListener.doPreGetUserList(condition, filteredUserList, userStoreManager,
-                userStoreDomain);
+            List<String> filteredUserList = new ArrayList<>();
 
-        List<String> expectedUsernames = new ArrayList<>();
-        expectedUsernames.add(filteredUser);
+            ExpressionCondition condition = new ExpressionCondition(operation, claimUri, claimValue);
+            boolean result = identityStoreEventListener.doPreGetUserList(condition, filteredUserList, userStoreManager,
+                    userStoreDomain);
 
-        assertTrue(result, "doPreGetUserList should return true on success.");
-        assertEquals(filteredUserList, expectedUsernames, "Filtered user list should match the data-store " +
-                "results for " + operation + " filtering.");
+            List<String> expectedUsernames = new ArrayList<>();
+            expectedUsernames.add(filteredUser);
+
+            assertTrue(result, "doPreGetUserList should return true on success.");
+            assertEquals(filteredUserList, expectedUsernames, "Filtered user list should match the data-store " +
+                    "results for " + operation + " filtering.");
+        }
+    }
+
+    @DataProvider(name = "doPostGetUserClaimValueHandler")
+    public Object[][] doPostGetUserClaimValueData() {
+
+        return new Object[][]{
+                // claim, claimValue, isManagedInIdentityDataStore, expectedValue, description.
+                {CLAIM_ACCOUNT_LOCKED, "true", true, "true", "identity claim in identity store"},
+                {CLAIM_FAILED_LOGIN_ATTEMPTS, "3", true, "3", "identity claim in identity store"},
+                {CLAIM_CUSTOM, "customValue", true, "customValue", "non-identity claim stored in identity store"},
+                {CLAIM_EMAIL_ADDRESS, "email@example.com", false, "email@example.com", "non-identity claim in user store"}
+        };
+    }
+
+    @Test(dataProvider = "doPostGetUserClaimValueHandler",
+            description = "Test doPostGetUserClaimValue with different claim configurations")
+    public void testDoPostGetUserClaimValue(String claim, String claimValue, boolean isManagedInIdentityDataStore,
+                                            String expectedValue, String testDescription) throws Exception {
+
+        // Always setup basic mocks.
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(TEST_USER_STORE_DOMAIN);
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        // Only setup identity data store for claims managed in identity data store.
+        // Non-managed claims return early, so identity data store is never accessed.
+        if (isManagedInIdentityDataStore) {
+            setupMocksForIdentityDataStore(TEST_USERNAME, claim, claimValue);
+        }
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            setupIdentityDataStoreUtilMocks(mockedUtil, claim,
+                    isManagedInIdentityDataStore, false);
+
+            // For non-managed claims, the initial value from user store should be preserved.
+            String initialValue = isManagedInIdentityDataStore ? "oldValue" : expectedValue;
+            List<String> resultClaimValue = new ArrayList<>(Arrays.asList(initialValue));
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME, claim, resultClaimValue,
+                    DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(resultClaimValue.size(), 1);
+            assertEquals(resultClaimValue.get(0), expectedValue);
+        }
+    }
+
+
+    @Test(description = "Test doPostGetUserClaimValue when listener is disabled")
+    public void testDoPostGetUserClaimValueWhenDisabled() throws Exception {
+
+        doReturn(false).when(identityStoreEventListener).isEnable();
+
+        List<String> claimValue = new ArrayList<>(Arrays.asList("initialValue"));
+        boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+        assertTrue(result);
+        assertEquals(claimValue.get(0), "initialValue");
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue when using user store based identity data store")
+    public void testDoPostGetUserClaimValueWithUserStoreBasedIdentityDataStore() throws Exception {
+
+        Mockito.doReturn(true).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        List<String> claimValue = new ArrayList<>(Arrays.asList("userStoreValue"));
+        boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+        assertTrue(result);
+        assertEquals(claimValue.get(0), "userStoreValue");
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue when StoreIdentityClaims is enabled")
+    public void testDoPostGetUserClaimValueWithStoreIdentityClaimsEnabled() throws Exception {
+
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(true));
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            mockedUtil.when(() -> IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled(userStoreManager))
+                    .thenReturn(true);
+
+            List<String> claimValue = new ArrayList<>(Arrays.asList("userStoreValue"));
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                    CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(claimValue.get(0), "userStoreValue");
+        }
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue when no identity data exists")
+    public void testDoPostGetUserClaimValueWithNoIdentityData() throws Exception {
+
+        TestUtils.startTenantFlow(TEST_TENANT_DOMAIN);
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+        userIdentityDataStore = mock(UserIdentityDataStore.class);
+
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn("PRIMARY");
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        Field field = IdentityDataStoreServiceImpl.class.getDeclaredField("identityDataStore");
+        field.setAccessible(true);
+        field.set(identityDataStoreService, userIdentityDataStore);
+
+        Mockito.when(userIdentityDataStore.load(TEST_USERNAME, userStoreManager)).thenReturn(null);
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            setupIdentityDataStoreUtilMocks(mockedUtil, CLAIM_ACCOUNT_LOCKED, true, false);
+
+            List<String> claimValue = new ArrayList<>();
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                    CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(claimValue.size(), 0);
+        }
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue with blank claim value")
+    public void testDoPostGetUserClaimValueWithBlankClaimValue() throws Exception {
+
+        setupMocksForIdentityDataStore(TEST_USERNAME, CLAIM_ACCOUNT_LOCKED, "");
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            setupIdentityDataStoreUtilMocks(mockedUtil, CLAIM_ACCOUNT_LOCKED, true, false);
+
+            List<String> claimValue = new ArrayList<>();
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                    CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(claimValue.size(), 0);
+        }
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue clears user store value when hybrid mode disabled")
+    public void testDoPostGetUserClaimValueClearsUserStoreValue() throws Exception {
+
+        setupMocksForIdentityDataStore(TEST_USERNAME, CLAIM_ACCOUNT_LOCKED, "true");
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            setupIdentityDataStoreUtilMocks(mockedUtil, CLAIM_ACCOUNT_LOCKED, true,
+                    false);
+
+            List<String> claimValue = new ArrayList<>(Arrays.asList("false"));
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                    CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(claimValue.size(), 1);
+            assertEquals(claimValue.get(0), "true");
+        }
+    }
+
+    @Test(description = "Test doPostGetUserClaimValue when claim not present in identity data store")
+    public void testDoPostGetUserClaimValueWhenClaimNotInIdentityDataStore() throws Exception {
+
+        setupMocksForIdentityDataStore(TEST_USERNAME, CLAIM_FAILED_LOGIN_ATTEMPTS, "5");
+
+        try (MockedStatic<IdentityDataStoreUtil> mockedUtil = Mockito.mockStatic(IdentityDataStoreUtil.class)) {
+            setupIdentityDataStoreUtilMocks(mockedUtil, CLAIM_ACCOUNT_LOCKED, true, false);
+
+            List<String> claimValue = new ArrayList<>();
+            boolean result = identityStoreEventListener.doPostGetUserClaimValue(TEST_USERNAME,
+                    CLAIM_ACCOUNT_LOCKED, claimValue, DEFAULT_PROFILE, userStoreManager);
+
+            assertTrue(result);
+            assertEquals(claimValue.size(), 0);
+        }
+    }
+
+    private void setupMocksForIdentityDataStore(String userName, String claim, String claimValue) throws Exception {
+
+        TestUtils.startTenantFlow(TEST_TENANT_DOMAIN);
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+        userIdentityDataStore = mock(UserIdentityDataStore.class);
+
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(TEST_USER_STORE_DOMAIN);
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        Field field = IdentityDataStoreServiceImpl.class.getDeclaredField("identityDataStore");
+        field.setAccessible(true);
+        field.set(identityDataStoreService, userIdentityDataStore);
+
+        Map<String, String> userIdentityDataMap = new HashMap<>();
+        if (claim != null && claimValue != null) {
+            userIdentityDataMap.put(claim, claimValue);
+        }
+        UserIdentityClaim userIdentityClaim = new UserIdentityClaim(userName, userIdentityDataMap);
+        Mockito.when(userIdentityDataStore.load(userName, userStoreManager)).thenReturn(userIdentityClaim);
+    }
+
+    private void setupIdentityDataStoreUtilMocks(MockedStatic<IdentityDataStoreUtil> mockedUtil, String claim,
+                                                 boolean isManagedInIdentityDataStore,
+                                                 boolean isStoreIdentityClaimsEnabled) {
+
+        mockedUtil.when(() -> IdentityDataStoreUtil.isManagedInIdentityDataStoreByClaimConfig(
+                claim, TEST_TENANT_DOMAIN, TEST_USER_STORE_DOMAIN)).thenReturn(isManagedInIdentityDataStore);
+        mockedUtil.when(() -> IdentityDataStoreUtil.isStoreIdentityClaimsInUserStoreEnabled(
+                Mockito.any())).thenReturn(isStoreIdentityClaimsEnabled);
+        mockedUtil.when(() -> IdentityDataStoreUtil.maskIfRequired(Mockito.anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 }
