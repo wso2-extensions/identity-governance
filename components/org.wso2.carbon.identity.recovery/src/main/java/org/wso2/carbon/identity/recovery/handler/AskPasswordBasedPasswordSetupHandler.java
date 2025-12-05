@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -47,6 +49,7 @@ import java.util.Map;
 public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordResetHandler {
 
     private static final Boolean isRandomValueForCredentialsDisabled = isRandomValueForCredentialsDisabled();
+    private static final String TENANT_DOMAIN = "tenant-domain";
 
     public String getName() {
 
@@ -62,6 +65,11 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
     public void handleEvent(Event event) throws IdentityEventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
+
+        if (!isAskPasswordBasedPasswordSetupHandlerEnabled((String) eventProperties.get(TENANT_DOMAIN))) {
+            return;
+        }
+
         String eventName = event.getEventName();
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
@@ -216,5 +224,14 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while storing ask password flow recovery data.", e);
         }
+    }
+
+    private boolean isAskPasswordBasedPasswordSetupHandlerEnabled(String tenantDomain) throws IdentityEventException {
+
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        }
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_VERIFICATION, tenantDomain));
     }
 }
