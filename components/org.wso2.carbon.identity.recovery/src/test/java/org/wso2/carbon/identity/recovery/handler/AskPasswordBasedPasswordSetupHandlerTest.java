@@ -339,6 +339,20 @@ public class AskPasswordBasedPasswordSetupHandlerTest {
                 eq(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), eq(null));
     }
 
+    @Test
+    public void testAskPasswordSetupHandlerDisabled() throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        event.getEventProperties().put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, "");
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, false);
+
+        askPasswordBasedPasswordSetupHandler.handleEvent(event);
+
+        // verify that no further actions were taken when the handler is disabled.
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(), any(), any()), org.mockito.Mockito.never());
+    }
+
     private void mockGetConnectorConfig(String connectorConfig, boolean value) {
 
         mockedUtils.when(() -> Utils.getConnectorConfig(eq(connectorConfig), anyString()))
