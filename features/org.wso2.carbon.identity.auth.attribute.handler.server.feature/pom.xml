@@ -22,7 +22,7 @@
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
         <relativePath>../../pom.xml</relativePath>
-        <version>1.11.154-SNAPSHOT</version>
+        <version>1.11.154</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
