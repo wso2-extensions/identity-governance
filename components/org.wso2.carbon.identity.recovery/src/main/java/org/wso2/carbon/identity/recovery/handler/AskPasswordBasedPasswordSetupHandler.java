@@ -231,6 +231,8 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         }
+        // Ask password based password setup flow is managed with email verification. Hence, checking email verification
+        // enablement.
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION, tenantDomain));
     }
