@@ -158,7 +158,7 @@ public class UserSelfRegistrationManager {
 
         NotificationResponseBean notificationResponseBean;
         try {
-            enterFlow(Flow.Name.REGISTER);
+            enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER);
             String tenantDomain = user.getTenantDomain();
 
             publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
@@ -720,7 +720,7 @@ public class UserSelfRegistrationManager {
 
         User user;
         try {
-            enterFlow(Flow.Name.REGISTER);
+            enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER);
             publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                     IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -841,12 +841,28 @@ public class UserSelfRegistrationManager {
         boolean supportMultipleEmailsAndMobileNumbers =
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+        Map<String, String> userClaimsToBeAdded = new HashMap<>();
+        Map<String, String> userClaimsToBeModified = new HashMap<>();
+        Map<String, String> userClaimsToBeDeleted = new HashMap<>();
+        Flow.InitiatingPersona flowInitiatingPersona = Flow.InitiatingPersona.USER;
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
+            String primaryEmail = null;
+            try {
+                // If the email being verified isn't the primary email, do not set the "emailVerified" claim.
+                primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+            } catch (IdentityEventException e) {
+                log.error(String.format("Error occurred while obtaining claim for the user: %s",
+                        Utils.maskIfRequired(user.getUserName())));
+            }
+
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
                 eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
+                        StringUtils.EMPTY);
                 // Only update verified email addresses claim if the recovery scenario is
                 // EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
                 if (RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
@@ -854,21 +870,16 @@ public class UserSelfRegistrationManager {
                     try {
                         List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
                                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-                        verifiedEmails.add(pendingEmailClaimValue);
-                        userClaims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
-                                verifiedEmails, multiAttributeSeparator));
+                        addOrUpdateMultiValuedClaim(verifiedEmails, pendingEmailClaimValue,
+                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
                         List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
                                 IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-                        if (!allEmails.contains(pendingEmailClaimValue)) {
-                            allEmails.add(pendingEmailClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
-                                    allEmails, multiAttributeSeparator)) ;
-                        }
+                        addOrUpdateMultiValuedClaim(allEmails, pendingEmailClaimValue,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
-                        // If the email being verified isn’t the primary email, do not set the “emailVerified” claim.
-                        String primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
                         if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
                             userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
                         }
@@ -876,14 +887,28 @@ public class UserSelfRegistrationManager {
                             // If the primary email is not set, set the verified email as primary.
                             userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
                             userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                    Boolean.TRUE.toString());
                         }
                     } catch (IdentityEventException e) {
-                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
-                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
-                                "value for the user : " + user.getUserName(), e);
+                        throw new IdentityRecoveryServerException(String.format(
+                                "Error occurred while obtaining existing claim value for the user: %s",
+                                Utils.maskIfRequired(user.getUserName())), e);
                     }
                 } else {
                     userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    if (StringUtils.isBlank(primaryEmail)) {
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
+                    } else {
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                                pendingEmailClaimValue);
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
+                    }
                 }
                 // Todo passes when email address is properly set here.
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
@@ -891,7 +916,16 @@ public class UserSelfRegistrationManager {
             }
         }
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            flowInitiatingPersona = Flow.InitiatingPersona.ADMIN;
             String pendingMobileClaimValue = recoveryData.getRemainingSetIds();
+            String primaryMobile = null;
+            try {
+                primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            } catch (IdentityEventException e) {
+                log.error(String.format("Error occurred while obtaining claim for the user: %s",
+                        Utils.maskIfRequired(user.getUserName())));
+            }
             if (StringUtils.isNotBlank(pendingMobileClaimValue)) {
                 if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
                             recoveryData.getRecoveryScenario())
@@ -901,11 +935,9 @@ public class UserSelfRegistrationManager {
                     try {
                         List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                                 user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                        if (!existingVerifiedMobileNumbersList.contains(pendingMobileClaimValue)) {
-                            existingVerifiedMobileNumbersList.add(pendingMobileClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
-                        }
+                        addOrUpdateMultiValuedClaim(existingVerifiedMobileNumbersList, pendingMobileClaimValue,
+                                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
                         /*
                         VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
@@ -913,15 +945,10 @@ public class UserSelfRegistrationManager {
                         */
                         List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                                 user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-                        if (!allMobileNumbersList.contains(pendingMobileClaimValue)) {
-                            allMobileNumbersList.add(pendingMobileClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, allMobileNumbersList));
-                        }
+                        addOrUpdateMultiValuedClaim(allMobileNumbersList, pendingMobileClaimValue,
+                                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
-                        // If the mobile being verified isn’t the primary mobile, do not set the “phoneVerified” claim.
-                        String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
                         if (StringUtils.isNotBlank(primaryMobile) && !pendingMobileClaimValue.equals(primaryMobile)) {
                             userClaims.remove(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM);
                         }
@@ -929,17 +956,34 @@ public class UserSelfRegistrationManager {
                             // If the primary mobile is not set, set the verified mobile as primary.
                             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
                             userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                                    pendingMobileClaimValue);
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                    Boolean.TRUE.toString());
                         }
 
                     } catch (IdentityEventException e) {
-                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
-                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
-                                "value for the user : " + user.getUserName(), e);
+                        throw new IdentityRecoveryServerException(String.format(
+                                "Error occurred while obtaining existing claim value for the user: %s",
+                                Utils.maskIfRequired(user.getUserName())), e);
                     }
                 } else {
                     userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    if (StringUtils.isBlank(primaryMobile)) {
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
+                    } else {
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                                pendingMobileClaimValue);
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
+                    }
                 }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM,
+                        StringUtils.EMPTY);
                 // Todo passes when mobile number is properly set here.
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
@@ -956,8 +1000,43 @@ public class UserSelfRegistrationManager {
         } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
         }
+
+
+        if (isValidVerificationOnUpdateScenario(recoveryData)) {
+            try {
+                enterFlow(Flow.Name.PROFILE_UPDATE, flowInitiatingPersona);
+                publishUserProfileUpdateEvent(user, userStoreManager, userClaimsToBeAdded, userClaimsToBeModified,
+                        userClaimsToBeDeleted);
+            } finally {
+                IdentityContext.getThreadLocalIdentityContext().exitFlow();
+            }
+        }
+
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
+    }
+
+    /**
+     * Check whether the recovery scenario and step correspond to a valid verification on update scenario.
+     *
+     * @param recoveryData User recovery data.
+     * @return true if valid verification on update scenario, false otherwise.
+     */
+    private boolean isValidVerificationOnUpdateScenario(UserRecoveryData recoveryData) {
+
+        RecoveryScenarios scenario = (RecoveryScenarios) recoveryData.getRecoveryScenario();
+        RecoverySteps step = (RecoverySteps) recoveryData.getRecoveryStep();
+
+        boolean isEmailVerification = (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(scenario) ||
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario)) &&
+                RecoverySteps.VERIFY_EMAIL.equals(step);
+
+        boolean isMobileVerification = (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(scenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario) ||
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario)) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(step);
+
+        return isEmailVerification || isMobileVerification;
     }
 
     private void validateRecoverySteps(UserRecoveryData recoveryData, User user)
@@ -1099,11 +1178,24 @@ public class UserSelfRegistrationManager {
         // Get the userstore manager for the user.
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
+        Map<String, String> userClaimsToBeAdded = new HashMap<>();
+        Map<String, String> userClaimsToBeModified = new HashMap<>();
+        Map<String, String> userClaimsToBeDeleted = new HashMap<>();
 
         boolean supportMultipleEmailsAndMobileNumbers =
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
+        String primaryMobile = null;
+
+        try {
+            primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+        } catch (IdentityEventException e) {
+            log.error(String.format("Error occurred while obtaining claim for the user: %s",
+                    Utils.maskIfRequired(user.getUserName())));
+        }
+
         if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
             /*
             Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
@@ -1116,11 +1208,9 @@ public class UserSelfRegistrationManager {
                     String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
                     List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                             user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                    if (!existingVerifiedMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
-                        existingVerifiedMobileNumbersList.add(pendingMobileNumberClaimValue);
-                        userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                                String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
-                    }
+                    addOrUpdateMultiValuedClaim(existingVerifiedMobileNumbersList, pendingMobileNumberClaimValue,
+                            IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                            userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
                     /*
                     VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
@@ -1128,38 +1218,62 @@ public class UserSelfRegistrationManager {
                     */
                     List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                             user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-                    if (!allMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
-                        allMobileNumbersList.add(pendingMobileNumberClaimValue);
-                        userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                                String.join(multiAttributeSeparator, allMobileNumbersList));
-                    }
+                    addOrUpdateMultiValuedClaim(allMobileNumbersList, pendingMobileNumberClaimValue,
+                            IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                            userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
-                    // If the mobile being verified is the primary mobile, set the “phoneVerified” claim to true.
-                    String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
-                            IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                    // If the mobile being verified is the primary mobile, set the "phoneVerified" claim to true.
                     if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
                         userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
                     }
                     if (StringUtils.isBlank(primaryMobile)) {
                         // If the primary mobile is not set, set the verified mobile as primary.
                         userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
                         userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                                pendingMobileNumberClaimValue);
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
                     }
                 } catch (IdentityEventException e) {
-                    log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
-                    throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
-                            "value for the user : " + user.getUserName(), e);
+                    throw new IdentityRecoveryServerException(String.format(
+                            "Error occurred while obtaining existing claim value for the user: %s",
+                            Utils.maskIfRequired(user.getUserName())), e);
                 }
             } else {
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
                 userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+                if (StringUtils.isBlank(primaryMobile)) {
+                    userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                    userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                            Boolean.TRUE.toString());
+                } else {
+                    userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                            pendingMobileNumberClaimValue);
+                    userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                            Boolean.TRUE.toString());
+                }
             }
             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
+
+        if (isValidVerificationOnUpdateScenario(recoveryData)) {
+            try {
+                enterFlow(Flow.Name.PROFILE_UPDATE, Flow.InitiatingPersona.USER);
+                publishUserProfileUpdateEvent(user, userStoreManager, userClaimsToBeAdded, userClaimsToBeModified,
+                        userClaimsToBeDeleted);
+            } finally {
+                IdentityContext.getThreadLocalIdentityContext().exitFlow();
+            }
+        }
+
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
@@ -1972,7 +2086,7 @@ public class UserSelfRegistrationManager {
         }
         NotificationResponseBean notificationResponseBean;
         try {
-            enterFlow(Flow.Name.REGISTER);
+            enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER);
 
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
@@ -2385,12 +2499,124 @@ public class UserSelfRegistrationManager {
      *
      * @param flowName The name of the flow to set in the identity context.
      */
-    private void enterFlow(Flow.Name flowName) {
+    private void enterFlow(Flow.Name flowName, Flow.InitiatingPersona initiatingPersona) {
 
         IdentityContext.getThreadLocalIdentityContext()
                 .enterFlow(new Flow.Builder()
                         .name(flowName)
-                        .initiatingPersona(Flow.InitiatingPersona.USER)
+                        .initiatingPersona(initiatingPersona)
                         .build());
+    }
+
+
+    /**
+     * This method publishes POST_USER_PROFILE_UPDATE event with proper properties for webhook execution.
+     *
+     * @param user             User object
+     * @param userStoreManager User store manager
+     * @param userClaimsAdded  Claims that were added
+     * @param userClaimsModified Claims that were modified
+     * @param userClaimsDeleted Claims that were deleted
+     */
+    private void publishUserProfileUpdateEvent(User user, UserStoreManager userStoreManager,
+                                               Map<String, String> userClaimsAdded,
+                                               Map<String, String> userClaimsModified,
+                                               Map<String, String> userClaimsDeleted) {
+
+        HashMap<String, Object> properties = new HashMap<>();
+
+        if (user == null) {
+            log.warn("User is null. Cannot publish POST_USER_PROFILE_UPDATE event.");
+            return;
+        }
+
+        // Get user ID from userStoreManager
+        try {
+            if (userStoreManager instanceof AbstractUserStoreManager) {
+                String userId = ((AbstractUserStoreManager) userStoreManager)
+                        .getUserIDFromUserName(user.getUserName());
+                properties.put(IdentityEventConstants.EventProperty.USER_ID, userId);
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Retrieved user ID: %s for user: %s", userId,
+                            Utils.maskIfRequired(user.getUserName())));
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("UserStoreManager is not an instance of AbstractUserStoreManager. " +
+                            "Skipping user ID retrieval for user: %s", Utils.maskIfRequired(user.getUserName())));
+                }
+            }
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            log.error(String.format("Error occurred while getting user ID for user: %s",
+                    Utils.maskIfRequired(user.getUserName())), e);
+        }
+
+        // Add claim maps to properties
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS_ADDED, userClaimsAdded);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED, userClaimsModified);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED, userClaimsDeleted);
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Event properties - USER_CLAIMS_ADDED: %s, USER_CLAIMS_MODIFIED: %s, USER_CLAIMS_DELETED: %s",
+                    userClaimsAdded.keySet(), userClaimsModified.keySet(), userClaimsDeleted.keySet()));
+        }
+
+        // Add tenant information
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_ID,
+                IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN,
+                IdentityUtil.extractDomainFromName(user.getUserName()));
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Event properties - TENANT_DOMAIN: %s, USER_STORE_DOMAIN: %s",
+                    user.getTenantDomain(), IdentityUtil.extractDomainFromName(user.getUserName())));
+        }
+
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_USER_PROFILE_UPDATE, properties);
+
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Successfully published POST_USER_PROFILE_UPDATE event for user: %s",
+                        Utils.maskIfRequired(user.getUserName())));
+            }
+        } catch (IdentityEventException e) {
+            log.error(String.format("Error occurred publishing event POST_USER_PROFILE_UPDATE for user: %s",
+                    Utils.maskIfRequired(user.getUserName())), e);
+        }
+    }
+
+    /**
+     * Helper method to add or update a multi-valued claim and track it in the appropriate claim map.
+     * This method handles the logic of determining whether a claim is being added for the first time
+     * or modified with additional values.
+     *
+     * @param existingValues         The list of existing values (will be modified by adding the new value)
+     * @param newValue               The new value to add to the list
+     * @param claimUri               The URI of the claim being updated
+     * @param multiAttributeSeparator The separator to use when joining multiple values
+     * @param userClaims             The map of user claims to update
+     * @param userClaimsToBeAdded    The map tracking claims that are being added
+     * @param userClaimsToBeModified The map tracking claims that are being modified
+     */
+    private void addOrUpdateMultiValuedClaim(List<String> existingValues, String newValue, String claimUri,
+                                             String multiAttributeSeparator, Map<String, String> userClaims,
+                                             Map<String, String> userClaimsToBeAdded,
+                                             Map<String, String> userClaimsToBeModified) {
+
+        if (!existingValues.contains(newValue)) {
+            existingValues.add(newValue);
+            String updatedClaimValue = StringUtils.join(existingValues, multiAttributeSeparator);
+            userClaims.put(claimUri, updatedClaimValue);
+
+            if (existingValues.size() == 1) {
+                // First value being added to this claim.
+                userClaimsToBeAdded.put(claimUri, newValue);
+            } else {
+                // Claim already existed, this is a modification.
+                userClaimsToBeModified.put(claimUri, updatedClaimValue);
+            }
+        }
     }
 }
