@@ -22,6 +22,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +67,8 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                         equals(resolvedUserResult.getResolvedStatus())) {
                     User resolvedUser = new User();
-                    resolvedUser.setUserName(resolvedUserResult.getUser().getPreferredUsername());
+                    resolvedUser.setUserName(
+                            UserCoreUtil.removeDomainFromName(resolvedUserResult.getUser().getUsername()));
                     if (StringUtils.isBlank(user.getRealm())) {
                         resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
                     } else {
