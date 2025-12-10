@@ -1033,6 +1033,7 @@ public class UserSelfRegistrationManager {
 
         boolean isMobileVerification = (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(scenario) ||
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario) ||
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.equals(scenario) ||
                 RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario)) &&
                 RecoverySteps.VERIFY_MOBILE_NUMBER.equals(step);
 

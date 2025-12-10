@@ -57,6 +57,7 @@ import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -2065,6 +2066,255 @@ public class UserSelfRegistrationManagerTest {
     private void mockGetUserClaimValue(String claimUri, String claimValue) throws UserStoreException {
 
         when(userStoreManager.getUserClaimValue(any(), eq(claimUri), any())).thenReturn(claimValue);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEmailVerificationPublishesProfileUpdateEventWithPendingClaimModified()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException, ClaimMetadataException,
+            IdentityEventException {
+
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
+        String verificationPendingEmail = "verified@test.com";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(false);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, StringUtils.EMPTY);
+
+        org.wso2.carbon.identity.application.common.model.Property property =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+        when(abstractUserStoreManager.getUserIDFromUserName(anyString())).thenReturn("test-user-id");
+
+        // Capture the event published.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        doNothing().when(identityEventService).handleEvent(eventCaptor.capture());
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                verifiedChannelClaim, metaProperties);
+
+        // Verify POST_USER_PROFILE_UPDATE event was published.
+        List<Event> events = eventCaptor.getAllValues();
+        Event profileUpdateEvent = events.stream()
+                .filter(e -> IdentityEventConstants.Event.POST_USER_PROFILE_UPDATE.equals(e.getEventName()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(profileUpdateEvent, "POST_USER_PROFILE_UPDATE event should be published.");
+
+        // Verify the event contains USER_CLAIMS_MODIFIED with pending email claim set to empty.
+        Map<String, Object> eventProperties = profileUpdateEvent.getEventProperties();
+        assertNotNull(eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED));
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+
+        // Verify pending email claim is in modified claims (not deleted).
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+                "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
+        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
+                "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be set to empty string.");
+
+        // Verify USER_CLAIMS_ADDED contains the email address claim.
+        @SuppressWarnings("unchecked")
+        Map<String, String> addedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_ADDED);
+        assertTrue(addedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
+                "EMAIL_ADDRESS_CLAIM should be in USER_CLAIMS_ADDED.");
+        assertEquals(addedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), verificationPendingEmail);
+    }
+
+    @Test
+    public void testMobileVerificationPublishesProfileUpdateEventWithPendingClaimModified()
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException, IdentityEventException {
+
+        String verificationPendingMobile = "+94771234567";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData.setRemainingSetIds(verificationPendingMobile);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(false);
+        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, StringUtils.EMPTY);
+        when(abstractUserStoreManager.getUserIDFromUserName(anyString())).thenReturn("test-user-id");
+
+        // Capture the event published.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        doNothing().when(identityEventService).handleEvent(eventCaptor.capture());
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, metaProperties);
+
+        // Verify POST_USER_PROFILE_UPDATE event was published.
+        List<Event> events = eventCaptor.getAllValues();
+        Event profileUpdateEvent = events.stream()
+                .filter(e -> IdentityEventConstants.Event.POST_USER_PROFILE_UPDATE.equals(e.getEventName()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(profileUpdateEvent, "POST_USER_PROFILE_UPDATE event should be published.");
+
+        // Verify the event contains USER_CLAIMS_MODIFIED with pending mobile claim set to empty.
+        Map<String, Object> eventProperties = profileUpdateEvent.getEventProperties();
+        assertNotNull(eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED));
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+
+        // Verify pending mobile claim is in modified claims (not deleted).
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
+        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
+                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be set to empty string.");
+
+        // Verify USER_CLAIMS_ADDED contains the mobile number claim.
+        @SuppressWarnings("unchecked")
+        Map<String, String> addedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_ADDED);
+        assertTrue(addedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM),
+                "MOBILE_NUMBER_CLAIM should be in USER_CLAIMS_ADDED.");
+        assertEquals(addedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), verificationPendingMobile);
+    }
+
+    @Test
+    public void testEmailVerificationOnVerifiedListUpdatePublishesProfileUpdateEvent()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException, ClaimMetadataException,
+            IdentityEventException {
+
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
+        String verificationPendingEmail = "new@test.com";
+        String existingVerifiedEmail = "existing@test.com";
+        String primaryEmail = "primary@test.com";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(true);
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, existingVerifiedEmail);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, existingVerifiedEmail + "," + primaryEmail);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, primaryEmail);
+
+        org.wso2.carbon.identity.application.common.model.Property property =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+        when(abstractUserStoreManager.getUserIDFromUserName(anyString())).thenReturn("test-user-id");
+
+        // Capture the event published.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        doNothing().when(identityEventService).handleEvent(eventCaptor.capture());
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                verifiedChannelClaim, metaProperties);
+
+        // Verify POST_USER_PROFILE_UPDATE event was published.
+        List<Event> events = eventCaptor.getAllValues();
+        Event profileUpdateEvent = events.stream()
+                .filter(e -> IdentityEventConstants.Event.POST_USER_PROFILE_UPDATE.equals(e.getEventName()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(profileUpdateEvent, "POST_USER_PROFILE_UPDATE event should be published.");
+
+        Map<String, Object> eventProperties = profileUpdateEvent.getEventProperties();
+
+        // Verify USER_CLAIMS_MODIFIED contains the multi-valued verified emails claim.
+        @SuppressWarnings("unchecked")
+        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
+                "VERIFIED_EMAIL_ADDRESSES_CLAIM should be in USER_CLAIMS_MODIFIED.");
+
+        // Verify pending email claim is modified to empty.
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+                "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
+        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
+    }
+
+    @Test
+    public void testMobileVerificationOnVerifiedListUpdatePublishesProfileUpdateEvent()
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException, IdentityEventException {
+
+        String verificationPendingMobile = "+94771234567";
+        String existingVerifiedMobile = "+94777777777";
+        String primaryMobile = "+94778888888";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData.setRemainingSetIds(verificationPendingMobile);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(true);
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, existingVerifiedMobile);
+        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, existingVerifiedMobile + "," + primaryMobile);
+        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, primaryMobile);
+        when(abstractUserStoreManager.getUserIDFromUserName(anyString())).thenReturn("test-user-id");
+
+        // Capture the event published.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        doNothing().when(identityEventService).handleEvent(eventCaptor.capture());
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, metaProperties);
+
+        // Verify POST_USER_PROFILE_UPDATE event was published.
+        List<Event> events = eventCaptor.getAllValues();
+        Event profileUpdateEvent = events.stream()
+                .filter(e -> IdentityEventConstants.Event.POST_USER_PROFILE_UPDATE.equals(e.getEventName()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(profileUpdateEvent, "POST_USER_PROFILE_UPDATE event should be published.");
+
+        Map<String, Object> eventProperties = profileUpdateEvent.getEventProperties();
+
+        // Verify USER_CLAIMS_MODIFIED contains the multi-valued verified mobiles claim.
+        @SuppressWarnings("unchecked")
+        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                "VERIFIED_MOBILE_NUMBERS_CLAIM should be in USER_CLAIMS_MODIFIED.");
+
+        // Verify pending mobile claim is modified to empty.
+        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
+        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
     }
 
     /**
