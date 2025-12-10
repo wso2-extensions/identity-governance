@@ -1005,10 +1005,12 @@ public class UserSelfRegistrationManager {
         if (isValidVerificationOnUpdateScenario(recoveryData)) {
             try {
                 enterFlow(Flow.Name.PROFILE_UPDATE, flowInitiatingPersona);
+                log.debug("PROFILE_UPDATE flow started for verification on claim update scenario.");
                 publishUserProfileUpdateEvent(user, userStoreManager, userClaimsToBeAdded, userClaimsToBeModified,
                         userClaimsToBeDeleted);
             } finally {
                 IdentityContext.getThreadLocalIdentityContext().exitFlow();
+                log.debug("PROFILE_UPDATE flow ended for verification on claim update scenario.");
             }
         }
 
@@ -1268,10 +1270,12 @@ public class UserSelfRegistrationManager {
         if (isValidVerificationOnUpdateScenario(recoveryData)) {
             try {
                 enterFlow(Flow.Name.PROFILE_UPDATE, Flow.InitiatingPersona.USER);
+                log.debug("PROFILE_UPDATE flow started for verification on claim update scenario.");
                 publishUserProfileUpdateEvent(user, userStoreManager, userClaimsToBeAdded, userClaimsToBeModified,
                         userClaimsToBeDeleted);
             } finally {
                 IdentityContext.getThreadLocalIdentityContext().exitFlow();
+                log.debug("PROFILE_UPDATE flow ended for verification on claim update scenario.");
             }
         }
 
