@@ -2257,10 +2257,13 @@ public class UserSelfRegistrationManagerTest {
         assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
                 "VERIFIED_EMAIL_ADDRESSES_CLAIM should be in USER_CLAIMS_MODIFIED.");
 
-        // Verify pending email claim is modified to empty.
-        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+        // Verify pending email claim is deleted to empty.
+        @SuppressWarnings("unchecked")
+        Map<String, String> deleteClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED);
+        assertTrue(deleteClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
                 "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
-        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
+        assertEquals(deleteClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
     }
 
     @Test
