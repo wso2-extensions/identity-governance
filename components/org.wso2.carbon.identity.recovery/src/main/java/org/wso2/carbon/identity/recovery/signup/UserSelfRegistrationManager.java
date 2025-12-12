@@ -915,7 +915,11 @@ public class UserSelfRegistrationManager {
             }
         }
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
-            flowInitiatingPersona = Flow.InitiatingPersona.ADMIN;
+            // This flow is initiated by admin in the mobile number verification on update scenario.
+            if (RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryData.getRecoveryScenario())
+                    || RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(recoveryData.getRecoveryScenario())) {
+                flowInitiatingPersona = Flow.InitiatingPersona.ADMIN;
+            }
             String pendingMobileClaimValue = recoveryData.getRemainingSetIds();
             String primaryMobile = null;
             try {
