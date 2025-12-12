@@ -850,7 +850,6 @@ public class UserSelfRegistrationManager {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
             String primaryEmail = null;
             try {
-                // If the email being verified isn't the primary email, do not set the "emailVerified" claim.
                 primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
             } catch (IdentityEventException e) {
@@ -861,7 +860,7 @@ public class UserSelfRegistrationManager {
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
                 eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
+                userClaimsToBeDeleted.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
                         StringUtils.EMPTY);
                 // Only update verified email addresses claim if the recovery scenario is
                 // EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
@@ -982,7 +981,7 @@ public class UserSelfRegistrationManager {
                     }
                 }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM,
+                userClaimsToBeDeleted.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM,
                         StringUtils.EMPTY);
                 // Todo passes when mobile number is properly set here.
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
@@ -1002,6 +1001,8 @@ public class UserSelfRegistrationManager {
         }
 
 
+        // Above flow is common for both self sign up confirmation and email/mobile verification on update.
+        // Profile update flow should be initiated only for email/mobile verification on update scenarios.
         if (isValidVerificationOnUpdateScenario(recoveryData)) {
             try {
                 enterFlow(Flow.Name.PROFILE_UPDATE, flowInitiatingPersona);
@@ -1260,13 +1261,14 @@ public class UserSelfRegistrationManager {
                 }
             }
             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-            userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            userClaimsToBeDeleted.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
+        // Profile update flow should be initiated only for email/mobile verification on update scenarios.
         if (isValidVerificationOnUpdateScenario(recoveryData)) {
             try {
                 enterFlow(Flow.Name.PROFILE_UPDATE, Flow.InitiatingPersona.USER);
