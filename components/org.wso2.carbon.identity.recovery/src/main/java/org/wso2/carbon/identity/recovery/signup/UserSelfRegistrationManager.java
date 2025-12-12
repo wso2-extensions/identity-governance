@@ -853,8 +853,8 @@ public class UserSelfRegistrationManager {
                 primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
             } catch (IdentityEventException e) {
-                log.error(String.format("Error occurred while obtaining claim for the user: %s",
-                        Utils.maskIfRequired(user.getUserName())));
+                log.error("Error occurred while obtaining email claim for the user: " +
+                        Utils.maskIfRequired(user.getUserName()), e);
             }
 
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
@@ -922,8 +922,8 @@ public class UserSelfRegistrationManager {
                 primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
             } catch (IdentityEventException e) {
-                log.error(String.format("Error occurred while obtaining claim for the user: %s",
-                        Utils.maskIfRequired(user.getUserName())));
+                log.error("Error occurred while obtaining mobile claim for the user: " +
+                        Utils.maskIfRequired(user.getUserName()), e);
             }
             if (StringUtils.isNotBlank(pendingMobileClaimValue)) {
                 if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
@@ -1196,8 +1196,8 @@ public class UserSelfRegistrationManager {
             primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
                     IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } catch (IdentityEventException e) {
-            log.error(String.format("Error occurred while obtaining claim for the user: %s",
-                    Utils.maskIfRequired(user.getUserName())));
+            log.error("Error occurred while obtaining mobile claim for the user: " +
+                    Utils.maskIfRequired(user.getUserName()), e);
         }
 
         if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {

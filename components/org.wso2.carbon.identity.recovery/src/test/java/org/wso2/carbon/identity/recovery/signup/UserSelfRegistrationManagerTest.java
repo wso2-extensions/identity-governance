@@ -2121,13 +2121,13 @@ public class UserSelfRegistrationManagerTest {
         assertNotNull(eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED));
 
         @SuppressWarnings("unchecked")
-        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
-                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+        Map<String, String> deletedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED);
 
-        // Verify pending email claim is in modified claims (not deleted).
-        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
-                "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
-        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
+        // Verify pending email claim is in deleted claims.
+        assertTrue(deletedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+                "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be in USER_CLAIMS_DELETED.");
+        assertEquals(deletedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
                 "EMAIL_ADDRESS_PENDING_VALUE_CLAIM should be set to empty string.");
 
         // Verify USER_CLAIMS_ADDED contains the email address claim.
@@ -2176,16 +2176,16 @@ public class UserSelfRegistrationManagerTest {
 
         // Verify the event contains USER_CLAIMS_MODIFIED with pending mobile claim set to empty.
         Map<String, Object> eventProperties = profileUpdateEvent.getEventProperties();
-        assertNotNull(eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED));
+        assertNotNull(eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED));
 
         @SuppressWarnings("unchecked")
-        Map<String, String> modifiedClaims = (Map<String, String>) eventProperties.get(
-                IdentityEventConstants.EventProperty.USER_CLAIMS_MODIFIED);
+        Map<String, String> deletedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED);
 
-        // Verify pending mobile claim is in modified claims (not deleted).
-        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
-        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
+        // Verify pending mobile claim is in deleted claims.
+        assertTrue(deletedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_DELETED.");
+        assertEquals(deletedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY,
                 "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be set to empty string.");
 
         // Verify USER_CLAIMS_ADDED contains the mobile number claim.
@@ -2311,10 +2311,13 @@ public class UserSelfRegistrationManagerTest {
         assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
                 "VERIFIED_MOBILE_NUMBERS_CLAIM should be in USER_CLAIMS_MODIFIED.");
 
-        // Verify pending mobile claim is modified to empty.
-        assertTrue(modifiedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_MODIFIED.");
-        assertEquals(modifiedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
+        // Verify pending mobile claim is deleted to empty.
+        @SuppressWarnings("unchecked")
+        Map<String, String> deletedClaims = (Map<String, String>) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_CLAIMS_DELETED);
+        assertTrue(deletedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                "MOBILE_NUMBER_PENDING_VALUE_CLAIM should be in USER_CLAIMS_DELETED.");
+        assertEquals(deletedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
     }
 
     /**
