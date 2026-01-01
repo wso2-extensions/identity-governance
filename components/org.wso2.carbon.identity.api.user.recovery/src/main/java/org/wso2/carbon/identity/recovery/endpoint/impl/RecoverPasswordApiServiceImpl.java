@@ -107,25 +107,35 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             }
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            if (e.getCause() != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
-                    e.getCause().getMessage())) {
-                LOG.error(e.getCause().getMessage(), e.getCause());
-                RecoveryUtil.handleBadRequest(e.getCause().getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
-            }
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            notificationResponseBean = handleRecoveryException(e.getCause(), e.getErrorCode(),
+                    recoveryInitiatingRequest);
         } catch (Throwable throwable) {
-            if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
-                    throwable.getMessage())) {
-                LOG.error(throwable.getMessage(), throwable);
-                RecoveryUtil.handleBadRequest(throwable.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
-            }
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+            notificationResponseBean = handleRecoveryException(throwable,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), recoveryInitiatingRequest);
         }
         if (StringUtils.isBlank(notificationResponseBean.getKey())) {
             return Response.accepted().build();
         }
         return Response.accepted(notificationResponseBean.getKey()).build();
+    }
+
+    private NotificationResponseBean handleRecoveryException(Throwable rootCause, String errorCode,
+                                                             RecoveryInitiatingRequestDTO recoveryInitiatingRequest) {
+
+        boolean isEmailNotFoundError = rootCause != null &&
+                StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND, rootCause.getMessage());
+        if (Utils.isUserExistenceHidden() && isEmailNotFoundError) {
+            // If user existence is hidden, do not reveal that the email is not found.
+            return new NotificationResponseBean(RecoveryUtil.getUser(recoveryInitiatingRequest.getUser()));
+        }
+        if (isEmailNotFoundError) {
+            // Log and handle email not found error separately
+            LOG.error(rootCause.getMessage(), rootCause);
+            RecoveryUtil.handleBadRequest(rootCause.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
+        }
+        // For other errors, handle as internal server error
+        RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, errorCode, LOG, rootCause);
+        return null; // Unreachable if handleInternalServerError throws an exception
     }
 
     /**

@@ -176,17 +176,19 @@ public class NotificationPasswordRecoveryManager {
                     IdentityRecoveryConstants.ACCOUNT_STATUS_DISABLED, eventName, properties);
             return new NotificationResponseBean(user);
         } else if (Utils.isAccountLocked(user)) {
-            // Check user in PENDING_SR or PENDING_AP status.
-            checkAccountPendingStatus(user);
-            // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
-            if (getNotifyUserAccountStatus()) {
-                String loginIdentifier = getLoginIdentifierFromProperties(properties);
-                loginIdentifier = StringUtils.isNotBlank(loginIdentifier) ? loginIdentifier : user.getUserName();
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                        loginIdentifier);
+            if (!Utils.isUserExistenceHidden()) {
+                // Check user in PENDING_SR or PENDING_AP status.
+                checkAccountPendingStatus(user);
+                // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
+                if (getNotifyUserAccountStatus()) {
+                    String loginIdentifier = getLoginIdentifierFromProperties(properties);
+                    loginIdentifier = StringUtils.isNotBlank(loginIdentifier) ? loginIdentifier : user.getUserName();
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
+                            loginIdentifier);
+                }
+                triggerAccountStatusNotification(user, notificationChannel,
+                        IdentityRecoveryConstants.ACCOUNT_STATUS_LOCKED, eventName, properties);
             }
-            triggerAccountStatusNotification(user, notificationChannel,
-                    IdentityRecoveryConstants.ACCOUNT_STATUS_LOCKED, eventName, properties);
             return new NotificationResponseBean(user);
         }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
