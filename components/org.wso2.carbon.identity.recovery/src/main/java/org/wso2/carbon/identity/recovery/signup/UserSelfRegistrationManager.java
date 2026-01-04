@@ -121,6 +121,8 @@ import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
+import static org.wso2.carbon.identity.event.IdentityEventConstants.Event.POST_MOBILE_CHANGE_VERIFICATION;
+import static org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty.VERIFIED_MOBILE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
@@ -817,6 +819,7 @@ public class UserSelfRegistrationManager {
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
         eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
 
         if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
             triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_USER_ACCOUNT_CONFIRMATION);
@@ -984,6 +987,7 @@ public class UserSelfRegistrationManager {
                                 Boolean.TRUE.toString());
                     }
                 }
+                eventProperties.put(VERIFIED_MOBILE, pendingMobileClaimValue);
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 userClaimsToBeDeleted.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM,
                         StringUtils.EMPTY);
@@ -992,16 +996,25 @@ public class UserSelfRegistrationManager {
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
+
+        // Get verifiedChannelURI before updating the user claims as it might be removed during the update.
+        String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
+
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
+        eventProperties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                recoveryData.getRecoveryScenario().name());
+        eventProperties.put(IdentityEventConstants.EventProperty.CONFIRMATION_CODE, code);
+
         if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) ||
                 RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
-            String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
         } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
+        } else if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, POST_MOBILE_CHANGE_VERIFICATION);
         }
 
 
