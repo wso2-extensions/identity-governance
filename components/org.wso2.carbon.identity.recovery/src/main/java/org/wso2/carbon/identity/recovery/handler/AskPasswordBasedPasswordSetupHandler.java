@@ -71,26 +71,8 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
         Map<String, Object> eventProperties = event.getEventProperties();
         String tenantDomainProperty = (String) eventProperties.get(TENANT_DOMAIN);
 
-        boolean isInviteUserRegistrationFlowEnabled;
-        try {
-            FlowConfigDTO flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(
-                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType(), tenantDomainProperty);
-            // A null flow configuration indicates that the Invited User Registration flow is not configured for the
-            // tenant; therefore, invited user registration is not enabled.
-            if (flowConfigDTO != null) {
-                isInviteUserRegistrationFlowEnabled = flowConfigDTO.getIsEnabled();
-            } else {
-                isInviteUserRegistrationFlowEnabled = false;
-            }
-        } catch (FlowMgtServerException e) {
-            throw new IdentityEventException(
-                    "Error while checking the invite user registration flow enablement for tenant: " +
-                            tenantDomainProperty, e
-            );
-        }
-
         if (!isAskPasswordBasedPasswordSetupHandlerEnabled(tenantDomainProperty)
-                && !isInviteUserRegistrationFlowEnabled) {
+                && !isInviteUserRegistrationFlowEnabled(tenantDomainProperty)) {
             return;
         }
 
@@ -259,5 +241,25 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
         // checking email verification enablement.
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION, tenantDomain));
+    }
+
+    private static boolean isInviteUserRegistrationFlowEnabled(String tenantDomain) throws IdentityEventException {
+
+        try {
+            FlowConfigDTO flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(
+                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType(), tenantDomain);
+            // A null flow configuration indicates that the Invited User Registration flow is not configured for the
+            // tenant; therefore, invited user registration is not enabled.
+            if (flowConfigDTO != null) {
+                return flowConfigDTO.getIsEnabled();
+            } else {
+                return false;
+            }
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException(
+                    "Error while checking the invite user registration flow enablement for tenant: " +
+                            tenantDomain, e
+            );
+        }
     }
 }
