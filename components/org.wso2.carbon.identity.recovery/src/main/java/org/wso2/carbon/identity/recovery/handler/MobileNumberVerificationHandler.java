@@ -227,7 +227,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
+            triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber,
+                    recoveryDataDO);
             // Set the otp triggered claim to be used in the authentication flow.
             IdentityUtil.threadLocalProperties.get().put(
                     IdentityRecoveryConstants.CLAIM_FOR_PENDING_OTP_VERIFICATION, otpTriggeredClaim);
@@ -247,7 +248,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * @throws IdentityRecoveryException
      */
     private void triggerNotification(User user, String code, Property[] props, String
-            verificationPendingMobileNumber) throws IdentityRecoveryException {
+            verificationPendingMobileNumber, UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
 
         String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE;
 
@@ -274,6 +275,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
+        }
+
+        if (recoveryDataDO != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    recoveryDataDO.getRecoveryScenario().name());
         }
 
         Event identityMgtEvent = new Event(eventName, properties);
