@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -345,12 +346,52 @@ public class AskPasswordBasedPasswordSetupHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
                 null, null, null);
         event.getEventProperties().put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, "");
+        FlowConfigDTO mockFlowConfig = mock(FlowConfigDTO.class);
+        when(mockFlowConfig.getIsEnabled()).thenReturn(false);
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(
+                        eq(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()), anyString()))
+                .thenReturn(mockFlowConfig);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, false);
-
         askPasswordBasedPasswordSetupHandler.handleEvent(event);
 
         // verify that no further actions were taken when the handler is disabled.
         mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(), any(), any()), org.mockito.Mockito.never());
+    }
+
+    @Test
+    public void testAskPasswordSetupHandlerDisabledWithNullFlowConfig() throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        event.getEventProperties().put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, "");
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(
+                        eq(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()), anyString()))
+                .thenReturn(null);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, false);
+        askPasswordBasedPasswordSetupHandler.handleEvent(event);
+
+        // verify that no further actions were taken when the handler is disabled.
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(), any(), any()), org.mockito.Mockito.never());
+    }
+
+    @Test(expectedExceptions = IdentityEventException.class,
+          expectedExceptionsMessageRegExp = "Error while checking the invite user registration flow enablement " +
+                  "for tenant: .*")
+    public void testHandleEventThrowsIdentityEventExceptionWhenFlowMgtServerExceptionOccurs() throws Exception {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        String testTenantDomain = "test-tenant.com";
+        event.getEventProperties().put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, testTenantDomain);
+
+        // Mock FlowMgtConfigUtils to throw FlowMgtServerException
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(
+                        eq(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()), eq(testTenantDomain)))
+                .thenThrow(new org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException(
+                        "Flow management server error"));
+
+        // This should throw IdentityEventException with the expected message
+        askPasswordBasedPasswordSetupHandler.handleEvent(event);
     }
 
     private void mockGetConnectorConfig(String connectorConfig, boolean value) {

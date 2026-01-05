@@ -25,6 +25,10 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -65,8 +69,10 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
     public void handleEvent(Event event) throws IdentityEventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
+        String tenantDomainProperty = (String) eventProperties.get(TENANT_DOMAIN);
 
-        if (!isAskPasswordBasedPasswordSetupHandlerEnabled((String) eventProperties.get(TENANT_DOMAIN))) {
+        if (!isAskPasswordBasedPasswordSetupHandlerEnabled(tenantDomainProperty)
+                && !isInviteUserRegistrationFlowEnabled(tenantDomainProperty)) {
             return;
         }
 
@@ -235,5 +241,25 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
         // checking email verification enablement.
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION, tenantDomain));
+    }
+
+    private static boolean isInviteUserRegistrationFlowEnabled(String tenantDomain) throws IdentityEventException {
+
+        try {
+            FlowConfigDTO flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(
+                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType(), tenantDomain);
+            // A null flow configuration indicates that the Invited User Registration flow is not configured for the
+            // tenant; therefore, invited user registration is not enabled.
+            if (flowConfigDTO != null) {
+                return flowConfigDTO.getIsEnabled();
+            } else {
+                return false;
+            }
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException(
+                    "Error while checking the invite user registration flow enablement for tenant: " +
+                            tenantDomain, e
+            );
+        }
     }
 }
