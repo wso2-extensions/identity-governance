@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.axis2.description.Flow;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -25,6 +26,9 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -65,8 +69,21 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
     public void handleEvent(Event event) throws IdentityEventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
+        String tenantDomainProperty = (String) eventProperties.get(TENANT_DOMAIN);
 
-        if (!isAskPasswordBasedPasswordSetupHandlerEnabled((String) eventProperties.get(TENANT_DOMAIN))) {
+        boolean isInviteUserRegistrationFlowEnabled;
+        try {
+            isInviteUserRegistrationFlowEnabled = FlowMgtConfigUtils.getFlowConfig(
+                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType(), tenantDomainProperty).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException(
+                    "Error while checking the invite user registration flow enablement for tenant: " +
+                            tenantDomainProperty, e
+            );
+        }
+
+        if (!isAskPasswordBasedPasswordSetupHandlerEnabled(tenantDomainProperty)
+                && !isInviteUserRegistrationFlowEnabled) {
             return;
         }
 

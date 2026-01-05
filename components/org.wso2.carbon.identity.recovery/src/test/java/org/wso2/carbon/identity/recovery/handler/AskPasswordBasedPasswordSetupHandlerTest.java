@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -345,8 +346,12 @@ public class AskPasswordBasedPasswordSetupHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
                 null, null, null);
         event.getEventProperties().put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, "");
+        FlowConfigDTO mockFlowConfig = mock(FlowConfigDTO.class);
+        when(mockFlowConfig.getIsEnabled()).thenReturn(false);
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(
+                        eq(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()), anyString()))
+                .thenReturn(mockFlowConfig);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, false);
-
         askPasswordBasedPasswordSetupHandler.handleEvent(event);
 
         // verify that no further actions were taken when the handler is disabled.
