@@ -223,7 +223,7 @@
                 <version>${apache.felix.scr.ds.annotations.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.eclipse.osgi</groupId>
+                <groupId>org.eclipse.platform</groupId>
                 <artifactId>org.eclipse.osgi.services</artifactId>
                 <version>${equinox.osgi.services.version}</version>
             </dependency>
@@ -724,7 +724,7 @@
         <commons-lang.osgi.version.range>[2.6.0, 3.0.0)</commons-lang.osgi.version.range>
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
-        <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
+        <equinox.osgi.services.version>3.12.0</equinox.osgi.services.version>
         <commons-collections.version>3.2.2.wso2v1</commons-collections.version>
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
         <identity.data.publisher.authentication.version>5.3.27</identity.data.publisher.authentication.version>
@@ -772,7 +772,7 @@
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
-        <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
         <jackson-jaxrs-json-provider.version>2.13.2</jackson-jaxrs-json-provider.version>
         <jackson-databind.version>2.13.2.1</jackson-databind.version>
         <cxf-bundle.version>3.5.9</cxf-bundle.version>

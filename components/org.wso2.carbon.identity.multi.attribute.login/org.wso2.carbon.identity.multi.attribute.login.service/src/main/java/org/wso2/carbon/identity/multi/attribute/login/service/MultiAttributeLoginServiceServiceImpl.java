@@ -21,10 +21,10 @@ package org.wso2.carbon.identity.multi.attribute.login.service;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.multi.attribute.login.constants.MultiAttributeLoginConstants;
 import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginDataHolder;
-import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginServiceComponent;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.utill.MultiAttributeLoginUtil;
@@ -37,6 +37,13 @@ import java.util.List;
 /**
  * This service provides the services needed to multi attribute login.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService",
+                "service.scope=singleton"
+        }
+)
 public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLoginService {
 
     private static final Log log = LogFactory.getLog(MultiAttributeLoginServiceServiceImpl.class);
