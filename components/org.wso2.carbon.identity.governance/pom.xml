@@ -107,6 +107,7 @@
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Provide-Capability>
                             osgi.service;objectClass=org.wso2.carbon.identity.governance.service.otp.OTPGenerator,
+                            osgi.service;objectClass=org.wso2.carbon.identity.governance.service.notification.NotificationTemplateManager,
                         </Provide-Capability>
                     </instructions>
                 </configuration>
