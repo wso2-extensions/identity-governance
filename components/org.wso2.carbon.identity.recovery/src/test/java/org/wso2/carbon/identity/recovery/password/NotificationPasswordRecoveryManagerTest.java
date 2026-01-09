@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -68,6 +69,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY;
@@ -161,12 +163,12 @@ public class NotificationPasswordRecoveryManagerTest {
                 TENANT_DOMAIN)).thenReturn(properties);
 
         try (MockedStatic<IdentityUtil> identityUtil = Mockito.mockStatic(IdentityUtil.class);
-            MockedStatic<Utils> mockedUtils = Mockito.mockStatic(Utils.class, Mockito.CALLS_REAL_METHODS);
-            MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore =
+             MockedStatic<Utils> mockedUtils = Mockito.mockStatic(Utils.class, Mockito.CALLS_REAL_METHODS);
+             MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore =
                      Mockito.mockStatic(JDBCRecoveryDataStore.class)) {
 
             identityUtil.when(() -> IdentityUtil.getProperty(
-                    IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE))
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE))
                     .thenReturn(sendOnlyOtpAsConfirmationCode);
             mockedUtils.when(() -> Utils.generateSecretKey(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
                     ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(OTP);
@@ -314,6 +316,114 @@ public class NotificationPasswordRecoveryManagerTest {
                 assertEquals(identityRecoveryClientException.getDescription(), EXTENSION_ERROR_DESCRIPTION);
             }
         }
+    }
+
+    @Test
+    public void testSendRecoveryNotification_AccountLocked_HideUserExistenceEnabled() throws Exception {
+
+        User user = createTestUser();
+        // Added JDBCRecoveryDataStore to the try-with-resources
+        try (MockedStatic<IdentityTenantUtil> tenantUtilMock = mockStatic(IdentityTenantUtil.class);
+             MockedStatic<IdentityUtil> identityUtilMock = mockStatic(IdentityUtil.class);
+             MockedStatic<Utils> utilsMock = mockStatic(Utils.class);
+             MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMock = mockStatic(JDBCRecoveryDataStore.class);
+             MockedStatic<OrganizationManagementUtil> organizationManagementUtilMock = mockStatic(OrganizationManagementUtil.class)) {
+
+            // Mock JDBC DataStore instance
+            jdbcRecoveryDataStoreMock.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+            organizationManagementUtilMock.when(() -> OrganizationManagementUtil.isOrganization(anyString())).thenReturn(false);
+
+            setupCommonMocks(user, tenantUtilMock, identityUtilMock, utilsMock);
+
+            // Mock lock and hidden status
+            utilsMock.when(() -> Utils.isAccountLocked(any(User.class))).thenReturn(true);
+            utilsMock.when(Utils::isUserExistenceHidden).thenReturn(true);
+
+            NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                    NotificationPasswordRecoveryManager.getInstance();
+            NotificationResponseBean result = notificationPasswordRecoveryManager.sendRecoveryNotification(
+                    user, NOTIFICATION_CHANNEL_EMAIL, true, new org.wso2.carbon.identity.recovery.model.Property[0]);
+
+            assertNotNull(result, "Should return NotificationResponseBean even when account is locked if " +
+                    "existence is hidden.");
+        }
+    }
+
+    @Test
+    public void testSendRecoveryNotification_AccountLocked_HideUserExistenceDisabled() throws Exception {
+
+        User user = createTestUser();
+
+        try (MockedStatic<IdentityTenantUtil> tenantUtilMock = mockStatic(IdentityTenantUtil.class);
+             MockedStatic<IdentityUtil> identityUtilMock = mockStatic(IdentityUtil.class);
+             MockedStatic<Utils> utilsMock = mockStatic(Utils.class);
+             MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMock = mockStatic(JDBCRecoveryDataStore.class);
+             MockedStatic<OrganizationManagementUtil> organizationManagementUtilMock = mockStatic(OrganizationManagementUtil.class)) {
+
+            // 1. Mock DataStore
+            jdbcRecoveryDataStoreMock.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+            organizationManagementUtilMock.when(() -> OrganizationManagementUtil.isOrganization(anyString())).thenReturn(false);
+
+            // 2. Setup Common Mocks (Realm, etc.)
+            setupCommonMocks(user, tenantUtilMock, identityUtilMock, utilsMock);
+
+            // 3. Mock Account Status: Locked = TRUE, Hidden = FALSE
+            utilsMock.when(() -> Utils.isAccountLocked(any(User.class))).thenReturn(true);
+            utilsMock.when(Utils::isUserExistenceHidden).thenReturn(false);
+
+            // 4. FIX: Mock IdentityUtil to return TRUE for the config (Handle both 1-arg and 2-arg calls)
+            identityUtilMock.when(() -> IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_ACCOUNT_STATUS)).thenReturn(TRUE_STRING);
+            identityUtilMock.when(() -> IdentityUtil.getProperty(
+                    ArgumentMatchers.eq(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_ACCOUNT_STATUS)
+            )).thenReturn(TRUE_STRING);
+
+            // 5. FIX: Stub handleClientException to return a real exception object (since Utils is a mock)
+            IdentityRecoveryClientException mockException = new IdentityRecoveryClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getCode(),
+                    "Account Locked");
+            utilsMock.when(() -> Utils.handleClientException(
+                    ArgumentMatchers.eq(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT),
+                    anyString())).thenReturn(mockException);
+
+            NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                    NotificationPasswordRecoveryManager.getInstance();
+
+            try {
+                notificationPasswordRecoveryManager.sendRecoveryNotification(user, NOTIFICATION_CHANNEL_EMAIL,
+                        true, new org.wso2.carbon.identity.recovery.model.Property[0]);
+                fail("Expected IdentityRecoveryClientException was not thrown.");
+            } catch (IdentityRecoveryClientException e) {
+                assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getCode());
+            }
+        }
+    }
+
+    private void setupCommonMocks(User user, MockedStatic<IdentityTenantUtil> tenantUtilMock,
+                                  MockedStatic<IdentityUtil> identityUtilMock,
+                                  MockedStatic<Utils> utilsMock) throws Exception {
+
+        tenantUtilMock.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(TENANT_ID);
+        identityUtilMock.when(IdentityUtil::getPrimaryDomainName).thenReturn(USER_STORE_DOMAIN);
+        identityUtilMock.when(() -> IdentityUtil.addDomainToName(anyString(), anyString())).thenReturn(USER_STORE_DOMAIN + "/" + "testUser");
+
+        utilsMock.when(() -> Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE_STRING);
+        utilsMock.when(() -> Utils.isAccessUrlAvailable(any())).thenReturn(true);
+        utilsMock.when(() -> Utils.isAccountDisabled(any(User.class))).thenReturn(false);
+        utilsMock.when(() -> Utils.getUserClaim(any(User.class), anyString())).thenReturn("test@gmail.com");
+
+        // --- FIX: Stub the RealmService and UserRealm chain ---
+        when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(userStoreManager.isExistingUser(anyString())).thenReturn(true);
+    }
+
+    private User createTestUser() {
+        User user = new User();
+        user.setUserName("testUser");
+        user.setTenantDomain(TENANT_DOMAIN);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+        return user;
     }
 
     private UserStoreException buildExceptionForPreUpdatePasswordActionFailure() {
