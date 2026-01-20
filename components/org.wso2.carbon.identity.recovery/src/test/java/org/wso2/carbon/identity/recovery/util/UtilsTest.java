@@ -84,6 +84,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -185,7 +186,7 @@ public class UtilsTest {
     }
 
     @BeforeMethod
-    public void setUp() throws org.wso2.carbon.user.api.UserStoreException {
+    public void setUp() throws org.wso2.carbon.user.api.UserStoreException, IdentityGovernanceException {
 
         MockitoAnnotations.openMocks(this);
 
@@ -201,6 +202,13 @@ public class UtilsTest {
 
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(identityRecoveryServiceDataHolder.getIdentityGovernanceService()).thenReturn(identityGovernanceService);
+        when(identityGovernanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN))).thenAnswer(invocation -> {
+            String[] keys = invocation.getArgument(0);
+            Property property = new Property();
+            property.setName(keys[0]);
+            property.setValue(FALSE_STRING);
+            return new Property[]{property};
+        });
         when(identityRecoveryServiceDataHolder.getAccountLockService()).thenReturn(accountLockService);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService()).thenReturn(
@@ -1433,7 +1441,40 @@ public class UtilsTest {
                 .thenReturn("false");
 
         boolean isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean isEmailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean isMobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+        assertFalse(isEmailsEnabled);
+        assertFalse(isMobilesEnabled);
+
+        // Case 1.1: When mobile verification on update is disabled, verified list claim is optional.
+        Map<String, String> mobileClaimProps = new HashMap<>();
+        mobileClaimProps.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        mobileClaimProps.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, "SUPPORTED");
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN))
+                .thenReturn(returnMobileRelatedLocalClaims(mobileClaimProps));
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("true");
+        when(identityGovernanceService.getConfiguration(eq(new String[]{IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE}), eq(TENANT_DOMAIN))).thenReturn(new Property[]{
+                        buildGovernanceProperty(IdentityRecoveryConstants.ConnectorConfig
+                                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, FALSE_STRING)});
+
+        boolean mobilesEnabledWhenVerificationDisabled =
+                Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertTrue(mobilesEnabledWhenVerificationDisabled);
+
+        // Case 1.2: When mobile verification on update is enabled, verified list claim becomes mandatory.
+        when(identityGovernanceService.getConfiguration(eq(new String[]{IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE}), eq(TENANT_DOMAIN))).thenReturn(new Property[]{
+                        buildGovernanceProperty(IdentityRecoveryConstants.ConnectorConfig
+                                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, TRUE_STRING)});
+
+        boolean mobilesEnabledWhenVerificationEnabled =
+                Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(mobilesEnabledWhenVerificationEnabled);
 
         // Case 2: When support_multi_emails_and_mobile_numbers_per_user config is true.
         mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
@@ -1446,7 +1487,11 @@ public class UtilsTest {
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties2));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEmailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isMobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(isEnabled);
+        assertTrue(isEmailsEnabled);
+        assertTrue(isMobilesEnabled);
 
         // Case 3: When support by default is disabled for feature related claims.
         Map<String, String> claimProperties3 = new HashMap<>();
@@ -1455,7 +1500,11 @@ public class UtilsTest {
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties3));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean emailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean mobilesEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+        assertFalse(emailsEnabled);
+        assertFalse(mobilesEnabled);
 
         // Case 4: When user store domain is excluded for feature related claims.
         Map<String, String> claimProperties4 = new HashMap<>();
@@ -1473,6 +1522,62 @@ public class UtilsTest {
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+    }
+
+    @Test
+    public void testIsMultiEmailsEnabledWhenVerificationDisabled() throws Exception {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("true");
+
+        Property property = new Property();
+        property.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        property.setValue(FALSE_STRING);
+        when(identityGovernanceService.getConfiguration(eq(new String[]{IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_VERIFICATION_ON_UPDATE}), eq(TENANT_DOMAIN))).thenReturn(new Property[]{property});
+
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService()).thenReturn(
+                claimMetadataManagementService);
+
+        Map<String, String> claimProps = new HashMap<>();
+        claimProps.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        emailAddressesClaim.setClaimProperties(claimProps);
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                Collections.singletonList(emailAddressesClaim));
+
+        boolean emailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertTrue(emailsEnabled);
+    }
+
+    @Test
+    public void testIsMultiEmailsDisabledWhenVerificationEnabledAndClaimMissing() throws Exception {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("true");
+
+        Property property = new Property();
+        property.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        property.setValue(TRUE_STRING);
+        when(identityGovernanceService.getConfiguration(eq(new String[]{IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_VERIFICATION_ON_UPDATE}), eq(TENANT_DOMAIN))).thenReturn(new Property[]{property});
+
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService()).thenReturn(
+                claimMetadataManagementService);
+
+        Map<String, String> claimProps = new HashMap<>();
+        claimProps.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        emailAddressesClaim.setClaimProperties(claimProps);
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                Collections.singletonList(emailAddressesClaim));
+
+        boolean emailsEnabled = Utils.isMultiEmailAddressesPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(emailsEnabled);
     }
 
     @Test(description = "Test getUserClaim() returns the stored claim value if it exists in the user store.")
@@ -1592,6 +1697,23 @@ public class UtilsTest {
         Mockito.when(context.getProperty("USER")).thenReturn(null);
         User result = Utils.resolveUserFromContext(context);
         assertNull(result);
+    }
+
+
+    private static Property buildGovernanceProperty(String name, String value) {
+
+        Property property = new Property();
+        property.setName(name);
+        property.setValue(value);
+        return property;
+    }
+
+
+    private static List<LocalClaim> returnMobileRelatedLocalClaims(Map<String, String> claimProperties) {
+
+        LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        mobileNumbersClaim.setClaimProperties(claimProperties);
+        return Collections.singletonList(mobileNumbersClaim);
     }
 
     private static List<LocalClaim> returnMultiEmailAndMobileRelatedLocalClaims(Map<String, String> claimProperties) {

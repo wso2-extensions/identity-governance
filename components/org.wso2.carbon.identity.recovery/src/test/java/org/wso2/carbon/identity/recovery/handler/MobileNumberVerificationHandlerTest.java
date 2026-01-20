@@ -684,7 +684,7 @@ public class MobileNumberVerificationHandlerTest {
     private void mockUtilMethods(boolean mobileVerificationEnabled, boolean multiAttributeEnabled,
                                  boolean useVerifyClaimEnabled) {
 
-        mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+        mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                 .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(useVerifyClaimEnabled);
         mockedUtils.when(() -> Utils.getConnectorConfig(

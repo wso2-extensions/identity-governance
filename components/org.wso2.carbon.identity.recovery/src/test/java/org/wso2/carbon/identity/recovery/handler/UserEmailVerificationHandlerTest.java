@@ -810,7 +810,7 @@ public class UserEmailVerificationHandlerTest {
     private void mockUtilMethods(boolean emailVerificationEnabled, boolean multiAttributeEnabled,
                                  boolean userVerifyClaimEnabled, boolean notificationOnEmailUpdate) {
 
-        mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+        mockedUtils.when(() -> Utils.isMultiEmailAddressesPerUserEnabled(anyString(), anyString()))
                 .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(userVerifyClaimEnabled);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
