@@ -195,9 +195,6 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             if (isEnableConfirmationOnCreation && isAccountLockOnCreation) {
                 step.setStepType(Constants.StepTypes.VIEW);
                 step.getData().addAdditionalData(ACCOUNT_STATUS, ACCOUNT_LOCKED);
-            } else {
-                publishEvent(user.getClaims(), user.getUserStoreDomain(), tenantDomain,
-                        IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
             }
         } catch (WorkflowException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
@@ -260,11 +257,13 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                 handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
                         IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS);
             }
-            publishEvent(user, confirmationCode, recoveryScenario);
-        } catch (UserStoreException | IdentityRecoveryException | IdentityEventException | FlowMgtServerException e) {
+            publishEvent(user, confirmationCode, recoveryScenario, IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
+        } catch (UserStoreException | IdentityRecoveryException | FlowMgtServerException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
                     context.getFlowType(), context.getContextIdentifier());
+        } catch (IdentityEventException e) {
+            log.error("Error while publishing event: " + IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, e);
         }
 
         return true;
@@ -325,10 +324,14 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                         notificationChannel.getChannelType(), StringUtils.EMPTY, internallyManaged,
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS);
             }
+            publishEvent(user, StringUtils.EMPTY, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+                    IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
         } catch (FlowMgtServerException | IdentityRecoveryException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
                     context.getFlowType(), context.getContextIdentifier());
+        } catch (IdentityEventException e) {
+            log.error("Error while publishing event: " + IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, e);
         }
         return true;
     }
@@ -498,7 +501,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         }
     }
 
-    private void publishEvent(User user, String code, String recoveryScenario)
+    private void publishEvent(User user, String code, String recoveryScenario, String eventName)
             throws IdentityEventException {
 
         HashMap<String, Object> props = new HashMap<>();
@@ -507,26 +510,12 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         props.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         props.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
         props.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
-        props.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-
-        Event event = new Event(IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, props);
-        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(event);
-    }
-
-    private void publishEvent(Map<String, String> claims, String userStoreDomain, String tenantDomain,
-                              String eventName) {
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
-        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
-
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            log.error("Error while publishing event: " + eventName, e);
+        if (StringUtils.isNotBlank(code)) {
+            props.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
+
+        Event event = new Event(eventName, props);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(event);
     }
 
     /**
