@@ -161,7 +161,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
                     preferredChannel, eventProperties);
 
-            // If the notification channel is verified no account lock is happening hence send the acount creation
+            // If the notification channel is verified no account lock is happening hence send the account creation
             // notification if the relevant configuration is enabled.
             // If notification channel is not verified, account creation notification is sent only if account
             // confirmation is disabled unless account confirmation notification will be sent.
@@ -171,6 +171,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
                         user.getUserStoreDomain());
             }
+
             // Event is not published if confirmation on creation is enabled as self registration is not complete yet.
             // If the notification channel is verified, then self registration is complete hence publish the event.
             if (notificationChannelVerified || !isEnableConfirmationOnCreation) {
