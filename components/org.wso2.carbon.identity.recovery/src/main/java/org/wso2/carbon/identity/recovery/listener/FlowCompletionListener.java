@@ -241,6 +241,11 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             return false;
         }
 
+        Map<String, String> userClaims = null;
+        if (context.getFlowUser() != null) {
+            userClaims = context.getFlowUser().getClaims();
+        }
+
         NotificationPasswordRecoveryManager manager = NotificationPasswordRecoveryManager.getInstance();
         notificationChannel = manager.getServerSupportedNotificationChannel(notificationChannel);
 
@@ -257,7 +262,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                 handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
                         IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS);
             }
-            publishEvent(user, confirmationCode, recoveryScenario, IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
+            publishEvent(user, userClaims, confirmationCode, recoveryScenario,
+                    IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
         } catch (UserStoreException | IdentityRecoveryException | FlowMgtServerException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
@@ -324,7 +330,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                         notificationChannel.getChannelType(), StringUtils.EMPTY, internallyManaged,
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS);
             }
-            publishEvent(user, StringUtils.EMPTY, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+            publishEvent(user, null , StringUtils.EMPTY, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
                     IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
         } catch (FlowMgtServerException | IdentityRecoveryException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
@@ -481,7 +487,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     }
 
     private void triggerNotification(User user, String recoveryScenario, String channel, String template,
-                                     String code, String eventName) throws IdentityRecoveryException {
+                                     String code, String eventName)
+            throws IdentityRecoveryException {
 
         HashMap<String, Object> props = new HashMap<>();
         props.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
@@ -501,7 +508,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         }
     }
 
-    private void publishEvent(User user, String code, String recoveryScenario, String eventName)
+    private void publishEvent(User user, Map<String, String> userClaims, String code, String recoveryScenario,
+                              String eventName)
             throws IdentityEventException {
 
         HashMap<String, Object> props = new HashMap<>();
@@ -512,6 +520,9 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         props.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
         if (StringUtils.isNotBlank(code)) {
             props.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
+        if (MapUtils.isNotEmpty(userClaims)) {
+            props.put(IdentityEventConstants.EventProperty.USER_CLAIMS, userClaims);
         }
 
         Event event = new Event(eventName, props);

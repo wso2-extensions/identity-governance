@@ -152,6 +152,10 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                     IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                     user.getTenantDomain()));
 
+            // In order for account lock to be effective, both account lock on creation and confirmation on creation
+            // should be enabled.
+            boolean isEffectiveAccountLockOnCreation = isAccountLockOnCreation && isEnableConfirmationOnCreation;
+
             // Get the user preferred notification channel.
             String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
                     userStoreDomain);
@@ -161,23 +165,25 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
                     preferredChannel, eventProperties);
 
-            // If the notification channel is verified no account lock is happening hence send the account creation
-            // notification if the relevant configuration is enabled.
-            // If notification channel is not verified, account creation notification is sent only if account
-            // confirmation is disabled unless account confirmation notification will be sent.
-            if (isNotificationInternallyManaged && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)
-                    && isSelfRegistrationConfirmationNotify &&
-                    (notificationChannelVerified || !isEnableConfirmationOnCreation) ) {
+            boolean isNotificationClaimAvailable = isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties);
+
+            // If notification channel is verified account is activated without further confirmation. Hence, send the
+            // account creation notification.
+            // If the notification channel is not verified, send the account creation notification if
+            // confirmation on creation is disabled.
+            if (isNotificationInternallyManaged && isNotificationClaimAvailable && isSelfRegistrationConfirmationNotify
+                    && (notificationChannelVerified || !isEnableConfirmationOnCreation)) {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
                         user.getUserStoreDomain());
             }
 
-            // Event is not published if confirmation on creation is enabled as self registration is not complete yet.
+            // Event is not published if account lock on creation is enabled as self registration is not complete yet.
             // If the notification channel is verified, then self registration is complete hence publish the event.
-            if (notificationChannelVerified || !(isEnableConfirmationOnCreation && isAccountLockOnCreation)) {
+            if (notificationChannelVerified || !isEffectiveAccountLockOnCreation) {
                 publishEvent(user, userStoreDomain, tenantDomain, eventProperties,
                         IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
             }
+
             // If the preferred channel is already verified, no need to send the notifications or lock
             // the account.
             if (notificationChannelVerified) {
@@ -185,8 +191,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             }
 
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
-            // Account locking is applicable only if Confirmation on creation is enabled.
-            if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
+            if (isEffectiveAccountLockOnCreation && isNotificationClaimAvailable) {
                 lockUserAccount(true, true, tenantDomain,
                         userStoreManager, userName);
             } else if (isEnableConfirmationOnCreation) {
@@ -194,13 +199,12 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                         userStoreManager, userName);
             }
 
-            // If notifications are externally managed, no notification needs to be sent.
+            // If notifications are externally managed, no notification are sent from the server.
             if (!isNotificationInternallyManaged) {
                 return;
             }
 
-            // If notifications are externally managed, no send notifications.
-            if (isEnableConfirmationOnCreation && isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties)) {
+            if (isEnableConfirmationOnCreation && isNotificationClaimAvailable) {
                 userRecoveryDataStore.invalidate(user);
 
                 // Create a secret key based on the preferred notification channel.
@@ -300,8 +304,8 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
     private boolean isNotifyingClaimAvailable(String claimUri, Map<String, Object> eventProperties) {
 
         Map<String, String> userClaims;
-        if (eventProperties.containsKey("USER_CLAIMS")) {
-            userClaims = (Map<String, String>) eventProperties.get("USER_CLAIMS");
+        if (eventProperties.containsKey(IdentityEventConstants.EventProperty.USER_CLAIMS)) {
+            userClaims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS);
         } else {
             return false;
         }
