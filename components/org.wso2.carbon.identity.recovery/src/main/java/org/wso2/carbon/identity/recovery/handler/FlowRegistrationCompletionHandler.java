@@ -174,7 +174,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
 
             // Event is not published if confirmation on creation is enabled as self registration is not complete yet.
             // If the notification channel is verified, then self registration is complete hence publish the event.
-            if (notificationChannelVerified || !isEnableConfirmationOnCreation) {
+            if (notificationChannelVerified || !(isEnableConfirmationOnCreation && isAccountLockOnCreation)) {
                 publishEvent(user, userStoreDomain, tenantDomain, eventProperties,
                         IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
             }
