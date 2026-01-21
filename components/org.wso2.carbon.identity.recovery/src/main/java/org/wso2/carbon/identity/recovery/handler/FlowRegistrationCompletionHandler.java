@@ -95,7 +95,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                 (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
+        String userStoreDomain = userStoreManager.getRealmConfiguration().getUserStoreProperty(
                 UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
@@ -103,7 +103,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(domainName);
+        user.setUserStoreDomain(userStoreDomain);
         boolean enable;
 
         try {
@@ -148,18 +148,41 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                     Constants.FlowTypes.REGISTRATION, tenantDomain,
                     Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED));
 
-            boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig(
+            boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getConnectorConfig(
                     IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                     user.getTenantDomain()));
 
+            // In order for account lock to be effective, both account lock on creation and confirmation on creation
+            // should be enabled.
+            boolean isEffectiveAccountLockOnCreation = isAccountLockOnCreation && isEnableConfirmationOnCreation;
+
             // Get the user preferred notification channel.
             String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
-                    domainName);
+                    userStoreDomain);
 
             NotificationChannels channel = getNotificationChannel(userName, preferredChannel);
 
             boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
                     preferredChannel, eventProperties);
+
+            boolean isNotificationClaimAvailable = isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties);
+
+            // If notification channel is verified account is activated without further confirmation. Hence, send the
+            // account creation notification.
+            // If the notification channel is not verified, send the account creation notification if
+            // confirmation on creation is disabled.
+            if (isNotificationInternallyManaged && isNotificationClaimAvailable && isSelfRegistrationConfirmationNotify
+                    && (notificationChannelVerified || !isEnableConfirmationOnCreation)) {
+                triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
+                        user.getUserStoreDomain());
+            }
+
+            // Event is not published if account lock on creation is enabled as self registration is not complete yet.
+            // If the notification channel is verified, then self registration is complete hence publish the event.
+            if (notificationChannelVerified || !isEffectiveAccountLockOnCreation) {
+                publishEvent(user, userStoreDomain, tenantDomain, eventProperties,
+                        IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+            }
 
             // If the preferred channel is already verified, no need to send the notifications or lock
             // the account.
@@ -168,8 +191,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             }
 
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
-            // Account locking is applicable only if Confirmation on creation is enabled.
-            if (isAccountLockOnCreation && isEnableConfirmationOnCreation) {
+            if (isEffectiveAccountLockOnCreation && isNotificationClaimAvailable) {
                 lockUserAccount(true, true, tenantDomain,
                         userStoreManager, userName);
             } else if (isEnableConfirmationOnCreation) {
@@ -177,22 +199,12 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                         userStoreManager, userName);
             }
 
-            // If notifications are externally managed, no notification needs to be sent.
-            if (!isNotificationInternallyManage) {
+            // If notifications are externally managed, no notification are sent from the server.
+            if (!isNotificationInternallyManaged) {
                 return;
             }
 
-            // If notify confirmation is enabled and email verification is disabled
-            // then send account creation notification.
-            if (!isEnableConfirmationOnCreation && isSelfRegistrationConfirmationNotify
-                    && isNotifyingClaimAvailable(channel.getClaimUri() , eventProperties)) {
-                triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
-                        user.getUserStoreDomain());
-                return;
-            }
-
-            // If notifications are externally managed, no send notifications.
-            if (isEnableConfirmationOnCreation && isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties)) {
+            if (isEnableConfirmationOnCreation && isNotificationClaimAvailable) {
                 userRecoveryDataStore.invalidate(user);
 
                 // Create a secret key based on the preferred notification channel.
@@ -200,7 +212,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
                         tenantDomain, "SelfRegistration");
 
                 // Resolve event name.
-                String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
+                String eventName = resolveEventName(preferredChannel, userName, userStoreDomain, tenantDomain);
 
                 UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
@@ -292,8 +304,8 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
     private boolean isNotifyingClaimAvailable(String claimUri, Map<String, Object> eventProperties) {
 
         Map<String, String> userClaims;
-        if (eventProperties.containsKey("USER_CLAIMS")) {
-            userClaims = (Map<String, String>) eventProperties.get("USER_CLAIMS");
+        if (eventProperties.containsKey(IdentityEventConstants.EventProperty.USER_CLAIMS)) {
+            userClaims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS);
         } else {
             return false;
         }
@@ -342,6 +354,35 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Publish identity event.
+     *
+     * @param user            User.
+     * @param userStoreDomain User store domain.
+     * @param tenantDomain    Tenant domain.
+     * @param eventProperties Event properties.
+     * @param eventName       Event name.
+     */
+    private void publishEvent(User user, String userStoreDomain, String tenantDomain,
+                              Map<String, Object> eventProperties, String eventName) {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        if (eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS) != null) {
+            properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS,
+                    eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS));
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error while publishing event: " + eventName, e);
         }
     }
 }

@@ -28,12 +28,16 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -51,9 +55,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public class FlowRegistrationCompletionHandlerTest {
 
@@ -78,11 +86,18 @@ public class FlowRegistrationCompletionHandlerTest {
     @Mock
     private NotificationChannels notificationChannels;
 
+    @Mock
+    private IdentityEventService identityEventService;
+
+    @Mock
+    private IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
+
     private MockedStatic<Utils> utilsMockedStatic;
     private MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMockedStatic;
     private MockedStatic<IdentityUtil> identityUtilMockedStatic;
     private MockedStatic<IdentityGovernanceUtil> identityGovernanceUtilMockedStatic;
     private MockedStatic<SelfRegistrationUtils> selfRegistrationUtilsMockedStatic;
+    private MockedStatic<IdentityRecoveryServiceDataHolder> identityRecoveryServiceDataHolderMockedStatic;
 
     private FlowRegistrationCompletionHandler handler;
 
@@ -96,6 +111,7 @@ public class FlowRegistrationCompletionHandlerTest {
         identityUtilMockedStatic = mockStatic(IdentityUtil.class);
         identityGovernanceUtilMockedStatic = mockStatic(IdentityGovernanceUtil.class);
         selfRegistrationUtilsMockedStatic = mockStatic(SelfRegistrationUtils.class);
+        identityRecoveryServiceDataHolderMockedStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
     }
 
     @AfterMethod
@@ -106,6 +122,7 @@ public class FlowRegistrationCompletionHandlerTest {
         identityUtilMockedStatic.close();
         identityGovernanceUtilMockedStatic.close();
         selfRegistrationUtilsMockedStatic.close();
+        identityRecoveryServiceDataHolderMockedStatic.close();
     }
 
     @Test
@@ -278,7 +295,7 @@ public class FlowRegistrationCompletionHandlerTest {
 
         utilsMockedStatic.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(SECRET_KEY);
-        utilsMockedStatic.when(() -> Utils.getArbitraryProperties())
+        utilsMockedStatic.when(Utils::getArbitraryProperties)
                 .thenReturn(new org.wso2.carbon.identity.recovery.model.Property[0]);
 
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.triggerNotification(
@@ -288,6 +305,12 @@ public class FlowRegistrationCompletionHandlerTest {
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.lockUserAccount(
                 any(Boolean.class), any(Boolean.class), anyString(), any(UserStoreManager.class), anyString()))
                 .thenAnswer(invocation -> null);
+
+        // Setup IdentityEventService mock
+        identityRecoveryServiceDataHolderMockedStatic.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+        doNothing().when(identityEventService).handleEvent(any(Event.class));
     }
 
     private void setupFlowCompletionMocks(boolean isAccountLockOnCreation, boolean isEnableConfirmationOnCreation) {
@@ -313,4 +336,443 @@ public class FlowRegistrationCompletionHandlerTest {
                 Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED))
                 .thenReturn(String.valueOf(isSelfRegistrationConfirmationNotify));
     }
+
+    @Test
+    public void testHandleEventWhenNotPostAddUserEvent() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createBaseEventProperties();
+        Event event = new Event("SOME_OTHER_EVENT", eventProperties);
+
+        handler.handleEvent(event);
+
+        // Verify no processing happens for non-POST_ADD_USER events
+        utilsMockedStatic.verifyNoInteractions();
+    }
+
+    @Test
+    public void testHandleEventWithAccountLockOnCreation() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // isAccountLockOnCreation = true, isEnableConfirmationOnCreation = true
+        setupFlowCompletionMocks(true, true);
+        setupNotificationMocks(true, false);
+
+        handler.handleEvent(event);
+
+        // Verify lockUserAccount called with (true, true, ...)
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                true, true, TENANT_DOMAIN, userStoreManager, USER_NAME));
+    }
+
+    @Test
+    public void testHandleEventWhenNotificationChannelIsVerified() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        // Set the verified claim to true
+        eventProperties.put(EMAIL_VERIFIED_CLAIM, "true");
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        setupFlowCompletionMocks(false, true);
+        setupNotificationMocks(true, false);
+
+        handler.handleEvent(event);
+
+        // When channel is verified, no lock or notification should be sent
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                any(Boolean.class), any(Boolean.class), anyString(), any(UserStoreManager.class), anyString()),
+                never());
+    }
+
+    @Test
+    public void testHandleEventWithExternallyManagedNotifications() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        setupFlowCompletionMocks(false, true);
+        // Notifications externally managed
+        setupNotificationMocks(false, false);
+
+        handler.handleEvent(event);
+
+        // Verify no notifications are sent when externally managed
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(User.class), anyString(), anyString(), any(), anyString()), never());
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                anyString(), anyString(), anyString()), never());
+    }
+
+    @Test
+    public void testHandleEventWithConfirmationNotificationEnabled() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Confirmation disabled, notification enabled
+        setupFlowCompletionMocks(false, false);
+        setupNotificationMocks(true, true);
+
+        handler.handleEvent(event);
+
+        // Verify account creation notification is triggered
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+    }
+
+    @Test
+    public void testHandleEventWithEmailVerificationEnabled() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Email verification enabled
+        setupFlowCompletionMocks(false, true);
+        setupNotificationMocks(true, false);
+
+        handler.handleEvent(event);
+
+        // Verify recovery data is stored
+        try {
+            verify(userRecoveryDataStore, times(1)).invalidate(any(User.class));
+            verify(userRecoveryDataStore, times(1)).store(any(UserRecoveryData.class));
+        } catch (IdentityRecoveryException e) {
+            fail("Unexpected exception: " + e.getMessage());
+        }
+
+        // Verify notification is sent
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(User.class), anyString(), eq(SECRET_KEY), any(), eq("EVENT_NAME")), times(1));
+    }
+
+    @Test
+    public void testHandleEventWithMissingUserClaims() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createBaseEventProperties();
+
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        setupFlowCompletionMocks(false, true);
+        setupNotificationMocks(true, true);
+
+        handler.handleEvent(event);
+
+        // Verify no notifications are sent when user claims are missing
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                anyString(), anyString(), anyString()), never());
+    }
+
+    @Test
+    public void testHandleEventWithEmptyUserClaims() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createBaseEventProperties();
+        eventProperties.put("USER_CLAIMS", new HashMap<String, String>());
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        setupFlowCompletionMocks(false, false);
+        setupNotificationMocks(true, true);
+
+        handler.handleEvent(event);
+
+        // Verify no notifications are sent when user claims are empty
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                anyString(), anyString(), anyString()), never());
+    }
+
+    @Test
+    public void testHandleEventWithIdentityRecoveryException() {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+
+        setupFlowCompletionMocks(false, true);
+        setupNotificationMocks(true, false);
+
+        when(notificationChannels.getClaimUri()).thenReturn(EMAIL_CLAIM);
+        when(notificationChannels.getVerifiedClaimUrl()).thenReturn(EMAIL_VERIFIED_CLAIM);
+
+        selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.getNotificationChannel(anyString(), anyString()))
+                .thenReturn(notificationChannels);
+
+        identityGovernanceUtilMockedStatic.when(IdentityGovernanceUtil::getDefaultNotificationChannel)
+                .thenReturn("EMAIL");
+
+        // Mock IdentityEventService to throw an exception
+        identityRecoveryServiceDataHolderMockedStatic.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+
+        try {
+            doNothing().when(identityEventService).handleEvent(any(Event.class));
+        } catch (IdentityEventException e) {
+            // Should not happen in mock setup
+        }
+
+        // Make the Utils.getFlowCompletionConfig throw FlowMgtServerException after initial setup
+        utilsMockedStatic.when(() -> Utils.getFlowCompletionConfig(
+                Constants.FlowTypes.REGISTRATION, TENANT_DOMAIN,
+                Constants.FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED))
+                .thenThrow(new FlowMgtServerException("Test exception"));
+
+        try {
+            handler.handleEvent(event);
+            fail("Expected IdentityEventException to be thrown");
+        } catch (IdentityEventException e) {
+            assertEquals(e.getMessage(), "Error while sending self sign up notification ");
+        }
+    }
+
+    @Test
+    public void testHandleEventWithNotificationChannelResolution() throws Exception {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        eventProperties.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, "SMS");
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+        doNothing().when(userRecoveryDataStore).invalidate(any(User.class));
+        doNothing().when(userRecoveryDataStore).store(any(UserRecoveryData.class));
+
+        when(notificationChannels.getClaimUri()).thenReturn(EMAIL_CLAIM);
+        when(notificationChannels.getVerifiedClaimUrl()).thenReturn(EMAIL_VERIFIED_CLAIM);
+
+        selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.getNotificationChannel(anyString(), eq("SMS")))
+                .thenReturn(notificationChannels);
+
+        identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))
+                .thenReturn("true");
+
+        selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.resolveEventName(
+                eq("SMS"), eq(USER_NAME), eq(DOMAIN_NAME), eq(TENANT_DOMAIN))).thenReturn("SMS_EVENT");
+
+        utilsMockedStatic.when(() -> Utils.generateSecretKey(eq("SMS"), anyString(), anyString(), anyString()))
+                .thenReturn(SECRET_KEY);
+        utilsMockedStatic.when(Utils::getArbitraryProperties)
+                .thenReturn(new org.wso2.carbon.identity.recovery.model.Property[0]);
+
+        selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.triggerNotification(
+                any(User.class), eq("SMS"), anyString(), any(), anyString())).thenAnswer(invocation -> null);
+        selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.lockUserAccount(
+                any(Boolean.class), any(Boolean.class), anyString(), any(UserStoreManager.class), anyString()))
+                .thenAnswer(invocation -> null);
+
+        // Setup IdentityEventService mock
+        identityRecoveryServiceDataHolderMockedStatic.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+        doNothing().when(identityEventService).handleEvent(any(Event.class));
+
+        setupFlowCompletionMocks(false, true);
+        setupNotificationMocks(true, false);
+
+        handler.handleEvent(event);
+
+        // Verify SMS channel was used (can be called multiple times)
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.getNotificationChannel(anyString(), eq("SMS")),
+                times(2));
+    }
+
+    @Test
+    public void testHandleEventWithNotificationInternallyManagedAndConfirmationNotify() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Confirmation disabled, notification enabled, internally managed
+        setupFlowCompletionMocks(false, false);
+        setupNotificationMocks(true, true);
+
+        handler.handleEvent(event);
+
+        // Verify account creation notification is triggered.
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+    }
+
+    @Test
+    public void testHandleEventPublishesUserRegistrationSuccessEvent() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Account lock disabled
+        setupFlowCompletionMocks(false, false);
+        setupNotificationMocks(true, true);
+
+
+        handler.handleEvent(event);
+
+        // Verify event was published (since account lock is disabled)
+        verify(identityEventService, times(1)).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testHandleEventDoesNotPublishEventWhenAccountLocked() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Account lock enabled
+        setupFlowCompletionMocks(true, true);
+        setupNotificationMocks(true, false);
+
+
+        handler.handleEvent(event);
+
+        // Verify event was NOT published (since account lock is enabled)
+        verify(identityEventService, never()).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testHandleEventWithAccountCreationNotificationBeforeVerified() throws IdentityEventException {
+
+        Map<String, Object> eventProperties = createCompleteEventProperties();
+        Event event = new Event(POST_ADD_USER, eventProperties);
+
+        FlowConfigDTO flowConfig = new FlowConfigDTO();
+        flowConfig.setIsEnabled(true);
+        utilsMockedStatic.when(() -> Utils.getFlowConfig(Constants.FlowTypes.REGISTRATION.getType(), TENANT_DOMAIN))
+                .thenReturn(flowConfig);
+
+        try {
+            setupMocksForEnabledFlowWithNotificationChannelVerified();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Notifications internally managed, confirmation notify enabled, verification disabled
+        setupFlowCompletionMocks(false, false);
+        setupNotificationMocks(true, true);
+
+        handler.handleEvent(event);
+
+        // Verify account creation notification is sent
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+    }
 }
+
+
