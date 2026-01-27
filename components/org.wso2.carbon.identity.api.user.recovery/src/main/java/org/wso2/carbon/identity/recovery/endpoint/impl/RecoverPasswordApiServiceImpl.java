@@ -119,7 +119,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         return Response.accepted(notificationResponseBean.getKey()).build();
     }
 
-    private NotificationResponseBean handleRecoveryException(Throwable rootCause, String errorCode,
+    protected NotificationResponseBean handleRecoveryException(Throwable rootCause, String errorCode,
                                                              RecoveryInitiatingRequestDTO recoveryInitiatingRequest) {
 
         boolean isEmailNotFoundError = rootCause != null &&

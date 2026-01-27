@@ -42,6 +42,7 @@ import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +53,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * This class covers unit tests for RecoverPasswordApiServiceImpl.java
@@ -61,6 +63,7 @@ public class RecoverPasswordApiServiceImplTest {
     private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
     private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+    private MockedStatic<Utils> mockedUtils;
 
     @Mock
     NotificationPasswordRecoveryManager notificationPasswordRecoveryManager;
@@ -84,6 +87,7 @@ public class RecoverPasswordApiServiceImplTest {
         mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
         mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
         mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
     }
 
     @AfterMethod
@@ -92,6 +96,7 @@ public class RecoverPasswordApiServiceImplTest {
         mockedRecoveryUtil.close();
         mockedIdentityTenantUtil.close();
         mockedIdentityRecoveryServiceDataHolder.close();
+        mockedUtils.close();
     }
 
     @DataProvider(name = "multiAttributeLoginEnableProperty")
@@ -146,5 +151,60 @@ public class RecoverPasswordApiServiceImplTest {
         propertyDTO.setKey("Dummy Key");
         propertyDTOList.add(propertyDTO);
         return propertyDTOList;
+    }
+
+    @Test
+    public void testHandleRecoveryException_UserExistenceHidden_EmailNotFound() throws Exception {
+        // Arrange: user existence hidden and rootCause message equals email-not-found constant
+        mockedUtils.when(Utils::isUserExistenceHidden).thenReturn(true);
+
+        // Mock RecoveryUtil.getUser to return a user object (we only need it to be non-null here)
+        org.wso2.carbon.identity.application.common.model.User mockedUser =
+                new org.wso2.carbon.identity.application.common.model.User();
+        mockedUser.setUserName("dummyUser");
+        mockedRecoveryUtil.when(() -> RecoveryUtil.getUser(Mockito.any())).thenReturn(mockedUser);
+
+        Throwable rootCause = new Throwable(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND);
+        RecoveryInitiatingRequestDTO request = buildRecoveryInitiatingRequestDTO();
+
+        // Act: invoke protected method via reflection
+        Method method = RecoverPasswordApiServiceImpl.class.getDeclaredMethod("handleRecoveryException",
+                Throwable.class, String.class, RecoveryInitiatingRequestDTO.class);
+        method.setAccessible(true);
+        Object result = method.invoke(recoverPasswordApiService, rootCause, Constants.ERROR_CODE_EMAIL_NOT_FOUND, request);
+
+        // Assert
+        assertNotNull(result, "Expected a NotificationResponseBean when user existence is hidden and email not found");
+        // Optionally assert it's of the expected type
+        assertEquals(result.getClass(), NotificationResponseBean.class);
+    }
+
+    @Test
+    public void testHandleRecoveryException_EmailNotFound_NotHidden_ThrowsBadRequest() throws Exception {
+        // Arrange: user existence not hidden
+        mockedUtils.when(Utils::isUserExistenceHidden).thenReturn(false);
+
+        // Mock RecoveryUtil.handleBadRequest to throw a RuntimeException to emulate failure path
+        mockedRecoveryUtil.when(() -> RecoveryUtil.handleBadRequest(Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(new RuntimeException("bad request called"));
+
+        Throwable rootCause = new Throwable(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND);
+        RecoveryInitiatingRequestDTO request = buildRecoveryInitiatingRequestDTO();
+
+        // Act: invoke protected method via reflection and expect the RuntimeException
+        Method method = RecoverPasswordApiServiceImpl.class.getDeclaredMethod("handleRecoveryException",
+                Throwable.class, String.class, RecoveryInitiatingRequestDTO.class);
+        method.setAccessible(true);
+        try {
+            method.invoke(recoverPasswordApiService, rootCause, Constants.ERROR_CODE_EMAIL_NOT_FOUND, request);
+        } catch (java.lang.reflect.InvocationTargetException ite) {
+            // The invoked method threw an exception; unwrap and assert
+            Throwable cause = ite.getCause();
+            assertNotNull(cause);
+            assertEquals(cause.getMessage(), "bad request called");
+            return;
+        }
+        // If no exception thrown, fail the test
+        throw new AssertionError("Expected RuntimeException to be thrown by RecoveryUtil.handleBadRequest");
     }
 }
