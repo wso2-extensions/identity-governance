@@ -27,6 +27,7 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -797,6 +798,24 @@ public class UtilsTest {
 
         // Case 3: Test with null properties.
         assertFalse(Utils.isLiteSignUp(null));
+    }
+
+    @DataProvider(name = "hideUserExistenceData")
+    public Object[][] hideUserExistenceData() {
+
+        return new Object[][]{
+                {TRUE_STRING, true},
+                {FALSE_STRING, false},
+                {null, false}
+        };
+    }
+
+    @Test(dataProvider = "hideUserExistenceData")
+    public void testIsUserExistenceHidden(String propertyValue, boolean expected) {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.HIDE_USER_EXISTENCE))
+                .thenReturn(propertyValue);
+        assertEquals(Utils.isUserExistenceHidden(), expected);
     }
 
     @Test

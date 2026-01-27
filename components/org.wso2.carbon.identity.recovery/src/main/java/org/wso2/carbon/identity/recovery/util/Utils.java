@@ -1019,6 +1019,17 @@ public class Utils {
     }
 
     /**
+     * Checks if user existence should be hidden to prevent enumeration.
+     *
+     * @return true if enabled, false if disabled or config is missing.
+     */
+    public static boolean isUserExistenceHidden() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.HIDE_USER_EXISTENCE));
+    }
+
+    /**
      * Check whether the internally notification management property is send with the meta properties. If management
      * mechanism is specified, return the specified boolean value. If the management mechanism is not specified in
      * meta properties return server configurations.
