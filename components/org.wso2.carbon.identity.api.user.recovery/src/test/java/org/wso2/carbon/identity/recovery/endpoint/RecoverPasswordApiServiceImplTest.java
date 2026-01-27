@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
@@ -41,6 +43,7 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.apache.commons.logging.Log;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -126,6 +129,122 @@ public class RecoverPasswordApiServiceImplTest {
         when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
         assertEquals(recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true).
                 getStatus(), 202);
+    }
+
+    @Test(dataProvider = "multiAttributeLoginEnableProperty")
+    public void testRecoverPasswordPost_IdentityRecoveryClientException_FederatedUser(boolean isMultiAttributeLoginEnabled) throws Exception {
+
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
+                notificationPasswordRecoveryManager);
+        if (isMultiAttributeLoginEnabled) {
+            mockedRecoveryUtil.when(() -> RecoveryUtil.getProperties(Mockito.any()))
+                    .thenReturn(new Property[0]);
+        }
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
+
+        IdentityRecoveryClientException e = new IdentityRecoveryClientException(
+                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER.getCode(), "Federated User");
+        Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
+                isNull())).thenThrow(e);
+
+        Response response = recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true);
+        assertEquals(response.getStatus(), 202);
+    }
+
+    @Test(dataProvider = "multiAttributeLoginEnableProperty")
+    public void testRecoverPasswordPost_IdentityRecoveryClientException_InvalidRequest(boolean isMultiAttributeLoginEnabled) throws Exception {
+
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
+                notificationPasswordRecoveryManager);
+        if (isMultiAttributeLoginEnabled) {
+            mockedRecoveryUtil.when(() -> RecoveryUtil.getProperties(Mockito.any()))
+                    .thenReturn(new Property[0]);
+        }
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
+
+        IdentityRecoveryClientException e = new IdentityRecoveryClientException(
+                IdentityRecoveryConstants.ErrorMessages.INVALID_PASSWORD_RECOVERY_REQUEST.getCode(), "Invalid Request");
+        Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
+                isNull())).thenThrow(e);
+
+        Response response = recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true);
+        assertEquals(response.getStatus(), 202);
+    }
+
+    @Test
+    public void testRecoverPasswordPost_IdentityRecoveryException() throws Exception {
+
+        boolean isMultiAttributeLoginEnabled = false;
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
+                notificationPasswordRecoveryManager);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
+
+        // Mock handleInternalServerError to throw RuntimeException to simulate server error and avoid NPE in logic
+        mockedRecoveryUtil.when(() -> RecoveryUtil.handleInternalServerError(anyString(), anyString(), Mockito.any(Log.class), Mockito.any(Throwable.class)))
+                .thenThrow(new RuntimeException("Mocked Server Error"));
+
+        IdentityRecoveryException e = new IdentityRecoveryException("Error", "ErrorCode", new Throwable("Cause"));
+        Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
+                isNull())).thenThrow(e);
+
+        try {
+            recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true);
+        } catch (RuntimeException ex) {
+            assertEquals(ex.getMessage(), "Mocked Server Error");
+        }
+
+        mockedRecoveryUtil.verify(() -> RecoveryUtil.handleInternalServerError(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any()
+        ));
+    }
+
+    @Test
+    public void testRecoverPasswordPost_Throwable() throws Exception {
+
+        boolean isMultiAttributeLoginEnabled = false;
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
+                notificationPasswordRecoveryManager);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
+
+        // Mock handleInternalServerError to throw RuntimeException
+        mockedRecoveryUtil.when(() -> RecoveryUtil.handleInternalServerError(anyString(), anyString(), Mockito.any(Log.class), Mockito.any(Throwable.class)))
+                .thenThrow(new RuntimeException("Mocked Server Error"));
+
+        RuntimeException e = new RuntimeException("Unexpected Error");
+        Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
+                isNull())).thenThrow(e);
+
+        try {
+            recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true);
+        } catch (RuntimeException ex) {
+            assertEquals(ex.getMessage(), "Mocked Server Error");
+        }
+
+        mockedRecoveryUtil.verify(() -> RecoveryUtil.handleInternalServerError(
+                Mockito.eq(Constants.SERVER_ERROR),
+                Mockito.eq(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode()),
+                Mockito.any(Log.class),
+                Mockito.eq(e)
+        ));
     }
 
     private RecoveryInitiatingRequestDTO buildRecoveryInitiatingRequestDTO() {
