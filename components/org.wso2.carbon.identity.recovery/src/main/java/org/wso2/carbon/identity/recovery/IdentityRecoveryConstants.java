@@ -637,6 +637,7 @@ public class IdentityRecoveryConstants {
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFY_RECOVERY_EMAIL_EXISTENCE = "Recovery.NotifyRecoveryEmailExistence";
         public static final String NOTIFY_USER_ACCOUNT_STATUS = "Recovery.NotifyUserAccountStatus";
+        public static final String HIDE_USER_EXISTENCE = "Recovery.HideUserExistence";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
