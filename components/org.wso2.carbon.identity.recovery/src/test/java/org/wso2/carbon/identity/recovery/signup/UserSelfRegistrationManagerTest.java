@@ -91,7 +91,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.rule.metadata.internal.config.FlowConfig;
 import org.wso2.carbon.identity.workflow.mgt.util.WorkflowErrorConstants;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
@@ -543,7 +542,7 @@ public class UserSelfRegistrationManagerTest {
     private void mockJDBCRecoveryDataStore(UserRecoveryData userRecoveryData) throws IdentityRecoveryException {
 
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(ArgumentMatchers.anyObject(), ArgumentMatchers.anyObject())).
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(ArgumentMatchers.any(), ArgumentMatchers.any())).
                 thenReturn(userRecoveryData);
         doNothing().when(userRecoveryDataStore).invalidate(ArgumentMatchers.anyString());
         doNothing().when(userRecoveryDataStore).store(ArgumentMatchers.any(UserRecoveryData.class));
