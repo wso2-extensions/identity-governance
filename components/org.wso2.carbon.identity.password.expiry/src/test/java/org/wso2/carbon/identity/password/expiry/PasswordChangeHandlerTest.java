@@ -45,8 +45,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

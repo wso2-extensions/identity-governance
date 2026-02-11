@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.user.onboard.core.service;
 
 
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.user.onboard.core.service.exception.UserOnboardServiceException;;
+import org.wso2.carbon.identity.user.onboard.core.service.exception.UserOnboardServiceException;
 import org.wso2.carbon.identity.user.onboard.core.service.model.Configuration;
 
 /**

@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.multi.attribute.login.resolver.regex;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginResolver;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
@@ -55,6 +56,13 @@ import java.util.stream.Collectors;
  * This class is used to implement MultiAttributeLoginResolver. In this class, users will be resolved using a regex
  * pattern.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginResolver",
+                "service.scope=singleton"
+        }
+)
 public class RegexResolver implements MultiAttributeLoginResolver {
 
     private static final Log log = LogFactory.getLog(RegexResolver.class);

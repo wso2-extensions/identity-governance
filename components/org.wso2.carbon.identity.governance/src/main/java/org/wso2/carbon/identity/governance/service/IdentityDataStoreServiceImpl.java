@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.governance.service;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
@@ -44,6 +45,13 @@ import java.util.Map;
 /**
  * Implementation of the IdentityDataStoreService.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.governance.service.IdentityDataStoreService",
+                "service.scope=singleton"
+        }
+)
 public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
     private UserIdentityDataStore identityDataStore;
