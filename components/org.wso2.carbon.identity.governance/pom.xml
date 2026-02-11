@@ -75,6 +75,10 @@
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.platform</groupId>
+            <artifactId>org.eclipse.osgi.services</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -101,6 +105,10 @@
                             org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.carbon.identity.governance.service.otp.OTPGenerator,
+                            osgi.service;objectClass=org.wso2.carbon.identity.governance.service.notification.NotificationTemplateManager,
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
