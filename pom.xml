@@ -416,7 +416,7 @@
 
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
+                <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -685,12 +685,11 @@
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.8.7</jacoco.version>
+        <jacoco.version>0.8.11</jacoco.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
-        <mockito.version>4.6.1</mockito.version>
-        <powermock.version>2.0.8</powermock.version>
+        <mockito.version>5.21.0</mockito.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         
         <h2database.version>2.1.210</h2database.version>
