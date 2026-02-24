@@ -231,7 +231,7 @@ public class JDBCRecoveryDataStoreTest {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getString("REMAINING_SETS")).thenReturn(remainingSetId);
         when(mockResultSet.getTimestamp(eq("TIME_CREATED"), any(Calendar.class)))
-                .thenReturn(new Timestamp(System.currentTimeMillis() - 600000));
+                .thenReturn(new Timestamp(System.currentTimeMillis() - 660000));
 
         mockExpiryTimes();
         mockUtilsErrors();
@@ -261,7 +261,7 @@ public class JDBCRecoveryDataStoreTest {
         when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getTimestamp(eq("TIME_CREATED"), any(Calendar.class)))
-                .thenReturn(new Timestamp(System.currentTimeMillis() - 600000));
+                .thenReturn(new Timestamp(System.currentTimeMillis() - 660000));
         when(mockResultSet.getString("SCENARIO")).thenReturn(recoveryScenario.toString());
         when(mockResultSet.getString("STEP")).thenReturn(recoveryStep.toString());
         when(mockResultSet.getInt("TENANT_ID")).thenReturn(TEST_TENANT_ID);
