@@ -164,6 +164,8 @@ public class PasswordResetEnforcerHandlerTest {
         // Case 2 : Password expiry is enabled.
         List<AuthenticatorConfig> authenticators = getAuthenticatorConfigs();
         when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(true);
+        when(PasswordPolicyUtils.getEnforcementScope(anyString()))
+                .thenReturn(PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE);
         when(PasswordPolicyUtils.isPasswordExpired(anyString(), anyString())).thenReturn(true);
 
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
@@ -192,6 +194,45 @@ public class PasswordResetEnforcerHandlerTest {
         PostAuthnHandlerFlowStatus flowStatus2 = enforcePasswordResetAuthenticationHandler.handle(httpServletRequest,
                 httpServletResponse, authenticationContext);
         Assert.assertEquals(flowStatus2, PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED);
+    }
+
+    @Test
+    public void testHandleSkipsWhenScopeIsAppWithEnforcer() throws Exception {
+
+        AuthenticatedIdPData authenticatedIdPData = getAuthenticatedIdPData();
+        Map<String, AuthenticatedIdPData> idPs = new HashMap<>();
+        when(authenticationContext.getCurrentAuthenticatedIdPs()).thenReturn(idPs);
+        idPs.put(AUTHENTICATOR_TYPE, authenticatedIdPData);
+
+        when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(true);
+        when(PasswordPolicyUtils.getEnforcementScope(anyString()))
+                .thenReturn(PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER);
+
+        PostAuthnHandlerFlowStatus flowStatus = enforcePasswordResetAuthenticationHandler.handle(
+                httpServletRequest, httpServletResponse, authenticationContext);
+        Assert.assertEquals(flowStatus, PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED,
+                "PostAuth handler must be skipped when scope is APP_WITH_ENFORCER");
+    }
+
+    @Test
+    public void testHandleProceedsWhenScopeIsOrgWide() throws Exception {
+
+        AuthenticatedIdPData authenticatedIdPData = getAuthenticatedIdPData();
+        Map<String, AuthenticatedIdPData> idPs = new HashMap<>();
+        when(authenticationContext.getCurrentAuthenticatedIdPs()).thenReturn(idPs);
+        idPs.put(AUTHENTICATOR_TYPE, authenticatedIdPData);
+
+        List<AuthenticatorConfig> authenticators = getAuthenticatorConfigs();
+        when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(true);
+        when(PasswordPolicyUtils.getEnforcementScope(anyString()))
+                .thenReturn(PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE);
+        when(PasswordPolicyUtils.isPasswordExpired(anyString(), anyString())).thenReturn(false);
+        doReturn(authenticators).when(idPs.get(AUTHENTICATOR_TYPE)).getAuthenticators();
+
+        PostAuthnHandlerFlowStatus flowStatus = enforcePasswordResetAuthenticationHandler.handle(
+                httpServletRequest, httpServletResponse, authenticationContext);
+        Assert.assertEquals(flowStatus, PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED,
+                "PostAuth handler must proceed to password check when scope is ORG_WIDE");
     }
 
     private static List<AuthenticatorConfig> getAuthenticatorConfigs() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -76,6 +76,16 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
             return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
         }
         if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
+            return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
+        }
+
+        PasswordPolicyConstants.PasswordResetEnforcementScope enforcementScope =
+                PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+        if (PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER == enforcementScope) {
+            if (log.isDebugEnabled()) {
+                log.debug("Password expiry enforcement scope is APP_WITH_ENFORCER. " +
+                        "Skipping org-wide PostAuthentication enforcement for tenant: " + tenantDomain);
+            }
             return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
         }
 
