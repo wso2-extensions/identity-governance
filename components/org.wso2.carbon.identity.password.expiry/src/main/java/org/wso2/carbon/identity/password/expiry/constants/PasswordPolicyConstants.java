@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -68,8 +68,21 @@ public class PasswordPolicyConstants {
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE = "passwordExpiry.enforcementScope";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DISPLAYED_NAME = "Password Reset Enforcement Scope";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DESCRIPTION =
+            "Defines whether password expiry is enforced organization-wide or only for applications using the " +
+            "Password Reset Enforcer authenticator.";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
+
+    /**
+     * Enforcement scope values for password expiry.
+     */
+    public enum PasswordResetEnforcementScope {
+        ORG_WIDE,
+        APP_WITH_ENFORCER
+    }
 
     // Time conversion constants.
     public static final long WINDOWS_EPOCH_DIFF = 11644473600000L;
