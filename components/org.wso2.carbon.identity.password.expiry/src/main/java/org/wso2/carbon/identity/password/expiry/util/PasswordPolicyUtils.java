@@ -687,16 +687,12 @@ public class PasswordPolicyUtils {
             throws PostAuthenticationFailedException {
 
         try {
-            String value = getPasswordExpiryConfig(tenantDomain,
-                    PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
-            if (StringUtils.isBlank(value)) {
+            String enforcementScope = getPasswordExpiryConfig(tenantDomain, PasswordPolicyConstants
+                    .CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
+            if (StringUtils.isBlank(enforcementScope)) {
                 return PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE;
             }
-            try {
-                return PasswordPolicyConstants.PasswordResetEnforcementScope.valueOf(value);
-            } catch (IllegalArgumentException e) {
-                return PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE;
-            }
+            return PasswordPolicyConstants.PasswordResetEnforcementScope.valueOf(enforcementScope);
         } catch (IdentityGovernanceException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
