@@ -19,14 +19,19 @@
 package org.wso2.carbon.identity.password.expiry;
 
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 
 import java.util.Map;
 import java.util.Properties;
+
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for password expiry configs.
@@ -149,5 +154,32 @@ public class PasswordExpiryConfigImplTest {
         Assert.assertEquals(
                 defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
                 PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE.name());
+    }
+
+    @Test
+    public void testGetDefaultPropertyValuesOverriddenFromIdentityUtil() throws IdentityGovernanceException {
+
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = mockStatic(IdentityUtil.class)) {
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY)).thenReturn("true");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS)).thenReturn("60");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES)).thenReturn("true");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE)).thenReturn(
+                    PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER.name());
+
+            Properties properties = passwordPolicyConfig.getDefaultPropertyValues("test.com");
+
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY),
+                    "true");
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
+                    "60");
+            Assert.assertEquals(
+                    properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES), "true");
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
+                    PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER.name());
+        }
     }
 }

@@ -651,6 +651,23 @@ public class PasswordPolicyUtilsTest {
                 "Should return the configured APP_WITH_ENFORCER scope");
     }
 
+    @Test
+    public void testGetEnforcementScopeThrowsOnGovernanceException() throws IdentityGovernanceException {
+
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE},
+                tenantDomain)).thenThrow(new IdentityGovernanceException("governance error"));
+
+        try {
+            PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+            Assert.fail("Expected PostAuthenticationFailedException was not thrown");
+        } catch (PostAuthenticationFailedException e) {
+            Assert.assertEquals(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
+                    e.getErrorCode());
+        }
+    }
+
     private void mockLastPasswordUpdateTime(Long updateTime, UserStoreManager userStoreManager) throws UserStoreException {
 
         String updateTimeString = updateTime != null ? String.valueOf(updateTime) : null;
