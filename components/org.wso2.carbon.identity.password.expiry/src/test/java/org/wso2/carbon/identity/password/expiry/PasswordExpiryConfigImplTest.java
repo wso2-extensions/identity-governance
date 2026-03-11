@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -19,14 +19,19 @@
 package org.wso2.carbon.identity.password.expiry;
 
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 
 import java.util.Map;
 import java.util.Properties;
+
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for password expiry configs.
@@ -80,7 +85,7 @@ public class PasswordExpiryConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> propertyNameMapping = passwordPolicyConfig.getPropertyNameMapping();
-        Assert.assertEquals(propertyNameMapping.size(), 3);
+        Assert.assertEquals(propertyNameMapping.size(), 4);
         Assert.assertEquals(
                 propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DISPLAYED_NAME);
@@ -90,6 +95,9 @@ public class PasswordExpiryConfigImplTest {
         Assert.assertEquals(
                 propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DISPLAYED_NAME);
+        Assert.assertEquals(
+                propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
+                PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DISPLAYED_NAME);
     }
 
     @Test
@@ -103,17 +111,18 @@ public class PasswordExpiryConfigImplTest {
     public void testGetPropertyNames() {
 
         String[] propertyNames = passwordPolicyConfig.getPropertyNames();
-        Assert.assertEquals(propertyNames.length, 3);
+        Assert.assertEquals(propertyNames.length, 4);
         Assert.assertEquals(propertyNames[0], PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         Assert.assertEquals(propertyNames[1], PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
         Assert.assertEquals(propertyNames[2], PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES);
+        Assert.assertEquals(propertyNames[3], PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
     }
 
     @Test
     public void testGetPropertyDescriptionMapping() {
 
         Map<String, String> propertyDescriptionMapping = passwordPolicyConfig.getPropertyDescriptionMapping();
-        Assert.assertEquals(propertyDescriptionMapping.size(), 3);
+        Assert.assertEquals(propertyDescriptionMapping.size(), 4);
         Assert.assertEquals(
                 propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DESCRIPTION);
@@ -123,13 +132,16 @@ public class PasswordExpiryConfigImplTest {
         Assert.assertEquals(
                 propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION);
+        Assert.assertEquals(
+                propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
+                PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DESCRIPTION);
     }
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
 
         Properties defaultPropertyValues = passwordPolicyConfig.getDefaultPropertyValues("test.com");
-        Assert.assertEquals(defaultPropertyValues.size(), 3);
+        Assert.assertEquals(defaultPropertyValues.size(), 4);
         Assert.assertEquals(
                 defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 String.valueOf(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DEFAULT_VALUE));
@@ -139,5 +151,35 @@ public class PasswordExpiryConfigImplTest {
         Assert.assertEquals(
                 defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
                 PasswordPolicyConstants.FALSE);
+        Assert.assertEquals(
+                defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
+                PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE.name());
+    }
+
+    @Test
+    public void testGetDefaultPropertyValuesOverriddenFromIdentityUtil() throws IdentityGovernanceException {
+
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = mockStatic(IdentityUtil.class)) {
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY)).thenReturn("true");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS)).thenReturn("60");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES)).thenReturn("true");
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE)).thenReturn(
+                    PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER.name());
+
+            Properties properties = passwordPolicyConfig.getDefaultPropertyValues("test.com");
+
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY),
+                    "true");
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
+                    "60");
+            Assert.assertEquals(
+                    properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES), "true");
+            Assert.assertEquals(properties.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE),
+                    PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER.name());
+        }
     }
 }

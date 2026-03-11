@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -84,6 +84,7 @@ public class PasswordPolicyUtils {
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES);
+        properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
         return properties.toArray(new String[0]);
     }
 
@@ -666,6 +667,32 @@ public class PasswordPolicyUtils {
         try {
             return Boolean.parseBoolean(PasswordPolicyUtils.getPasswordExpiryConfig(tenantDomain,
                     PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES));
+        } catch (IdentityGovernanceException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get the enforcement scope configured for password expiry in the given tenant domain.
+     * Returns {@code ORG_WIDE} when the property is absent or blank, ensuring zero behavioral
+     * change for existing tenants that have never set this property.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return The enforcement scope value, defaulting to {@code ORG_WIDE}.
+     * @throws PostAuthenticationFailedException If an error occurs while reading system configurations.
+     */
+    public static PasswordPolicyConstants.PasswordResetEnforcementScope getEnforcementScope(String tenantDomain)
+            throws PostAuthenticationFailedException {
+
+        try {
+            String enforcementScope = getPasswordExpiryConfig(tenantDomain, PasswordPolicyConstants
+                    .CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
+            if (StringUtils.isBlank(enforcementScope)) {
+                return PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE;
+            }
+            return PasswordPolicyConstants.PasswordResetEnforcementScope.valueOf(enforcementScope);
         } catch (IdentityGovernanceException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),

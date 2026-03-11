@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -161,7 +161,7 @@ public class PasswordPolicyUtilsTest {
     public void testGetPasswordExpiryPropertyNames() {
 
         String[] passwordExpiryPropertyNames = PasswordPolicyUtils.getPasswordExpiryPropertyNames();
-        Assert.assertEquals(passwordExpiryPropertyNames.length, 3);
+        Assert.assertEquals(passwordExpiryPropertyNames.length, 4);
     }
 
     @Test
@@ -600,6 +600,72 @@ public class PasswordPolicyUtilsTest {
         Property[] properties = new Property[1];
         properties[0] = property1;
         return properties;
+    }
+
+    @Test
+    public void testGetEnforcementScopeReturnsOrgWideWhenPropertyMissing()
+            throws PostAuthenticationFailedException, IdentityGovernanceException {
+
+        // Governance service returns a property with a null value (property not set).
+        Property property = new Property();
+        property.setName(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
+        property.setValue(null);
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE},
+                tenantDomain)).thenReturn(new Property[]{property});
+
+        PasswordPolicyConstants.PasswordResetEnforcementScope scope = PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+        Assert.assertEquals(scope, PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE,
+                "Should default to ORG_WIDE when property value is null");
+    }
+
+    @Test
+    public void testGetEnforcementScopeReturnsOrgWideWhenPropertyBlank()
+            throws PostAuthenticationFailedException, IdentityGovernanceException {
+
+        Property property = new Property();
+        property.setName(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
+        property.setValue("   ");
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE},
+                tenantDomain)).thenReturn(new Property[]{property});
+
+        PasswordPolicyConstants.PasswordResetEnforcementScope scope = PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+        Assert.assertEquals(scope, PasswordPolicyConstants.PasswordResetEnforcementScope.ORG_WIDE,
+                "Should default to ORG_WIDE when property value is blank");
+    }
+
+    @Test
+    public void testGetEnforcementScopeReturnsConfiguredValue()
+            throws PostAuthenticationFailedException, IdentityGovernanceException {
+
+        Property property = new Property();
+        property.setName(PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE);
+        property.setValue(PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER.name());
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE},
+                tenantDomain)).thenReturn(new Property[]{property});
+
+        PasswordPolicyConstants.PasswordResetEnforcementScope scope = PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+        Assert.assertEquals(scope, PasswordPolicyConstants.PasswordResetEnforcementScope.APP_WITH_ENFORCER,
+                "Should return the configured APP_WITH_ENFORCER scope");
+    }
+
+    @Test
+    public void testGetEnforcementScopeThrowsOnGovernanceException() throws IdentityGovernanceException {
+
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_ENFORCEMENT_SCOPE},
+                tenantDomain)).thenThrow(new IdentityGovernanceException("governance error"));
+
+        try {
+            PasswordPolicyUtils.getEnforcementScope(tenantDomain);
+            Assert.fail("Expected PostAuthenticationFailedException was not thrown");
+        } catch (PostAuthenticationFailedException e) {
+            Assert.assertEquals(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
+                    e.getErrorCode());
+        }
     }
 
     private void mockLastPasswordUpdateTime(Long updateTime, UserStoreManager userStoreManager) throws UserStoreException {
