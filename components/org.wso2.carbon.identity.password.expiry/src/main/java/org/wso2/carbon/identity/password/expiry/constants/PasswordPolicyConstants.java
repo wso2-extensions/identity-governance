@@ -52,6 +52,11 @@ public class PasswordPolicyConstants {
             "Skip password expiry if no applicable rules";
     public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION =
             "Skip password expiry if no applicable rules are found for the user";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE = "passwordExpiry.enforcementScope";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DISPLAYED_NAME = "Password Reset Enforcement Scope";
+    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DESCRIPTION =
+            "Defines whether password expiry is enforced organization-wide or only for applications using the " +
+                    "Password Reset Enforcer authenticator.";
     public static final String CONNECTOR_CONFIG_SUB_CATEGORY = "DEFAULT";
     public static final String PASSWORD_EXPIRED_ERROR_MESSAGE = "Password has expired";
     public static final String ENCODED_PASSWORD_EXPIRED_MSG = URLEncoder.encode(
@@ -68,11 +73,6 @@ public class PasswordPolicyConstants {
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
-    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE = "passwordExpiry.enforcementScope";
-    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DISPLAYED_NAME = "Password Reset Enforcement Scope";
-    public static final String CONNECTOR_CONFIG_ENFORCEMENT_SCOPE_DESCRIPTION =
-            "Defines whether password expiry is enforced organization-wide or only for applications using the " +
-            "Password Reset Enforcer authenticator.";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
 
