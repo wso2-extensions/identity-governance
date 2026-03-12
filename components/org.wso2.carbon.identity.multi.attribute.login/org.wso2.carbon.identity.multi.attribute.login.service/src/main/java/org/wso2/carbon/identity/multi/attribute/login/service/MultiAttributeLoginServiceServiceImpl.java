@@ -128,11 +128,26 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
     @Override
     public ResolvedUserResult resolveUser(String loginIdentifierValue, String tenantDomain) {
 
+        return resolveUser(loginIdentifierValue, tenantDomain, false);
+    }
+
+    /**
+     * This method is used to resolve user from given login identifier.
+     *
+     * @param loginIdentifierValue    User entered login identifier value.
+     * @param tenantDomain            User tenant domain.
+     * @param allowDuplicateUsernames Indicates whether to allow duplicate usernames across user stores.
+     * @return ResolvedUserResult object with resolved user and resolved login identifier claim.
+     */
+    @Override
+    public ResolvedUserResult resolveUser(String loginIdentifierValue, String tenantDomain,
+                                          boolean allowDuplicateUsernames) {
+
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifierValue) && StringUtils.isNotBlank(tenantDomain)) {
             List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
             resolvedUserResult = MultiAttributeLoginDataHolder.getInstance().getMultiAttributeLoginResolver().
-                    resolveUser(loginIdentifierValue, allowedAttributes, tenantDomain);
+                    resolveUser(loginIdentifierValue, allowedAttributes, tenantDomain, allowDuplicateUsernames);
         }
         return resolvedUserResult;
     }

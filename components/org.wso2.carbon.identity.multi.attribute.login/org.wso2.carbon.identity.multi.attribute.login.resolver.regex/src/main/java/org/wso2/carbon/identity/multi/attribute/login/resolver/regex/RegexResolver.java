@@ -70,6 +70,13 @@ public class RegexResolver implements MultiAttributeLoginResolver {
     @Override
     public ResolvedUserResult resolveUser(String loginAttribute, List<String> allowedAttributes, String tenantDomain) {
 
+        return resolveUser(loginAttribute, allowedAttributes, tenantDomain, false);
+    }
+
+    @Override
+    public ResolvedUserResult resolveUser(String loginAttribute, List<String> allowedAttributes, String tenantDomain,
+                                          boolean allowDuplicateUsernames) {
+
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         try {
             if (allowedAttributes == null) {
@@ -80,7 +87,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             ClaimManager claimManager = userRealm.getClaimManager();
 
             resolveDistinctUsersForClaims(loginAttribute, allowedAttributes, claimManager, userStoreManager,
-                    resolvedUserResult);
+                    resolvedUserResult, allowDuplicateUsernames);
 
         } catch (UserStoreException e) {
             log.error("Error occurred while resolving user name", e);
@@ -91,12 +98,13 @@ public class RegexResolver implements MultiAttributeLoginResolver {
     private void resolveDistinctUsersForClaims(String loginAttribute, List<String> allowedAttributes,
                                                ClaimManager claimManager,
                                                UniqueIDUserStoreManager userStoreManager,
-                                               ResolvedUserResult resolvedUserResult)
+                                               ResolvedUserResult resolvedUserResult, boolean allowDuplicateUsernames)
             throws UserStoreException {
 
         Set<String> uniqueUserIds = new HashSet<>();
         Map<String, List<User>> distinctUsers = new HashMap<>();
         List<String> userStorePreferenceOrder  = getUserStorePreferenceOrder();
+        Claim usernameClaim = claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI);
 
         // Resolve the user from the regex matching.
         for (String claimURI : allowedAttributes) {
@@ -140,15 +148,21 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                     the error message.
                     */
                 } else if (allowedDistinctUsersForClaim.size() > 1) {
-                    resolvedUserResult.setErrorMessage("Found multiple users for " + claim.getDisplayTag() +
-                            " to value " + loginAttribute);
-                    return;
+                    if (allowDuplicateUsernames && StringUtils.equals(claimURI, usernameClaim.getClaimUri())) {
+                        User userFromUserList = allowedDistinctUsersForClaim.get(0);
+                        User user = new User();
+                        user.setUsername(userFromUserList.getUsername());
+                        distinctUsers.put(claimURI, Collections.singletonList(user));
+                    } else {
+                        resolvedUserResult.setErrorMessage("Found multiple users for " + claim.getDisplayTag() +
+                                " to value " + loginAttribute);
+                        return;
+                    }
                 }
             }
         }
 
         // Check the users from username by default if there is no regex for username claim.
-        Claim usernameClaim = claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI);
         if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)
                 && StringUtils.isBlank(usernameClaim.getRegEx())) {
             List<User> userList = getUserList(UserCoreClaimConstants.USERNAME_CLAIM_URI, loginAttribute,
@@ -159,6 +173,11 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                         .collect(Collectors.toList());
                 if (allowedDistinctUsersForClaim.size() == 1) {
                     distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, allowedDistinctUsersForClaim);
+                } else if (allowedDistinctUsersForClaim.size() > 1 && allowDuplicateUsernames) {
+                    User userFromUserList = allowedDistinctUsersForClaim.get(0);
+                    User user = new User();
+                    user.setUsername(userFromUserList.getUsername());
+                    distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, Collections.singletonList(user));
                 }
             }
         }
