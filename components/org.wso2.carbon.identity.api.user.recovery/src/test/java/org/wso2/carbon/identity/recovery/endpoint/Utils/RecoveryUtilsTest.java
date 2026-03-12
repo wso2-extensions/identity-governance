@@ -22,12 +22,20 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 
 import java.io.IOException;
@@ -131,6 +139,41 @@ public class RecoveryUtilsTest {
 
             // Call the method
             RecoveryUtil.makeCaptchaVerificationHttpClient5Request(reCaptchaResponse, properties);
+        }
+    }
+
+    @Test(description = "Test happy path for getUserDTO method.")
+    public void testGetUserDTOHappyPath() throws Exception {
+
+        User user = new User();
+        user.setTenantDomain("carbon.super");
+        user.setUserStoreDomain("PRIMARY");
+        user.setUserName("alice");
+
+        RealmService realmService = Mockito.mock(RealmService.class);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        AbstractUserStoreManager userStoreManager = Mockito.mock(AbstractUserStoreManager.class);
+
+        Mockito.when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
+        Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(userStoreManager.getUserIDFromUserName("PRIMARY/alice")).thenReturn("user-id-1");
+
+        IdentityRecoveryServiceDataHolder dataHolder = IdentityRecoveryServiceDataHolder.getInstance();
+        RealmService originalRealmService = dataHolder.getRealmService();
+        dataHolder.setRealmService(realmService);
+
+        try (MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil =
+                     Mockito.mockStatic(IdentityTenantUtil.class)) {
+            mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId("carbon.super"))
+                    .thenReturn(-1234);
+
+            UserDTO userDTO = RecoveryUtil.getUserDTO(user);
+            assertEquals(userDTO.getTenantDomain(), "carbon.super");
+            assertEquals(userDTO.getRealm(), "PRIMARY");
+            assertEquals(userDTO.getUsername(), "alice");
+            assertEquals(userDTO.getUserId(), "user-id-1");
+        } finally {
+            dataHolder.setRealmService(originalRealmService);
         }
     }
 }

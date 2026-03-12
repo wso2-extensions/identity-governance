@@ -276,6 +276,19 @@ public class Utils {
         } else {
             userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
         }
+        try {
+            RealmService realmService = Utils.getRealmService();
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            if (realmService != null && realmService.getTenantUserRealm(tenantId) != null) {
+                AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager) realmService.
+                        getTenantUserRealm(tenantId).getUserStoreManager();
+                userDTO.setUserId(userStoreManager.getUserIDFromUserName(user.getUserStoreDomain() + "/" +
+                        user.getUserName()));
+            }
+        } catch (UserStoreException | UserExportException e) {
+            throw new InternalServerErrorException("Error in loading userId for user:" +
+                    user.getLoggableMaskedUserId());
+        }
         userDTO.setUsername(user.getUserName());
         return userDTO;
     }

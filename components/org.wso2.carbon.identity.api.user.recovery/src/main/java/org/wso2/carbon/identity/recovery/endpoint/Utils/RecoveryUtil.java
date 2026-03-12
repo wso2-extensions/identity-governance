@@ -61,6 +61,8 @@ import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryMa
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 import org.wso2.securevault.SecretResolver;
@@ -301,6 +303,20 @@ public class RecoveryUtil {
         } else {
             userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
         }
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        try {
+            if (realmService != null && realmService.getTenantUserRealm(tenantId) != null) {
+                AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager) realmService.
+                        getTenantUserRealm(tenantId).getUserStoreManager();
+                userDTO.setUserId(userStoreManager.getUserIDFromUserName(user.getUserStoreDomain() + "/" +
+                        user.getUserName()));
+            }
+        } catch (UserStoreException e) {
+            LOG.error("Can not set userId to userDTO.", e);
+        }
+
         userDTO.setUsername(user.getUserName());
         return userDTO;
     }

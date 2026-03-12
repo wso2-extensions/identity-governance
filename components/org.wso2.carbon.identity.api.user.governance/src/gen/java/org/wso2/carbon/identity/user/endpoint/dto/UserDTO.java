@@ -23,6 +23,7 @@ public class UserDTO  {
   
   private String realm = null;
 
+  private String userId = null;
 
   /**
    **/
@@ -59,7 +60,16 @@ public class UserDTO  {
     this.realm = realm;
   }
 
-
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("userId")
+  public String getUserId() {
+    return userId;
+  }
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
 
   @Override
   public String toString()  {
@@ -69,6 +79,7 @@ public class UserDTO  {
     sb.append("  username: ").append(username).append("\n");
     sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
     sb.append("  realm: ").append(realm).append("\n");
+    sb.append("  userId: ").append(userId).append("\n");
     sb.append("}\n");
     return sb.toString();
   }
