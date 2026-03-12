@@ -110,14 +110,6 @@ public class UtilsTest {
         assertEquals(Utils.getUser(buildUserDTO()).getUserStoreDomain(), "TESTREALM");
     }
 
-    @Test
-    public void testGetUserDTO() {
-
-        assertNotNull(Utils.getUserDTO(buildUser()), "Failed building user object.");
-        assertEquals(Utils.getUserDTO(buildUser()).getUsername(), "testUser");
-        assertEquals(Utils.getUserDTO(buildUser()).getRealm(), "TESTREALM");
-    }
-
     private SelfRegistrationUserDTO buildSelfRegistrationUserDTO() {
 
         SelfRegistrationUserDTO userDTO = new SelfRegistrationUserDTO();

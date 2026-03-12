@@ -419,6 +419,8 @@ definitions:
         type: string
       tenant-domain:
         type: string
+      userId:
+        type: string
   #-----------------------------------------------------
   # The Credential object
   #-----------------------------------------------------
