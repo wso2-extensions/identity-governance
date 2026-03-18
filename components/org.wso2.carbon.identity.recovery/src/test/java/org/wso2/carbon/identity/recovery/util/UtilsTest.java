@@ -1439,7 +1439,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() throws Exception {
+    public void testIsMultiEmailsPerUserEnabled() throws Exception {
 
         // Mock ClaimMetadataManagementService
         ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
@@ -1451,7 +1451,7 @@ public class UtilsTest {
                         IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
                 .thenReturn("false");
 
-        boolean isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        boolean isEnabled = Utils.isMultiEmailsPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
 
         // Case 2: When support_multi_emails_and_mobile_numbers_per_user config is true.
@@ -1464,7 +1464,7 @@ public class UtilsTest {
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties2));
 
-        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEnabled = Utils.isMultiEmailsPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(isEnabled);
 
         // Case 3: When support by default is disabled for feature related claims.
@@ -1473,7 +1473,7 @@ public class UtilsTest {
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties3));
 
-        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEnabled = Utils.isMultiEmailsPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
 
         // Case 4: When user store domain is excluded for feature related claims.
@@ -1483,14 +1483,70 @@ public class UtilsTest {
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties4));
 
-        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEnabled = Utils.isMultiEmailsPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
 
         // Case 5: When ClaimMetadataException is thrown.
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN))
                 .thenThrow(new ClaimMetadataException("Test exception"));
 
-        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        isEnabled = Utils.isMultiEmailsPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+    }
+
+    @Test
+    public void testIsMultiMobileNumbersPerUserEnabled() throws Exception {
+
+        // Mock ClaimMetadataManagementService
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
+                .thenReturn(claimMetadataManagementService);
+
+        // Case 1: When support_multi_emails_and_mobile_numbers_per_user config is false.
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("false");
+
+        boolean isEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 2: When support_multi_emails_and_mobile_numbers_per_user config is true.
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("true");
+
+        Map<String, String> claimProperties2 = new HashMap<>();
+        claimProperties2.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties2));
+
+        isEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertTrue(isEnabled);
+
+        // Case 3: When support by default is disabled for feature related claims.
+        Map<String, String> claimProperties3 = new HashMap<>();
+        claimProperties3.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.FALSE.toString());
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties3));
+
+        isEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 4: When user store domain is excluded for feature related claims.
+        Map<String, String> claimProperties4 = new HashMap<>();
+        claimProperties4.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        claimProperties4.put(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY, USER_STORE_DOMAIN);
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties4));
+
+        isEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 5: When ClaimMetadataException is thrown.
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN))
+                .thenThrow(new ClaimMetadataException("Test exception"));
+
+        isEnabled = Utils.isMultiMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
     }
 
