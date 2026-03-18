@@ -1527,13 +1527,13 @@ public class Utils {
     }
 
     /**
-     * Check whether the supporting multiple email addresses and mobile numbers per user feature is enabled.
+     * Check whether supporting multiple email addresses per user is enabled.
      *
-     * @param tenantDomain   Tenant domain.
+     * @param tenantDomain    Tenant domain.
      * @param userStoreDomain User store domain.
      * @return True if the config is set to true, false otherwise.
      */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
+    public static boolean isMultiEmailsPerUserEnabled(String tenantDomain, String userStoreDomain) {
 
         if (!Boolean.parseBoolean(IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
@@ -1550,16 +1550,48 @@ public class Utils {
                             .getLocalClaims(tenantDomain);
 
             List<String> requiredClaims = Arrays.asList(
-                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                     IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
                     IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
 
-            // Check if all required claims are valid for the user store.
             return requiredClaims.stream().allMatch(claimUri ->
                             isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
         } catch (ClaimMetadataException e) {
-            log.error("Error while retrieving multiple emails and mobiles config.", e);
+            log.error("Error while retrieving multiple emails config.", e);
+            return false;
+        }
+    }
+
+    /**
+     * Check whether supporting multiple mobile numbers per user is enabled.
+     *
+     * @param tenantDomain    Tenant domain.
+     * @param userStoreDomain User store domain.
+     * @return True if the config is set to true, false otherwise.
+     */
+    public static boolean isMultiMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
+
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
+            return false;
+        }
+
+        if (StringUtils.isBlank(tenantDomain) || StringUtils.isBlank(userStoreDomain)) {
+            return false;
+        }
+
+        try {
+            List<LocalClaim> localClaims =
+                    IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                            .getLocalClaims(tenantDomain);
+
+            List<String> requiredClaims = Arrays.asList(
+                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+
+            return requiredClaims.stream().allMatch(claimUri ->
+                            isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
+        } catch (ClaimMetadataException e) {
+            log.error("Error while retrieving multiple mobile numbers config.", e);
             return false;
         }
     }
@@ -1580,10 +1612,8 @@ public class Utils {
             .anyMatch(claim -> {
                 Map<String, String> properties = claim.getClaimProperties();
 
-                // Check if claim is supported by default.
-                boolean isSupported = Boolean.parseBoolean(
-                        properties.getOrDefault(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY,
-                                Boolean.FALSE.toString()));
+                // Check if claim is supported by default, considering profile-specific values.
+                boolean isSupported = isClaimSupportedByDefaultWithProfiles(properties);
 
                 // Check if user store is not in excluded list.
                 String excludedUserStoreDomains = properties.get(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY);
@@ -1593,6 +1623,41 @@ public class Utils {
 
                 return isSupported && isNotExcluded;
             });
+    }
+
+    /**
+     * Determines if a claim is supported by default by checking profile-specific values first.
+     *
+     * @param claimProperties The claim properties map.
+     * @return True if the claim is supported by default considering profiles.
+     */
+    private static boolean isClaimSupportedByDefaultWithProfiles(Map<String, String> claimProperties) {
+
+        boolean globalValue = Boolean.parseBoolean(
+                claimProperties.getOrDefault(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY,
+                        Boolean.FALSE.toString()));
+
+        String consoleValue = claimProperties.get(buildProfileSupportedByDefaultKey(
+                ClaimConstants.DefaultAllowedClaimProfile.CONSOLE.getProfileName()));
+        String endUserValue = claimProperties.get(buildProfileSupportedByDefaultKey(
+                ClaimConstants.DefaultAllowedClaimProfile.END_USER.getProfileName()));
+
+        // Use profile value if defined, otherwise fall back to global value.
+        boolean consoleSupported = consoleValue != null ? Boolean.parseBoolean(consoleValue) : globalValue;
+        boolean endUserSupported = endUserValue != null ? Boolean.parseBoolean(endUserValue) : globalValue;
+        return consoleSupported && endUserSupported;
+    }
+
+    /**
+     * Builds the profile-specific SupportedByDefault property key.
+     *
+     * @param profileName The profile name.
+     * @return The profile-specific SupportedByDefault property key.
+     */
+    private static String buildProfileSupportedByDefaultKey(String profileName) {
+
+        return ClaimConstants.PROFILES_CLAIM_PROPERTY_PREFIX + profileName
+                + ClaimConstants.CLAIM_PROFILE_PROPERTY_DELIMITER + ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY;
     }
 
     /**
