@@ -1032,7 +1032,7 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
@@ -1062,7 +1062,7 @@ public class UserSelfRegistrationManagerTest {
         // Case 2: External Verified Channel type.
         verifiedChannelType = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
@@ -1085,7 +1085,7 @@ public class UserSelfRegistrationManagerTest {
 
         // Case 3: Throws user store exception while getting user claim values.
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
@@ -1110,7 +1110,7 @@ public class UserSelfRegistrationManagerTest {
         verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
         verifiedChannelClaim = "http://wso2.org/claims/invalid";
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
@@ -1157,7 +1157,7 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+            mockedUtils.when(() -> Utils.isMultiMobileNumbersPerUserEnabled(anyString(), anyString()))
                     .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
