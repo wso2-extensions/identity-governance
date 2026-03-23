@@ -109,6 +109,7 @@ import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainName;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
@@ -1401,7 +1402,11 @@ public class Utils {
         int otpLength = IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH;
         // Set connector specific OTP configuration values, for connectors that have separate OTP configurations.
         if (StringUtils.isNotBlank(connectorName)) {
-            sendOTPInEmail = Boolean.parseBoolean(getRecoveryConfigs(
+            // Set new email claim update specific OTP configuration value.
+            boolean isEmailOTPEnabledOnUpdate = "UserClaimUpdate".equals(connectorName) &&
+                    Boolean.parseBoolean(getRecoveryConfigs(ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+            // Set OTP behavior by prioritizing the new config and falling back to legacy config.
+            sendOTPInEmail = isEmailOTPEnabledOnUpdate || Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.SendOTPInEmail", tenantDomain));
             isSelfRegistrationOTPEnabled = "SelfRegistration".equals(connectorName) &&
                     Boolean.parseBoolean(getRecoveryConfigs(SELF_REGISTRATION_EMAIL_OTP_ENABLE, tenantDomain));
