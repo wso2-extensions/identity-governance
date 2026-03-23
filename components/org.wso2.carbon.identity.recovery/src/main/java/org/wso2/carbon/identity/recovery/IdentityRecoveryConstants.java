@@ -65,6 +65,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
+    public static final String NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE = "emailOTPVerificationOnUpdate";
     // This type of notification is used to send a notification when the user updates the email with verification.
     public static final String NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE = "notifyOnExistingEmailUpdate";
     // This type of notification is used to send a notification when the user updates the email without verification.
@@ -727,6 +728,7 @@ public class IdentityRecoveryConstants {
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
+        public static final String ENABLE_EMAIL_OTP_ON_UPDATE = "UserClaimUpdate.Email.EnableEmailOTP";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "UserClaimUpdate.OTP.SendOTPInEmail";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "UserClaimUpdate." +
                 "OTP.UseUppercaseCharactersInOTP";
