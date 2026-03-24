@@ -364,6 +364,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
                     notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE;
+                    log.info("Email OTP verification enabled for user: " + user.getUserName() + " in tenant: " + user.getTenantDomain());
                 } else {
                     // Handles verification with confirmation link scenario.
                     userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
