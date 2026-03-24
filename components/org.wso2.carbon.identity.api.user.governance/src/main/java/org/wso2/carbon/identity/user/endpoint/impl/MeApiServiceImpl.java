@@ -313,6 +313,9 @@ public class MeApiServiceImpl extends MeApiService {
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Valid recovery scenario found: " + recoveryScenario);
+            }
             return recoveryScenario;
         }
 

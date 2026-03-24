@@ -1405,6 +1405,9 @@ public class Utils {
             // Set new email claim update specific OTP configuration value.
             boolean isEmailOTPEnabledOnUpdate = "UserClaimUpdate".equals(connectorName) &&
                     Boolean.parseBoolean(getRecoveryConfigs(ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+            if (log.isDebugEnabled()) {
+                log.debug("Email OTP enabled on update: " + isEmailOTPEnabledOnUpdate + " for tenant: " + tenantDomain);
+            }
             // Set OTP behavior by prioritizing the new config and falling back to legacy config.
             sendOTPInEmail = isEmailOTPEnabledOnUpdate || Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.SendOTPInEmail", tenantDomain));
