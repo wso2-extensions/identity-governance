@@ -736,6 +736,36 @@ public class UserSelfRegistrationManagerTest {
     }
 
     @Test
+    public void testConfirmVerificationCodeMeEmailOTPVerificationOnUpdate()
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
+
+        String verificationPendingEmail = "new-email@test.com";
+        String existingPrimaryEmail = "old-email@test.com";
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(false);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, existingPrimaryEmail);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, verificationPendingEmail);
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), verificationPendingEmail);
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM), Boolean.TRUE.toString());
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
+    }
+
+    @Test
     public void testConfirmVerificationCodeMeVerificationOnVerifiedListUpdate()
             throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
 

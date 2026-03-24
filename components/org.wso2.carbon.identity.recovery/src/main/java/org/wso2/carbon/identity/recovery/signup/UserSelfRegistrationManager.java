@@ -1063,7 +1063,9 @@ public class UserSelfRegistrationManager {
         RecoverySteps step = (RecoverySteps) recoveryData.getRecoveryStep();
 
         boolean isEmailVerification = (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(scenario) ||
-                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario)) &&
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.equals(scenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario)) &&
                 RecoverySteps.VERIFY_EMAIL.equals(step);
 
         boolean isMobileVerification = (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(scenario) ||
@@ -1195,13 +1197,15 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryException {
 
         Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
+        Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
         UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
 
-        // Validate the recovery step to verify mobile claim scenario.
-        if (!RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+        // Validate the recovery step to verify email/mobile claim scenarios.
+        if (!RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             auditRecoveryConfirm(recoveryData,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
@@ -1221,81 +1225,167 @@ public class UserSelfRegistrationManager {
         boolean supportMultipleEmailsAndMobileNumbers =
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
-        String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
-        String primaryMobile = null;
+        if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
+            String primaryEmail = null;
+            try {
+                primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+            } catch (IdentityEventException e) {
+                log.error("Error occurred while obtaining email claim for the user: " +
+                        Utils.maskIfRequired(user.getUserName()), e);
+            }
 
-        try {
-            primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
-                    IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-        } catch (IdentityEventException e) {
-            log.error("Error occurred while obtaining mobile claim for the user: " +
-                    Utils.maskIfRequired(user.getUserName()), e);
-        }
+            // Check whether the pending email claim value from recovery data is same as the one in the user store.
+            try {
+                String currentPendingEmailClaim = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
+                if (StringUtils.isNotBlank(pendingEmailClaimValue) &&
+                        !pendingEmailClaimValue.equals(currentPendingEmailClaim)) {
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_LONGER_VALID_LINK, null);
+                }
+            } catch (IdentityEventException e) {
+                throw new IdentityRecoveryServerException("Error while reading pending email claim for user: "
+                        + Utils.maskIfRequired(user.getUserName()), e);
+            }
 
-        if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
-            /*
-            Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
-            claim.
-            */
-            if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryData.getRecoveryScenario()
-                    ) || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                    recoveryData.getRecoveryScenario())) && supportMultipleEmailsAndMobileNumbers) {
-                try {
-                    String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
-                    List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
-                            user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                    addOrUpdateMultiValuedClaim(existingVerifiedMobileNumbersList, pendingMobileNumberClaimValue,
-                            IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
-                            userClaims, userClaimsToBeAdded, userClaimsToBeModified);
+            if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
+                if ((RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                        recoveryData.getRecoveryScenario()) || RecoveryScenarios
+                        .EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryData.getRecoveryScenario()))
+                        && supportMultipleEmailsAndMobileNumbers) {
+                    try {
+                        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+                        List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                        addOrUpdateMultiValuedClaim(verifiedEmails, pendingEmailClaimValue,
+                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
-                    /*
-                    VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
-                    mobileNumbers claim as well.
-                    */
-                    List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
-                            user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-                    addOrUpdateMultiValuedClaim(allMobileNumbersList, pendingMobileNumberClaimValue,
-                            IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
-                            userClaims, userClaimsToBeAdded, userClaimsToBeModified);
+                        List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                        addOrUpdateMultiValuedClaim(allEmails, pendingEmailClaimValue,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
 
-                    // If the mobile being verified is the primary mobile, set the "phoneVerified" claim to true.
-                    if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
-                        userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                        if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
+                            userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+                        }
+                        if (StringUtils.isBlank(primaryEmail)) {
+                            // If the primary email is not set, set the verified email as primary.
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                                    pendingEmailClaimValue);
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                    Boolean.TRUE.toString());
+                        }
+                    } catch (IdentityEventException e) {
+                        throw new IdentityRecoveryServerException(String.format(
+                                "Error occurred while obtaining existing claim value for the user: %s",
+                                Utils.maskIfRequired(user.getUserName())), e);
+                    }
+                } else {
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    if (StringUtils.isBlank(primaryEmail)) {
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
+                    } else {
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                                pendingEmailClaimValue);
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
                                 Boolean.TRUE.toString());
                     }
+                }
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaimsToBeDeleted.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
+                        StringUtils.EMPTY);
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+            }
+        } else {
+            String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
+            String primaryMobile = null;
+
+            try {
+                primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            } catch (IdentityEventException e) {
+                log.error("Error occurred while obtaining mobile claim for the user: " +
+                        Utils.maskIfRequired(user.getUserName()), e);
+            }
+
+            if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
+                /*
+                Verifying whether user is trying to add a mobile number to
+                http://wso2.org/claims/verifedMobileNumbers claim.
+                */
+                if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                        recoveryData.getRecoveryScenario()) ||
+                        RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                                recoveryData.getRecoveryScenario())) && supportMultipleEmailsAndMobileNumbers) {
+                    try {
+                        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+                        List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                                user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                        addOrUpdateMultiValuedClaim(existingVerifiedMobileNumbersList, pendingMobileNumberClaimValue,
+                                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
+
+                        /*
+                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
+                        mobileNumbers claim as well.
+                        */
+                        List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                                user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                        addOrUpdateMultiValuedClaim(allMobileNumbersList, pendingMobileNumberClaimValue,
+                                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, multiAttributeSeparator,
+                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
+
+                        // If the mobile being verified is the primary mobile, set the "phoneVerified" claim to true.
+                        if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                            userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                    Boolean.TRUE.toString());
+                        }
+                        if (StringUtils.isBlank(primaryMobile)) {
+                            // If the primary mobile is not set, set the verified mobile as primary.
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                                    pendingMobileNumberClaimValue);
+                            userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                    Boolean.TRUE.toString());
+                        }
+                    } catch (IdentityEventException e) {
+                        throw new IdentityRecoveryServerException(String.format(
+                                "Error occurred while obtaining existing claim value for the user: %s",
+                                Utils.maskIfRequired(user.getUserName())), e);
+                    }
+                } else {
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                    userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
                     if (StringUtils.isBlank(primaryMobile)) {
-                        // If the primary mobile is not set, set the verified mobile as primary.
-                        userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                        userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
                         userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
                                 pendingMobileNumberClaimValue);
                         userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
                                 Boolean.TRUE.toString());
+                    } else {
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                                pendingMobileNumberClaimValue);
+                        userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
+                                Boolean.TRUE.toString());
                     }
-                } catch (IdentityEventException e) {
-                    throw new IdentityRecoveryServerException(String.format(
-                            "Error occurred while obtaining existing claim value for the user: %s",
-                            Utils.maskIfRequired(user.getUserName())), e);
                 }
-            } else {
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
-                if (StringUtils.isBlank(primaryMobile)) {
-                    userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                    userClaimsToBeAdded.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
-                            Boolean.TRUE.toString());
-                } else {
-                    userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
-                            pendingMobileNumberClaimValue);
-                    userClaimsToBeModified.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM,
-                            Boolean.TRUE.toString());
-                }
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaimsToBeDeleted.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM,
+                        StringUtils.EMPTY);
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
-            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-            userClaimsToBeDeleted.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
