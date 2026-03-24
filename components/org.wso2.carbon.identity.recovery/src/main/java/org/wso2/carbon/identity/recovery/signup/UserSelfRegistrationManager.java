@@ -860,6 +860,21 @@ public class UserSelfRegistrationManager {
                         Utils.maskIfRequired(user.getUserName()), e);
             }
 
+            // Check whether the pending email claim value from recovery data is same as the one in the user store,
+            // to avoid already deleted email getting added.
+            try {
+                String currentPendingEmailClaim = Utils.getSingleValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
+                if (StringUtils.isNotBlank(pendingEmailClaimValue) &&
+                        !pendingEmailClaimValue.equals(currentPendingEmailClaim)) {
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_LONGER_VALID_LINK, null);
+                }
+            } catch (IdentityEventException e) {
+                throw new IdentityRecoveryServerException("Error while reading pending email claim for user: "
+                        + Utils.maskIfRequired(user.getUserName()), e);
+            }
+
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
                 eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
