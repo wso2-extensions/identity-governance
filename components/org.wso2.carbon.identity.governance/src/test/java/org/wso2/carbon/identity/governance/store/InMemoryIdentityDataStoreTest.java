@@ -199,9 +199,9 @@ public class InMemoryIdentityDataStoreTest {
 
         new InMemoryIdentityDataStore().storeOnRead(dto, usm);
 
-        verify(mockCache).addToCacheOnRead(any(IdentityDataStoreCacheKey.class), any(UserIdentityClaim.class),
+        verify(mockCache).addToCache(any(IdentityDataStoreCacheKey.class), any(UserIdentityClaim.class),
                 anyInt());
-        verify(mockCache, never()).addToCache(any(), any(), anyInt());
+        verify(mockCache, never()).addToCacheOnRead(any(), any(), anyInt());
     }
 
     @Test(description = "storeOnRead should merge claims with the cached entry and call addToCacheOnRead.")
@@ -270,7 +270,7 @@ public class InMemoryIdentityDataStoreTest {
 
         // Verify cache was called with the lowercased key.
         IdentityDataStoreCacheKey expectedKey = new IdentityDataStoreCacheKey("PRIMARY", "charlie");
-        verify(mockCache).addToCacheOnRead(
+        verify(mockCache).addToCache(
                 Mockito.eq(expectedKey),
                 any(UserIdentityClaim.class), anyInt());
     }
@@ -302,17 +302,19 @@ public class InMemoryIdentityDataStoreTest {
         new InMemoryIdentityDataStore().storeOnRead(dto, usm);
 
         IdentityDataStoreCacheKey expectedKey = new IdentityDataStoreCacheKey("PRIMARY", "dave");
-        verify(mockCache).addToCacheOnRead(
+        verify(mockCache).addToCache(
                 Mockito.eq(expectedKey),
                 any(UserIdentityClaim.class), anyInt());
     }
 
-    @Test(description = "storeOnRead should NOT call addToCache — only addToCacheOnRead is allowed.")
-    public void testStoreOnRead_neverCallsAddToCache() throws Exception {
+    @Test(description = "addToCache and addToCacheOnRead are mutually exclusive: " +
+            "no cached entry uses addToCache only; existing cached entry uses addToCacheOnRead only.")
+    public void testStoreOnRead_cacheMethods_areMutuallyExclusive() throws Exception {
 
-        IdentityDataStoreCache mockCache = mock(IdentityDataStoreCache.class);
+        // Branch 1: no cached entry — addToCache is called, addToCacheOnRead is never called.
+        IdentityDataStoreCache mockCache1 = mock(IdentityDataStoreCache.class);
         mockedIdentityDataStoreCache = Mockito.mockStatic(IdentityDataStoreCache.class);
-        mockedIdentityDataStoreCache.when(IdentityDataStoreCache::getInstance).thenReturn(mockCache);
+        mockedIdentityDataStoreCache.when(IdentityDataStoreCache::getInstance).thenReturn(mockCache1);
 
         JDBCUserStoreManager usm = mock(JDBCUserStoreManager.class);
         RealmConfiguration rc = mock(RealmConfiguration.class);
@@ -329,18 +331,29 @@ public class InMemoryIdentityDataStoreTest {
         when(usm.getRealmConfiguration()).thenReturn(rc);
         when(usm.getTenantId()).thenReturn(MultitenantConstants.SUPER_TENANT_ID);
         when(rc.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME)).thenReturn("PRIMARY");
+        when(mockCache1.getValueFromCache(any(IdentityDataStoreCacheKey.class), anyInt())).thenReturn(null);
 
-        // Test both branches: no cached entry, and with cached entry.
-        when(mockCache.getValueFromCache(any(IdentityDataStoreCacheKey.class), anyInt())).thenReturn(null);
         new InMemoryIdentityDataStore().storeOnRead(dto, usm);
-        verify(mockCache, never()).addToCache(any(), any(), anyInt());
+
+        verify(mockCache1).addToCache(any(), any(), anyInt());
+        verify(mockCache1, never()).addToCacheOnRead(any(), any(), anyInt());
+
+        mockedIdentityDataStoreCache.close();
+
+        // Branch 2: cached entry exists — addToCacheOnRead is called, addToCache is never called.
+        IdentityDataStoreCache mockCache2 = mock(IdentityDataStoreCache.class);
+        mockedIdentityDataStoreCache = Mockito.mockStatic(IdentityDataStoreCache.class);
+        mockedIdentityDataStoreCache.when(IdentityDataStoreCache::getInstance).thenReturn(mockCache2);
 
         Map<String, String> cachedClaims = new HashMap<>();
         UserIdentityClaim cachedDto = mock(UserIdentityClaim.class);
         when(cachedDto.getUserIdentityDataMap()).thenReturn(cachedClaims);
-        when(mockCache.getValueFromCache(any(IdentityDataStoreCacheKey.class), anyInt())).thenReturn(cachedDto);
+        when(mockCache2.getValueFromCache(any(IdentityDataStoreCacheKey.class), anyInt())).thenReturn(cachedDto);
+
         new InMemoryIdentityDataStore().storeOnRead(dto, usm);
-        verify(mockCache, never()).addToCache(any(), any(), anyInt());
+
+        verify(mockCache2).addToCacheOnRead(any(), any(), anyInt());
+        verify(mockCache2, never()).addToCache(any(), any(), anyInt());
     }
 
     @Test(description = "The default storeOnRead in UserIdentityDataStore should be a no-op with no exception.")
