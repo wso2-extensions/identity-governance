@@ -279,6 +279,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
+        log.debug("Checking if email OTP on update is enabled for tenant: " + tenantDomain);
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
     }
