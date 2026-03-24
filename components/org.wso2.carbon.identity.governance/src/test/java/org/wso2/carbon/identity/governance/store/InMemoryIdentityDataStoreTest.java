@@ -75,6 +75,10 @@ public class InMemoryIdentityDataStoreTest {
     @BeforeMethod
     public void setUp() {
 
+        // CarbonContext's static initializer reads CARBON_HOME; set it before any static mock so
+        // PrivilegedCarbonContext can be instrumented without triggering a class-init failure.
+        System.setProperty(CarbonBaseConstants.CARBON_HOME,
+                Paths.get(System.getProperty("user.dir"), "target").toString());
         MockitoAnnotations.openMocks(this);
         mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
         mockedUserCoreUtil = Mockito.mockStatic(UserCoreUtil.class);
@@ -101,6 +105,11 @@ public class InMemoryIdentityDataStoreTest {
         identityClaimsMap.put("keyOne", "valueOne");
         identityClaimsMap.put("keyTwo", "valueTwo");
 
+        // Stub getThreadLocalCarbonContext before initPrivilegedCarbonContext() is called, otherwise the
+        // static mock returns null and the init helper throws an NPE.
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(privilegedCarbonContext);
+
         initPrivilegedCarbonContext();
 
         Map<String, String> identityClaimsMapClone = new HashMap<>(identityClaimsMap);
@@ -109,12 +118,13 @@ public class InMemoryIdentityDataStoreTest {
         userIdentityClaim = mock(UserIdentityClaim.class);
         realmConfiguration = mock(RealmConfiguration.class);
         userIdentityDataStore = mock(InMemoryIdentityDataStore.class);
-        privilegedCarbonContext = mock(PrivilegedCarbonContext.class);
+
+        IdentityDataStoreCache mockCache = mock(IdentityDataStoreCache.class);
+        mockedIdentityDataStoreCache = Mockito.mockStatic(IdentityDataStoreCache.class);
+        mockedIdentityDataStoreCache.when(IdentityDataStoreCache::getInstance).thenReturn(mockCache);
 
         mockedIdentityUtil.when(() -> IdentityUtil.isUserStoreCaseSensitive(userStoreManager)).thenReturn(true);
         mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName("gayashan")).thenReturn("gayashan");
-        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
-                .thenReturn(privilegedCarbonContext);
 
         Mockito.when(userStoreManager.getTenantId()).thenReturn(MultitenantConstants.SUPER_TENANT_ID);
         Mockito.when(userIdentityClaim.getUserName()).thenReturn("gayashan");
