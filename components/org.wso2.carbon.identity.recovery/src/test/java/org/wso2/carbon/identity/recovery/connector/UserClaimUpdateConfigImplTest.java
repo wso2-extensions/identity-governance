@@ -122,6 +122,8 @@ public class UserClaimUpdateConfigImplTest {
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Enable user email verification on update");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Enable user email OTP verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -152,6 +154,8 @@ public class UserClaimUpdateConfigImplTest {
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Trigger a verification notification when user's email address is updated.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Trigger an email OTP verification when user's email address is updated.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
         descriptionMappingExpected.put(
@@ -185,6 +189,7 @@ public class UserClaimUpdateConfigImplTest {
 
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -233,6 +238,8 @@ public class UserClaimUpdateConfigImplTest {
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_OTP_ON_UPDATE));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE));
@@ -266,6 +273,6 @@ public class UserClaimUpdateConfigImplTest {
     public void testGetMetaData() {
 
         Map<String, Property> metaData = userClaimUpdateConfig.getMetaData();
-        Assert.assertEquals(metaData.size(), 10);
+        Assert.assertEquals(metaData.size(), 11);
     }
 }
