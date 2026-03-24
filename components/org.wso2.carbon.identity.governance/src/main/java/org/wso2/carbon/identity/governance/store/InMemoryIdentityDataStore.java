@@ -145,7 +145,7 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                     cachedUserIdentityDTO.getUserIdentityDataMap().putAll(userIdentityDTO.getUserIdentityDataMap());
                     identityDataStoreCache.addToCacheOnRead(key, cachedUserIdentityDTO, tenantId);
                 } else {
-                    identityDataStoreCache.addToCacheOnRead(key, userIdentityDTO, tenantId);
+                    identityDataStoreCache.addToCache(key, userIdentityDTO, tenantId);
                 }
             }
         } catch (UserStoreException e) {
