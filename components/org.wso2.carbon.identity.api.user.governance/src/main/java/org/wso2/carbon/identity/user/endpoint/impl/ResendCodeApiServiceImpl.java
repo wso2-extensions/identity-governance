@@ -355,6 +355,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         } else if (RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
+            log.info("Resending email OTP for email verification on verified list update for user: " + resendCodeRequestDTO.getUser().getUsername());
             notificationResponseBean = setNotificationResponseBean(
                 resendConfirmationManager,
                 RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
