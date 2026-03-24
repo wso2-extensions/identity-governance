@@ -47,6 +47,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -94,6 +95,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static junit.framework.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -103,6 +105,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -138,6 +141,8 @@ public class UtilsTest {
     private IdentityEventService identityEventService;
     @Mock
     private ClaimMetadataManagementService claimMetadataManagementService;
+    @Mock
+    private OTPGenerator otpGenerator;
 
     private static MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
     private static MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
@@ -206,6 +211,7 @@ public class UtilsTest {
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService()).thenReturn(
                 claimMetadataManagementService);
+        when(identityRecoveryServiceDataHolder.getOtpGenerator()).thenReturn(otpGenerator);
 
         when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
         when(realmService.getBootstrapRealm()).thenReturn(userRealm);
@@ -616,6 +622,76 @@ public class UtilsTest {
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryServerException);
         }
+    }
+
+    @Test
+    public void testGenerateSecretKeyWithEmailOTPOnUpdateEnabled() throws Exception {
+
+        Map<String, String> connectorConfigs = buildUserClaimUpdateOTPConfigs("true", "false");
+        mockConnectorConfigs(connectorConfigs);
+        when(otpGenerator.generateOTP(true, true, true, 6, "CUSTOM_SCENARIO")).thenReturn("123456");
+
+        String secretKey = Utils.generateSecretKey(NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                "CUSTOM_SCENARIO", TENANT_DOMAIN, "UserClaimUpdate");
+
+        assertEquals(secretKey, "123456");
+        verify(otpGenerator).generateOTP(true, true, true, 6, "CUSTOM_SCENARIO");
+    }
+
+    @Test
+    public void testGenerateSecretKeyWithEmailOTPOnUpdateDisabledAndLegacyEnabled() throws Exception {
+
+        Map<String, String> connectorConfigs = buildUserClaimUpdateOTPConfigs("false", "true");
+        mockConnectorConfigs(connectorConfigs);
+        when(otpGenerator.generateOTP(true, true, true, 6, "CUSTOM_SCENARIO")).thenReturn("654321");
+
+        String secretKey = Utils.generateSecretKey(NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                "CUSTOM_SCENARIO", TENANT_DOMAIN, "UserClaimUpdate");
+
+        assertEquals(secretKey, "654321");
+        verify(otpGenerator).generateOTP(true, true, true, 6, "CUSTOM_SCENARIO");
+    }
+
+    @Test
+    public void testGenerateSecretKeyWithEmailOTPOnUpdateAndLegacyDisabled() throws Exception {
+
+        Map<String, String> connectorConfigs = buildUserClaimUpdateOTPConfigs("false", "false");
+        mockConnectorConfigs(connectorConfigs);
+
+        String secretKey = Utils.generateSecretKey(NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                "CUSTOM_SCENARIO", TENANT_DOMAIN, "UserClaimUpdate");
+
+        assertNotNull(secretKey);
+        assertFalse(secretKey.isEmpty());
+        verify(otpGenerator, never()).generateOTP(anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyString());
+    }
+
+    private Map<String, String> buildUserClaimUpdateOTPConfigs(String enableEmailOTPOnUpdate,
+                                                               String legacySendOTPInEmail) {
+
+        Map<String, String> connectorConfigs = new HashMap<>();
+        connectorConfigs.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                enableEmailOTPOnUpdate);
+        connectorConfigs.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
+                legacySendOTPInEmail);
+        connectorConfigs.put("UserClaimUpdate.OTP.UseUppercaseCharactersInOTP", "true");
+        connectorConfigs.put("UserClaimUpdate.OTP.UseLowercaseCharactersInOTP", "true");
+        connectorConfigs.put("UserClaimUpdate.OTP.UseNumbersInOTP", "true");
+        connectorConfigs.put("UserClaimUpdate.OTP.OTPLength", "6");
+        return connectorConfigs;
+    }
+
+    private void mockConnectorConfigs(Map<String, String> connectorConfigs) throws IdentityGovernanceException {
+
+        when(identityGovernanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
+                .thenAnswer(invocation -> {
+                    String[] configKeyArray = invocation.getArgument(0);
+                    String configKey = configKeyArray[0];
+                    Property property = new Property();
+                    property.setName(configKey);
+                    property.setValue(connectorConfigs.getOrDefault(configKey, "false"));
+                    return new Property[]{property};
+                });
     }
 
     @Test
