@@ -282,11 +282,19 @@ public class ResendConfirmationManager {
 
         boolean isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE, user.getTenantDomain()));
+        boolean isEmailOTPVerificationOnUpdateEnabled;
+        try {
+            isEmailOTPVerificationOnUpdateEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE, user.getTenantDomain()));
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
+        }
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
             }
-            if (isSelfRegistrationEmailOTPEnabled) {
+            if (isSelfRegistrationEmailOTPEnabled || isEmailOTPVerificationOnUpdateEnabled) {
                 properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             }
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
@@ -503,6 +511,9 @@ public class ResendConfirmationManager {
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean emailOTPVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString()
+                .equals(recoveryScenario)
+                || RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
         boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
                 .ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario);
         boolean isAskPasswordSMSOTPScenario = RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString()
@@ -538,7 +549,7 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
-        if (emailVerificationOnUpdateScenario) {
+        if (emailVerificationOnUpdateScenario || emailOTPVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario
@@ -564,7 +575,8 @@ public class ResendConfirmationManager {
                 notificationResponseBean.setNotificationChannel(preferredChannel);
             }
 
-            if (emailVerificationOnUpdateScenario && RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
+            if ((emailVerificationOnUpdateScenario || emailOTPVerificationOnUpdateScenario) &&
+                    RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
                 String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
                 propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailClaimValue));
                 recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
@@ -815,6 +827,8 @@ public class ResendConfirmationManager {
                 case MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                 case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                 case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE:
+                case EMAIL_OTP_VERIFICATION_ON_UPDATE:
+                case EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "UserClaimUpdate");
                 case ASK_PASSWORD:
