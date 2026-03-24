@@ -334,7 +334,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_EMAIL_OTP_ON_UPDATE_ELEMENT));
                         if (enableEmailOTPOnUpdate != null) {
                             enableEmailOTPOnUpdateProperty = enableEmailOTPOnUpdate.getText();
-                            log.debug("Email OTP on update configuration loaded: " + enableEmailOTPOnUpdateProperty);
                         }
                         OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
