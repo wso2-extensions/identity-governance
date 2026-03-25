@@ -97,6 +97,11 @@
                 <artifactId>org.wso2.carbon.identity.central.log.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>javax.cache.wso2</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
 
             <!--Orbit Dependencies-->
             <dependency>
@@ -732,14 +737,14 @@
         <identity.branding.preference.management.version>1.1.29</identity.branding.preference.management.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.10.67</carbon.kernel.version>
+        <carbon.kernel.version>4.12.15</carbon.kernel.version>
         <carbon.kernel.feature.version>4.9.0</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>7.10.82</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.10.106</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[7.3.6, 8.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
