@@ -136,7 +136,9 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                 }
 
                 org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager) userStoreManager;
-                String domainName = store.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+                String domainName = store.getRealmConfiguration().getUserStoreProperty(
+                    UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME
+                );
 
                 IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
                 int tenantId = userStoreManager.getTenantId();
