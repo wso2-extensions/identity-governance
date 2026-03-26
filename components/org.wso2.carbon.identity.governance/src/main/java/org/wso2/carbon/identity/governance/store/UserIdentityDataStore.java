@@ -65,6 +65,17 @@ public abstract class UserIdentityDataStore {
             throws IdentityException;
 
     /**
+     * Stores data during a READ operation.
+     *
+     * @param userIdentityDTO
+     * @param userStoreManager
+     */
+    public void storeOnRead(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
+            throws IdentityException {
+        // By default, do nothing. Subclasses may override this method if needed.
+    }
+
+    /**
      * Loads
      *
      * @param userName
