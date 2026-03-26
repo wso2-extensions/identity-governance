@@ -47,6 +47,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private static final Log log = LogFactory.getLog(AccountSuspensionNotificationHandler.class);
     private static final String UPDATE_CONFIGURATION = "UPDATE_CONFIGURATION";
+    private static final String LAST_LOGIN_TIME_CLAIM_UPDATE = "LastLoginTimeClaimUpdate";
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
@@ -86,9 +87,13 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                     userClaims.put(NotificationConstants.LAST_LOGIN_TIME, currentTime);
                 }
 
+                // Related to https://github.com/wso2/product-is/issues/25324
+                IdentityUtil.threadLocalProperties.get().put(LAST_LOGIN_TIME_CLAIM_UPDATE, true);
                 userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
+            } finally {
+                IdentityUtil.threadLocalProperties.get().remove(LAST_LOGIN_TIME_CLAIM_UPDATE);
             }
         }
     }
