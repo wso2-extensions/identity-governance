@@ -508,10 +508,10 @@ public class ResendConfirmationManager {
                     .equals(recoveryScenario)
                 || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
                     .equals(recoveryScenario);
-        boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
+        boolean isEmailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
-        boolean emailOTPVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString()
+        boolean isEmailOTPVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
         boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
@@ -549,7 +549,7 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
-        if (emailVerificationOnUpdateScenario || emailOTPVerificationOnUpdateScenario) {
+        if (isEmailVerificationOnUpdateScenario || isEmailOTPVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario
@@ -575,7 +575,7 @@ public class ResendConfirmationManager {
                 notificationResponseBean.setNotificationChannel(preferredChannel);
             }
 
-            if ((emailVerificationOnUpdateScenario || emailOTPVerificationOnUpdateScenario) &&
+            if ((isEmailVerificationOnUpdateScenario || isEmailOTPVerificationOnUpdateScenario) &&
                     RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
                 String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
                 propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailClaimValue));
