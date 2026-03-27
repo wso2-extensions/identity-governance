@@ -171,22 +171,18 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     }
 
     @Override
-    public Property[] getConfiguration(String[] propertyNames, String tenantDomain) throws
-            IdentityGovernanceException {
+    public Property[] getConfiguration(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
 
         List<Property> requestedProperties = new ArrayList<>();
         Property[] allProperties = getConfiguration(tenantDomain);
-        for (String propertyName : propertyNames) {
-            for (int i = 0; i < allProperties.length; i++) {
-                if (propertyName.equals(allProperties[i].getName())) {
-                    requestedProperties.add(allProperties[i]);
-                    break;
-                }
-            }
+        Set<String> requestedPropertyNames = new HashSet<>(Arrays.asList(propertyNames));
 
+        for (Property property : allProperties) {
+            if (requestedPropertyNames.contains(property.getName())) {
+                requestedProperties.add(property);
+            }
         }
         return requestedProperties.toArray(new Property[requestedProperties.size()]);
-
     }
 
     /**
