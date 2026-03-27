@@ -122,7 +122,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         boolean supportMultipleEmails =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+                Utils.isMultiEmailsPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         boolean enable = false;
 
@@ -552,7 +552,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         boolean supportMultipleEmails =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+                Utils.isMultiEmailsPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
         // Update multiple email address related claims only if they’re in the claims map.
         // This avoids issues with updating the primary email address due to user store limitations on multiple
         // email addresses.
