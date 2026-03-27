@@ -277,6 +277,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
     }
 
+    private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
+
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+    }
+
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
@@ -346,22 +352,40 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         try {
             UserRecoveryData recoveryDataDO;
+            RecoveryScenarios recoveryScenario;
+            String notificationTemplateType;
+            boolean isEmailOTPOnUpdateEnabled = isEmailOTPOnUpdateEnabled(user.getTenantDomain());
+
+            // Handles multiple email addresses scenario.
             if (Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated()) {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
-                        RecoverySteps.VERIFY_EMAIL);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
-                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                // Handles verification with OTP scenario.
+                if (isEmailOTPOnUpdateEnabled) {
+                    recoveryScenario = RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE;
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE;
+                // Handles verification with confirmation link scenario.
+                } else {
+                    recoveryScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE;
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE;
+                }
+            // Handles single email address scenario.
             } else {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
-                        RecoverySteps.VERIFY_EMAIL);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
-                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                // Handles verification with OTP scenario.
+                if (isEmailOTPOnUpdateEnabled) {
+                    recoveryScenario = RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE;
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE;
+                // Handles verification with confirmation link scenario.
+                } else {
+                    recoveryScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE;
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE;
+                }
             }
+            userRecoveryDataStore.invalidate(user, recoveryScenario, RecoverySteps.VERIFY_EMAIL);
+            recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, RecoverySteps.VERIFY_EMAIL);
             /* Email address persisted in remaining set ids to maintain context information about the email address
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE, secretKey,
+            triggerNotification(user, notificationTemplateType, secretKey,
                     Utils.getArbitraryProperties(), verificationPendingEmailAddress, recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
@@ -461,13 +485,23 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 properties.put(prop.getKey(), prop.getValue());
             }
         }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
+        
         try {
+            String recoveryScenario = null;
+            if (recoveryDataDO != null) {
+                recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
+            }
+            if (StringUtils.isNotBlank(code) && recoveryScenario != null) {
+                if (RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                        RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+                    properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+                } else {
+                    properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+                }
+            }
+
             String selectedNotificationType = type;
             if (recoveryDataDO != null) {
-                String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
                 properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
 
                 if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {

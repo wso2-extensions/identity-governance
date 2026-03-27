@@ -630,6 +630,52 @@ public class UserEmailVerificationHandlerTest {
     }
 
     @Test
+    public void testHandleEventPostSetUserClaimsRecoveryScenariosWhenEmailOTPEnabled()
+            throws IdentityEventException, IdentityRecoveryException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        mockUtilMethods(true, true, false, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE, true);
+        mockPendingVerificationEmail(EXISTING_EMAIL_1);
+
+        // Case 1: Change primary email address.
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedEmailAddressesUpdated).thenReturn(false);
+        userEmailVerificationHandler.handleEvent(event);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_EMAIL, capturedRecoveryData.getRecoveryStep());
+
+        ArgumentCaptor<Event> notificationEventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(notificationEventCaptor.capture());
+        Event capturedNotificationEvent = notificationEventCaptor.getValue();
+        Assert.assertEquals(capturedNotificationEvent.getEventProperties().get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE);
+        Assert.assertEquals(capturedNotificationEvent.getEventProperties().get(IdentityRecoveryConstants.OTP_CODE),
+                capturedRecoveryData.getSecret());
+
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        // Case 2: Change verified email list.
+        Event event2 = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedEmailAddressesUpdated).thenReturn(true);
+        userEmailVerificationHandler.handleEvent(event2);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor2 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor2.capture());
+        UserRecoveryData capturedRecoveryData2 = recoveryDataCaptor2.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData2.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_EMAIL, capturedRecoveryData2.getRecoveryStep());
+    }
+
+    @Test
     public void testHandleEventPreAddUserVerifyEmailClaim() throws IdentityEventException {
 
         /*

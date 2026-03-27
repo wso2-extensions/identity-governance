@@ -140,6 +140,7 @@ import static org.testng.Assert.fail;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes.ERROR_CODE_DUPLICATE_CLAIM_VALUE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
@@ -443,6 +444,11 @@ public class UserSelfRegistrationManagerTest {
         selfRegistrationEmailOTPConfig.setName(SELF_REGISTRATION_EMAIL_OTP_ENABLE);
         selfRegistrationEmailOTPConfig.setValue(Boolean.FALSE.toString());
 
+        org.wso2.carbon.identity.application.common.model.Property emailOtpOnUpdateConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        emailOtpOnUpdateConfig.setName(ENABLE_EMAIL_OTP_ON_UPDATE);
+        emailOtpOnUpdateConfig.setValue(Boolean.FALSE.toString());
+
         org.wso2.carbon.identity.application.common.model.Property useLowerCaseConfig =
                 new org.wso2.carbon.identity.application.common.model.Property();
         useLowerCaseConfig.setName(SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -496,6 +502,9 @@ public class UserSelfRegistrationManagerTest {
                 .getConfiguration(new String[]{SELF_REGISTRATION_EMAIL_OTP_ENABLE}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{
                         selfRegistrationEmailOTPConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{ENABLE_EMAIL_OTP_ON_UPDATE}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{emailOtpOnUpdateConfig});
         when(identityGovernanceService
                 .getConfiguration(new String[]{SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP},
                         TEST_TENANT_DOMAIN_NAME))
@@ -724,6 +733,36 @@ public class UserSelfRegistrationManagerTest {
         } catch (IdentityRecoveryException e) {
             assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode());
         }
+    }
+
+    @Test
+    public void testConfirmVerificationCodeMeEmailOTPVerificationOnUpdate()
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
+
+        String verificationPendingEmail = "new-email@test.com";
+        String existingPrimaryEmail = "old-email@test.com";
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(false);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, existingPrimaryEmail);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, verificationPendingEmail);
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), verificationPendingEmail);
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM), Boolean.TRUE.toString());
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
     }
 
     @Test

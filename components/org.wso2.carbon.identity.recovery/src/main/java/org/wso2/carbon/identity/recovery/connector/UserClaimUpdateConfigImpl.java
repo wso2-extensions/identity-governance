@@ -50,6 +50,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE = "false";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_OTP_ON_UPDATE = "false";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "false";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "true";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP = "true";
@@ -72,9 +73,11 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String ENABLE_EMAIL_OTP_ON_UPDATE_ELEMENT = "EnableEmailOTP";
     private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
     private static final String ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER = "EnableVerificationByPrivilegedUser";
     private static String enableEmailVerificationOnUpdateProperty = null;
+    private static String enableEmailOTPOnUpdateProperty = null;
     private static String enableSendOTPInEmailProperty = null;
     private static String useUppercaseCharactersInOTPProperty = null;
     private static String useLowercaseCharactersInOTPProperty = null;
@@ -122,6 +125,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Enable user email verification on update");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Enable user email OTP verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -151,6 +156,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Trigger a verification notification when user's email address is updated.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Trigger an email OTP verification when user's email address is updated.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
         descriptionMapping.put(
@@ -182,6 +189,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -199,6 +207,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     public Properties getDefaultPropertyValues(String tenantDomain) {
 
         String enableEmailVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE;
+        String enableEmailOTPOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_OTP_ON_UPDATE;
         String enableSendOTPInEmail = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL;
         String useUppercaseCharactersInOTP = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP;
         String useLowercaseCharactersInOTP = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP;
@@ -214,6 +223,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         if (StringUtils.isNotBlank(enableEmailVerificationOnUpdateProperty)) {
             enableEmailVerificationOnUpdate = enableEmailVerificationOnUpdateProperty;
+        }
+        if (StringUtils.isNotBlank(enableEmailOTPOnUpdateProperty)) {
+            enableEmailOTPOnUpdate = enableEmailOTPOnUpdateProperty;
         }
         if (StringUtils.isNotEmpty(enableSendOTPInEmailProperty)) {
             enableSendOTPInEmail = enableSendOTPInEmailProperty;
@@ -249,6 +261,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Properties properties = new Properties();
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 enableEmailVerificationOnUpdate);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                enableEmailOTPOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 enableSendOTPInEmail);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -316,6 +330,11 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     if (verificationOnUpdate != null) {
                         enableEmailVerificationOnUpdateProperty = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
+                        OMElement enableEmailOTPOnUpdate = verificationOnUpdate.getFirstChildWithName(new QName
+                                (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_EMAIL_OTP_ON_UPDATE_ELEMENT));
+                        if (enableEmailOTPOnUpdate != null) {
+                            enableEmailOTPOnUpdateProperty = enableEmailOTPOnUpdate.getText();
+                        }
                         OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
                         if (verificationCode != null) {
@@ -373,6 +392,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
