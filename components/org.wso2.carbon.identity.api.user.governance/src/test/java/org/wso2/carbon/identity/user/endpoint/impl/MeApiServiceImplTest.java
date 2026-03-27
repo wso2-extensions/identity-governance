@@ -222,6 +222,8 @@ public class MeApiServiceImplTest {
         return new Object[][] {
                 {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
                 {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
+                {RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
                 {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
                 {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
                         RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
