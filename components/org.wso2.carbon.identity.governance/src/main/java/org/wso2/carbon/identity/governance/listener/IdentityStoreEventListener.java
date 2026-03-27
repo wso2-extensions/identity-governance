@@ -116,7 +116,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doPreAddUser executed in the IdentityStoreEventListener for user: " + userName);
+            log.debug("doPreAddUser executed in the IdentityStoreEventListener for user: " + maskIfRequired(userName));
         }
 
         // clear the existing thread local
@@ -143,7 +143,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     // we remove the identity claims to prevent it from getting stored in user store
                     // before the user is successfully added
                     if (log.isDebugEnabled()) {
-                        log.debug(claim.getKey() + " claim added to thread local for user: " + userName + " in preUserAdd");
+                        log.debug(claim.getKey() + " claim added to thread local for user: " + maskIfRequired(userName)
+                                + " in preUserAdd");
                     }
                     it.remove();
                 }
@@ -185,7 +186,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doPostAddUser executed in the IdentityStoreEventListener for user: " + userName);
+            log.debug("doPostAddUser executed in the IdentityStoreEventListener for user: " + maskIfRequired(userName));
         }
 
         try {
@@ -225,7 +226,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " + userName);
+            log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " +
+                    maskIfRequired(userName));
         }
 
         return identityDataStoreService.storeInIdentityDataStore(userName, userStoreManager,
@@ -243,7 +245,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         if (log.isDebugEnabled()) {
             log.debug("doPreGetUserClaimValues getting executed in the IdentityStoreEventListener for user: " +
-                    userName);
+                    maskIfRequired(userName));
         }
 
         // If hybrid data store is enabled, we need to send all claims to user store
@@ -301,7 +303,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         if (log.isDebugEnabled()) {
             log.debug("doPostGetUserClaimValues getting executed in the IdentityStoreEventListener for user: " +
-                    userName);
+                    maskIfRequired(userName));
         }
 
         if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
@@ -754,18 +756,22 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doPostDeleteUser executed in the IdentityStoreEventListener for user: " + userName);
+            log.debug(
+                    "doPostDeleteUser executed in the IdentityStoreEventListener for user: "
+                            + maskIfRequired(userName));
         }
 
         // remove identity claims of user deleted from the identity store
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Removed Identity Claims of user: " + userName + " from IdentityDataStore.");
+                log.debug("Removed Identity Claims of user: " + maskIfRequired(userName)
+                        + " from IdentityDataStore.");
             }
             identityDataStoreService.removeIdentityClaims(userName, userStoreManager);
             return true;
         } catch (IdentityException e) {
-            throw new UserStoreException("Error while removing user: " + userName + " from identity data store", e);
+            throw new UserStoreException("Error while removing user: " + maskIfRequired(userName)
+                    + " from identity data store", e);
         }
     }
 
@@ -825,7 +831,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     identityDataStore.store(userIdentityClaim, userStoreManager);
                 } catch (IdentityException e) {
                     throw new UserStoreException(
-                            "Error while saving user identityDataStore data for user : " + userName, e);
+                            "Error while saving user identityDataStore data for user : "
+                                    + maskIfRequired(userName), e);
                 }
             }
             return true;
@@ -889,7 +896,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
             if (log.isDebugEnabled()) {
                 log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
-                        "user: " + username);
+                        "user: " + maskIfRequired(username));
             }
 
             if (userClaimSearchEntry.getClaims() == null) {
