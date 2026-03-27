@@ -850,87 +850,9 @@ public class UserSelfRegistrationManager {
         Flow.InitiatingPersona flowInitiatingPersona = Flow.InitiatingPersona.USER;
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
-            String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
-            String primaryEmail = null;
-            try {
-                primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-            } catch (IdentityEventException e) {
-                log.error("Error occurred while obtaining email claim for the user: " +
-                        Utils.maskIfRequired(user.getUserName()), e);
-            }
-
-            // Check whether the pending email claim value from recovery data is same as the one in the user store,
-            // to avoid already deleted email getting added.
-            try {
-                String currentPendingEmailClaim = Utils.getSingleValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
-                if (StringUtils.isNotBlank(pendingEmailClaimValue) &&
-                        !pendingEmailClaimValue.equals(currentPendingEmailClaim)) {
-                    throw Utils.handleClientException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_LONGER_VALID_LINK, null);
-                }
-            } catch (IdentityEventException e) {
-                throw new IdentityRecoveryServerException("Error while reading pending email claim for user: "
-                        + Utils.maskIfRequired(user.getUserName()), e);
-            }
-
-            if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
-                eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
-                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaimsToBeDeleted.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
-                        StringUtils.EMPTY);
-                // Only update verified email addresses claim if the recovery scenario is
-                // EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
-                if (RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                        recoveryData.getRecoveryScenario()) && supportMultipleEmailsAndMobileNumbers) {
-                    try {
-                        List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-                        addOrUpdateMultiValuedClaim(verifiedEmails, pendingEmailClaimValue,
-                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
-                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
-
-                        List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-                        addOrUpdateMultiValuedClaim(allEmails, pendingEmailClaimValue,
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
-                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
-
-                        if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
-                            userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
-                        }
-                        if (StringUtils.isBlank(primaryEmail)) {
-                            // If the primary email is not set, set the verified email as primary.
-                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                    Boolean.TRUE.toString());
-                        }
-                    } catch (IdentityEventException e) {
-                        throw new IdentityRecoveryServerException(String.format(
-                                "Error occurred while obtaining existing claim value for the user: %s",
-                                Utils.maskIfRequired(user.getUserName())), e);
-                    }
-                } else {
-                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                    if (StringUtils.isBlank(primaryEmail)) {
-                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                Boolean.TRUE.toString());
-                    } else {
-                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
-                                pendingEmailClaimValue);
-                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                Boolean.TRUE.toString());
-                    }
-                }
-                // Todo passes when email address is properly set here.
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
-            }
+            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user, supportMultipleEmailsAndMobileNumbers,
+                    multiAttributeSeparator, userClaims, userClaimsToBeAdded, userClaimsToBeModified,
+                    userClaimsToBeDeleted, eventProperties, false);
         }
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             // This flow is initiated by admin in the mobile number verification on update scenario.
@@ -1075,6 +997,135 @@ public class UserSelfRegistrationManager {
                 RecoverySteps.VERIFY_MOBILE_NUMBER.equals(step);
 
         return isEmailVerification || isMobileVerification;
+    }
+
+    /**
+     * Processes verified claim updates for email-verification-on-update flows.
+     * <p>
+     * This method validates that the pending email in recovery data still matches the current pending email claim,
+     * applies the appropriate claim updates (single email or verified list updates), clears pending email state and
+     * marks the flow to skip re-triggering email verification notifications on profile update.
+     *
+     * @param recoveryData User recovery data associated with the verification code.
+     * @param userStoreManager User store manager for the target user.
+     * @param user User being verified.
+     * @param supportMultipleEmailsAndMobileNumbers Whether multi email/mobile support is enabled.
+     * @param multiAttributeSeparator Multi-attribute claim separator.
+     * @param userClaims Claims map that will be persisted.
+     * @param userClaimsToBeAdded Claims that are tracked as new additions for profile update events.
+     * @param userClaimsToBeModified Claims that are tracked as modifications for profile update events.
+     * @param userClaimsToBeDeleted Claims that are tracked as deletions for profile update events.
+     * @param eventProperties Event properties to enrich when available (nullable).
+     * @param includeEmailOtpVerifiedListUpdateScenario Whether OTP verified-list scenario should be treated as a
+     *                                                  verified-list update scenario in this call path.
+     * @throws IdentityRecoveryException If recovery state validation fails or claim retrieval/update preparation
+     *                                   encounters an error.
+     */
+    private void processEmailVerificationOnUpdate(UserRecoveryData recoveryData, UserStoreManager userStoreManager,
+                                                  User user, boolean supportMultipleEmailsAndMobileNumbers,
+                                                  String multiAttributeSeparator, Map<String, String> userClaims,
+                                                  Map<String, String> userClaimsToBeAdded,
+                                                  Map<String, String> userClaimsToBeModified,
+                                                  Map<String, String> userClaimsToBeDeleted,
+                                                  Map<String, Object> eventProperties,
+                                                  boolean includeEmailOtpVerifiedListUpdateScenario)
+            throws IdentityRecoveryException {
+
+        String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
+        String primaryEmail = null;
+        try {
+            primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while obtaining email claim for the user: " +
+                    Utils.maskIfRequired(user.getUserName()), e);
+        }
+
+        // Check whether the pending email claim value from recovery data is same as the one in the user store,
+        // to avoid already deleted email getting added.
+        try {
+            String currentPendingEmailClaim = Utils.getSingleValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
+            if (StringUtils.isNotBlank(pendingEmailClaimValue) && !pendingEmailClaimValue.equals(currentPendingEmailClaim)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_LONGER_VALID_LINK,
+                        null);
+            }
+        } catch (IdentityEventException e) {
+            throw new IdentityRecoveryServerException("Error while reading pending email claim for user: "
+                    + Utils.maskIfRequired(user.getUserName()), e);
+        }
+
+        if (StringUtils.isBlank(pendingEmailClaimValue)) {
+            return;
+        }
+
+        if (eventProperties != null) {
+            eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
+        }
+
+        if (isVerifiedListEmailUpdateScenario(recoveryData, includeEmailOtpVerifiedListUpdateScenario) &&
+                supportMultipleEmailsAndMobileNumbers) {
+            try {
+                List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                addOrUpdateMultiValuedClaim(verifiedEmails, pendingEmailClaimValue,
+                        IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator, userClaims,
+                        userClaimsToBeAdded, userClaimsToBeModified);
+
+                List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                        IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                addOrUpdateMultiValuedClaim(allEmails, pendingEmailClaimValue,
+                        IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator, userClaims,
+                        userClaimsToBeAdded, userClaimsToBeModified);
+
+                if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
+                    userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+                }
+                if (StringUtils.isBlank(primaryEmail)) {
+                    // If the primary email is not set, set the verified email as primary.
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                    userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                }
+            } catch (IdentityEventException e) {
+                throw new IdentityRecoveryServerException(String.format(
+                        "Error occurred while obtaining existing claim value for the user: %s",
+                        Utils.maskIfRequired(user.getUserName())), e);
+            }
+        } else {
+            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            if (StringUtils.isBlank(primaryEmail)) {
+                userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            } else {
+                userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            }
+        }
+
+        userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+        userClaimsToBeDeleted.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+        Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(
+                IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+    }
+
+    /**
+     * Determines whether the recovery scenario should follow verified-email-list update handling.
+     *
+     * @param recoveryData User recovery data associated with the verification code.
+     * @param includeEmailOtpVerifiedListUpdateScenario Whether to include the OTP-specific verified-list scenario
+     *                                                  along with the default email verification verified-list scenario.
+     * @return {@code true} if the scenario is treated as a verified-list update scenario, {@code false} otherwise.
+     */
+    private boolean isVerifiedListEmailUpdateScenario(UserRecoveryData recoveryData,
+                                                      boolean includeEmailOtpVerifiedListUpdateScenario) {
+
+        RecoveryScenarios scenario = (RecoveryScenarios) recoveryData.getRecoveryScenario();
+        return RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario) ||
+                (includeEmailOtpVerifiedListUpdateScenario &&
+                        RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(scenario));
     }
 
     private void validateRecoverySteps(UserRecoveryData recoveryData, User user)
@@ -1226,86 +1277,9 @@ public class UserSelfRegistrationManager {
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
-            String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
-            String primaryEmail = null;
-            try {
-                primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-            } catch (IdentityEventException e) {
-                log.error("Error occurred while obtaining email claim for the user: " +
-                        Utils.maskIfRequired(user.getUserName()), e);
-            }
-
-            // Check whether the pending email claim value from recovery data is same as the one in the user store.
-            try {
-                String currentPendingEmailClaim = Utils.getSingleValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
-                if (StringUtils.isNotBlank(pendingEmailClaimValue) &&
-                        !pendingEmailClaimValue.equals(currentPendingEmailClaim)) {
-                    throw Utils.handleClientException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_LONGER_VALID_LINK, null);
-                }
-            } catch (IdentityEventException e) {
-                throw new IdentityRecoveryServerException("Error while reading pending email claim for user: "
-                        + Utils.maskIfRequired(user.getUserName()), e);
-            }
-
-            if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
-                if ((RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                        recoveryData.getRecoveryScenario()) || RecoveryScenarios
-                        .EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryData.getRecoveryScenario()))
-                        && supportMultipleEmailsAndMobileNumbers) {
-                    try {
-                        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
-                        List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-                        addOrUpdateMultiValuedClaim(verifiedEmails, pendingEmailClaimValue,
-                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
-                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
-
-                        List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-                        addOrUpdateMultiValuedClaim(allEmails, pendingEmailClaimValue,
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, multiAttributeSeparator,
-                                userClaims, userClaimsToBeAdded, userClaimsToBeModified);
-
-                        if (StringUtils.isNotBlank(primaryEmail) && !pendingEmailClaimValue.equals(primaryEmail)) {
-                            userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
-                        }
-                        if (StringUtils.isBlank(primaryEmail)) {
-                            // If the primary email is not set, set the verified email as primary.
-                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
-                                    pendingEmailClaimValue);
-                            userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                    Boolean.TRUE.toString());
-                        }
-                    } catch (IdentityEventException e) {
-                        throw new IdentityRecoveryServerException(String.format(
-                                "Error occurred while obtaining existing claim value for the user: %s",
-                                Utils.maskIfRequired(user.getUserName())), e);
-                    }
-                } else {
-                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                    if (StringUtils.isBlank(primaryEmail)) {
-                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
-                        userClaimsToBeAdded.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                Boolean.TRUE.toString());
-                    } else {
-                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
-                                pendingEmailClaimValue);
-                        userClaimsToBeModified.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                Boolean.TRUE.toString());
-                    }
-                }
-                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaimsToBeDeleted.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM,
-                        StringUtils.EMPTY);
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
-            }
+            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user, supportMultipleEmailsAndMobileNumbers,
+                    FrameworkUtils.getMultiAttributeSeparator(), userClaims, userClaimsToBeAdded, userClaimsToBeModified,
+                    userClaimsToBeDeleted, null, true);
         } else {
             String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
             String primaryMobile = null;
