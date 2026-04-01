@@ -121,7 +121,8 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
                         }
                         // Redirect to the password reset page.
                         String confirmationCode = generateNewConfirmationCode(authenticatedUser);
-                        redirectToPasswordResetPage(httpServletResponse, tenantDomain, confirmationCode);
+                        redirectToPasswordResetPage(httpServletResponse, tenantDomain, confirmationCode,
+                                authenticatedUser.isSharedUser());
                         return PostAuthnHandlerFlowStatus.INCOMPLETE;
                     }
                     return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
@@ -191,12 +192,17 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
      */
     @SuppressFBWarnings("UNVALIDATED_REDIRECT")
     private void redirectToPasswordResetPage(HttpServletResponse httpServletResponse, String tenantDomain,
-                                             String confirmationCode) throws PostAuthenticationFailedException {
+                                             String confirmationCode, boolean isSharedUser)
+            throws PostAuthenticationFailedException {
 
         String queryString = PasswordPolicyConstants.CONFIRMATION_QUERY_PARAM + confirmationCode +
                 PasswordPolicyConstants.PASSWORD_EXPIRED_QUERY_PARAMS
                 + PasswordPolicyConstants.PASSWORD_EXPIRED_MSG_QUERY_PARAM +
                 PasswordPolicyConstants.ENCODED_PASSWORD_EXPIRED_MSG;
+        if (isSharedUser) {
+            queryString = queryString + PasswordPolicyConstants.IS_SHARED_USER_QUERY_PARAM + true;
+        }
+
         String passwordRestPage;
         try {
             passwordRestPage = PasswordPolicyUtils.getPasswordResetPageUrl(tenantDomain);
