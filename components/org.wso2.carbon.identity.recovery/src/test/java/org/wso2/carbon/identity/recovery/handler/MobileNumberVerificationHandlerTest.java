@@ -28,6 +28,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -154,6 +156,9 @@ public class MobileNumberVerificationHandlerTest {
     @AfterMethod
     public void tearDown() {
 
+        if (IdentityContext.getThreadLocalIdentityContext().getCurrentFlow() != null) {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
+        }
         mockedJDBCRecoveryDataStore.close();
         mockedUtils.close();
         mockedIdentityRecoveryServiceDataHolder.close();
@@ -161,7 +166,7 @@ public class MobileNumberVerificationHandlerTest {
         Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
-        Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
+        Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
     }
 
     @Test
@@ -647,6 +652,86 @@ public class MobileNumberVerificationHandlerTest {
                 "'phoneVerified' claim should be cleared (empty string) when primary mobile is set to empty string.");
     }
 
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminPrimaryMobileUpdate()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_MOBILE_NUMBER);
+        mockUtilMethods(true, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        enterAdminInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), NEW_MOBILE_NUMBER);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM), Boolean.TRUE.toString());
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminVerifiedMobileListUpdate()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                NEW_MOBILE_NUMBER, null, null);
+        mockUtilMethods(true, true, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        enterAdminInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM),
+                EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                NEW_MOBILE_NUMBER);
+        Assert.assertNotEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM),
+                Boolean.TRUE.toString());
+        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
+                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ADMIN_UPDATE.toString()));
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsDoesNotSkipVerificationOnUserPersona()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_MOBILE_NUMBER);
+        mockUtilMethods(true, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockVerificationPendingMobileNumber();
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        enterUserInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                NEW_MOBILE_NUMBER);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
+    }
+
+    @Test
+    public void testHandleEventPostSetUserClaimsSkipVerificationOnAdminUpdateState()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
+                null, null, null);
+        mockUtilMethods(true, true, false);
+        mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate).thenReturn(
+                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ADMIN_UPDATE.toString());
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        verify(identityEventService, never()).handleEvent(any());
+    }
+
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
 
         when(userStoreManager.getUserClaimValue(anyString(),
@@ -687,10 +772,36 @@ public class MobileNumberVerificationHandlerTest {
         mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
                 .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(useVerifyClaimEnabled);
-        mockedUtils.when(() -> Utils.getConnectorConfig(
-                        eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE),
-                        anyString()))
-                .thenReturn(String.valueOf(mobileVerificationEnabled));
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                mobileVerificationEnabled);
+        mockGetConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                false);
+    }
+
+    private void mockGetConnectorConfig(String connectorConfig, boolean value) {
+
+        mockedUtils.when(() -> Utils.getConnectorConfig(eq(connectorConfig), anyString()))
+                .thenReturn(String.valueOf(value));
+    }
+
+    private void enterAdminInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
+    }
+
+    private void enterUserInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.USER)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
     }
 
     private void mockVerificationPendingMobileNumber() throws UserStoreException {

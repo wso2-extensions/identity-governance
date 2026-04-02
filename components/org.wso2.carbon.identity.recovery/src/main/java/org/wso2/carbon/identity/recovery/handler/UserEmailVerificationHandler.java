@@ -287,26 +287,26 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
      */
     private boolean isEmailVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
-        boolean enableEmailVerificationOnUpdate = Boolean.parseBoolean(Utils.getConnectorConfig(
+        boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
 
         if (log.isDebugEnabled()) {
-            log.debug("Email verification on update config value is: " + enableEmailVerificationOnUpdate +
+            log.debug("Email verification on update config value is: " + isEmailVerificationEnabled +
                     " for tenant: " + tenantDomain);
         }
 
-        if (!enableEmailVerificationOnUpdate) {
+        if (!isEmailVerificationEnabled) {
             return false;
         }
 
-        boolean adminInitiatedFlow = isAdminInitiatedFlow();
-        boolean skipInitiatingVerificationForPrivilegedUser = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
+        boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
+        boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
         if (log.isDebugEnabled()) {
-            log.debug("Current flow is admin-initiated: " + adminInitiatedFlow +
-                    "Privileged-user skip-initiation config value is: " + skipInitiatingVerificationForPrivilegedUser + ".");
+            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow +
+                    " Privileged-user skip-initiation config value is: " + isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");
         }
 
-        return !(adminInitiatedFlow && skipInitiatingVerificationForPrivilegedUser);
+        return !(isAdminInitiatedFlow && isSkipInitiatingVerificationForPrivilegedUserEnabled);
     }
 
     private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
