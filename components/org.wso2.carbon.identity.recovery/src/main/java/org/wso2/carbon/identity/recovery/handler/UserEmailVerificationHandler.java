@@ -294,19 +294,24 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             log.debug("Email verification on update config value is: " + isEmailVerificationEnabled +
                     " for tenant: " + tenantDomain);
         }
-
         if (!isEmailVerificationEnabled) {
             return false;
         }
 
         boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
-        boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
         if (log.isDebugEnabled()) {
-            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow +
-                    " Privileged-user skip-initiation config value is: " + isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");
+            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
         }
 
-        return !(isAdminInitiatedFlow && isSkipInitiatingVerificationForPrivilegedUserEnabled);
+        if (isAdminInitiatedFlow) {
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
+            if (log.isDebugEnabled()) {
+                log.debug("Admin-initiated flow to update email. Privileged-user skip-initiation config value is: " +
+                        isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");
+            }
+            return !isSkipInitiatingVerificationForPrivilegedUserEnabled;
+        }
+        return true;
     }
 
     private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {

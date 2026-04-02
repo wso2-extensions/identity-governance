@@ -616,11 +616,17 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Check whether mobile verification on update feature is enabled via connector configuration.
+     * Determine whether mobile verification on update should run for the current context.
+     * <p>
+     * Verification is enabled only when:
+     * <ul>
+     *     <li>The tenant-level {@code EnableVerification} config is enabled.</li>
+     *     <li>The request is not an admin-initiated flow with privileged-user skip enabled.</li>
+     * </ul>
      *
      * @param userTenantDomain Tenant domain of the user.
-     * @return True if the feature is enabled, false otherwise.
-     * @throws IdentityEventException
+     * @return {@code true} if mobile verification on update should be triggered; {@code false} otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
      */
     private boolean isMobileVerificationOnUpdateEnabled(String userTenantDomain) throws IdentityEventException {
 
@@ -631,19 +637,23 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             log.debug("Mobile number verification on update config value is: " + isMobileVerificationEnabled +
                     " for tenant: " + userTenantDomain);
         }
-
         if (!isMobileVerificationEnabled) {
             return false;
         }
 
         boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
-        boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
         if (log.isDebugEnabled()) {
-            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow +
-                    " Privileged-user skip-initiation config value is: " + isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");
+            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
         }
-
-        return !(isAdminInitiatedFlow && isSkipInitiatingVerificationForPrivilegedUserEnabled);
+        if (isAdminInitiatedFlow) {
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
+            if (log.isDebugEnabled()) {
+                log.debug("Admin-initiated flow to update mobile number. Privileged-user skip-initiation config value is: " +
+                        isSkipInitiatingVerificationForPrivilegedUserEnabled);
+            }
+            return !isSkipInitiatingVerificationForPrivilegedUserEnabled;
+        }
+        return true;
     }
 
     /**
