@@ -22,6 +22,9 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementClientException;
+import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
+import org.wso2.carbon.consent.mgt.core.model.PIICategory;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -60,14 +63,19 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
+import static org.wso2.carbon.consent.mgt.core.constant.ConsentConstants.ACTIVE_STATE;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.CONSENT_PREFIX;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.CONSENT_REJECTED_PREFIX;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
@@ -84,6 +92,8 @@ import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.Execu
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.USER_ALREADY_EXISTING_USERNAME;
+import static org.wso2.carbon.consent.mgt.core.constant.ConsentConstants.ErrorMessages.ERROR_CODE_PII_CAT_NAME_INVALID;
+import static org.wso2.carbon.consent.mgt.core.constant.ConsentConstants.REJECTED_STATE;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -96,6 +106,7 @@ public class UserProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(UserProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
+    private static final String COLLECTION_METHOD_LOGIN = "Login";
 
     @Override
     public String getName() {
@@ -187,6 +198,8 @@ public class UserProvisioningExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
+            createConsent(user.getUsername(), context.getTenantDomain(), user.getUserConsents());
+            createRejectedConsents(user.getUsername(), context.getTenantDomain(), user.getRejectedUserConsents());
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
@@ -204,7 +217,7 @@ public class UserProvisioningExecutor implements Executor {
             if (e.getMessage().contains(USER_ALREADY_EXISTING_USERNAME)) {
                 if (displayClaimAvailability) {
                     return userErrorResponse(response, ERROR_CODE_USERNAME_ALREADY_EXISTS, context.getTenantDomain());
-                } else  {
+                } else {
                     return userErrorResponse(response, ERROR_CODE_USER_PROVISIONING_FAILURE,
                             context.getContextIdentifier());
                 }
@@ -333,6 +346,112 @@ public class UserProvisioningExecutor implements Executor {
             throw handleClientException(ERROR_CODE_INVALID_USERNAME, username);
         }
         return username;
+    }
+
+    private void createConsent(String username, String tenantDomain, Map<String, String> acceptedConsents) {
+
+        if (acceptedConsents == null || acceptedConsents.isEmpty()) {
+            return;
+        }
+
+        acceptedConsents.forEach((key, value) -> {
+            String consentType = key.substring(CONSENT_PREFIX.length());
+
+            try {
+                for (String purposeUuid : value.split(",")) {
+                    purposeUuid = purposeUuid.trim();
+                    if (StringUtils.isBlank(purposeUuid)) {
+                        continue;
+                    }
+                    processPolicyConsent(username, tenantDomain, purposeUuid, consentType);
+                }
+            } catch (ConsentManagementException e) {
+                LOG.error("Error while creating consent of type: " + consentType + " for user: " +
+                        Utils.maskIfRequired(username), e);
+            }
+        });
+    }
+
+    private void createRejectedConsents(String username, String tenantDomain, Map<String, String> rejectedConsents) {
+
+        if (rejectedConsents == null || rejectedConsents.isEmpty()) {
+            return;
+        }
+
+        rejectedConsents.forEach((key, value) -> {
+            String consentType = key.substring(CONSENT_REJECTED_PREFIX.length());
+
+            try {
+                PIICategory piiCategory = getOrCreatePiiCategory(consentType);
+                Map<String, List<Integer>> purposeMap = new LinkedHashMap<>();
+                for (String purposeUuid : value.split(",")) {
+                    purposeUuid = purposeUuid.trim();
+                    if (StringUtils.isBlank(purposeUuid)) {
+                        continue;
+                    }
+                    purposeMap.put(purposeUuid, Collections.singletonList(piiCategory.getId()));
+                }
+                if (purposeMap.isEmpty()) {
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Creating rejected consent. Type: " + consentType + ", User: " +
+                            Utils.maskIfRequired(username) + ", Purposes: " + purposeMap.keySet());
+                }
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
+                        .addConsent(username, "SYSTEM", tenantDomain, consentType, purposeMap,
+                                COLLECTION_METHOD_LOGIN, REJECTED_STATE);
+            } catch (ConsentManagementException e) {
+                LOG.error("Error while creating rejected consent of type: " + consentType + " for user: " +
+                        Utils.maskIfRequired(username), e);
+            }
+        });
+    }
+
+    private void processPolicyConsent(String subjectId, String tenantDomain, String purposeUuid, String consentType)
+            throws ConsentManagementException {
+
+        PIICategory piiCategory = getOrCreatePiiCategory(consentType);
+        Map<String, List<Integer>> purposeMap = new LinkedHashMap<>();
+        purposeMap.put(purposeUuid, Collections.singletonList(piiCategory.getId()));
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating policy consent. Type: " + consentType + ", User: " +
+                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid);
+        }
+
+        // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
+        IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
+                .addConsent(subjectId, "SYSTEM", tenantDomain, consentType, purposeMap,
+                        COLLECTION_METHOD_LOGIN, ACTIVE_STATE);
+    }
+
+    private PIICategory getOrCreatePiiCategory(String consentType)
+            throws ConsentManagementException {
+
+        PIICategory piiCategory;
+        try {
+            piiCategory = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
+                    .getPIICategoryByName(consentType);
+        } catch (ConsentManagementClientException e) {
+            if (isInvalidPIICategoryError(e)) {
+                PIICategory piiCategoryInput = new PIICategory(consentType,
+                    "PII category for consent type: " + consentType, false, consentType);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("PII category: " + consentType + " does not exist. Creating a new PII category.");
+                }
+                piiCategory = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
+                        .addPIICategory(piiCategoryInput);
+            } else {
+                throw e;
+            }
+        }
+        return piiCategory;
+    }
+
+    private boolean isInvalidPIICategoryError(ConsentManagementClientException e) {
+
+        return ERROR_CODE_PII_CAT_NAME_INVALID.getCode().equals(e.getErrorCode());
     }
 
     private void createFederatedAssociations(FlowUser user, String tenantDomain, String flowId) {
