@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -273,14 +274,50 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     private boolean isEmailVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
-        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
+        boolean enableEmailVerificationOnUpdate = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
+
+        if (!enableEmailVerificationOnUpdate) {
+            return false;
+        }
+
+        return !(isAdminInitiatedFlow() && isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain));
     }
 
     private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+    }
+
+    /**
+     * Check whether skipping email verification initiation is enabled for privileged-user initiated updates.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return true if skipping verification initiation is enabled, false otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
+     */
+    private boolean isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(String tenantDomain)
+            throws IdentityEventException {
+
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, tenantDomain));
+    }
+
+    /**
+     * Check whether the current flow is initiated by an admin persona.
+     *
+     * @return true if the current flow exists and the initiating persona is ADMIN, false otherwise.
+     */
+    private boolean isAdminInitiatedFlow() {
+
+        Flow currentFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        if (currentFlow == null || currentFlow.getInitiatingPersona() == null) {
+            return false;
+        }
+
+        Flow.InitiatingPersona initiatingPersona = currentFlow.getInitiatingPersona();
+        return Flow.InitiatingPersona.ADMIN.equals(initiatingPersona);
     }
 
     @Override

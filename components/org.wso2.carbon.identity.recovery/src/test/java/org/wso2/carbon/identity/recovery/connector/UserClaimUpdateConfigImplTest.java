@@ -64,6 +64,8 @@ public class UserClaimUpdateConfigImplTest {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER_ELEMENT =
+            "EnableSkipInitiatingVerificationByPrivilegedUser";
     private static final String ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT =
             "EnableMultipleEmailsAndMobileNumbers";
     private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
@@ -124,6 +126,9 @@ public class UserClaimUpdateConfigImplTest {
                 "Enable user email verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
                 "Enable user email OTP verification on update");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                        ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable skipping initiating email verification by privileged users");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -144,6 +149,9 @@ public class UserClaimUpdateConfigImplTest {
                 "Mobile number verification on update SMS OTP expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Enable mobile number verification by privileged users");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable skipping initiating mobile verification by privileged users");
         Map<String, String> nameMapping = userClaimUpdateConfig.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal.");
     }
@@ -156,6 +164,9 @@ public class UserClaimUpdateConfigImplTest {
                 "Trigger a verification notification when user's email address is updated.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
                 "Trigger an email OTP verification when user's email address is updated.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                        ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                "Skip initiating email verification when privileged users update email claims.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
         descriptionMappingExpected.put(
@@ -180,6 +191,10 @@ public class UserClaimUpdateConfigImplTest {
                 "Validity time of the mobile number confirmation OTP in minutes.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Allow privileged users to initiate mobile number verification on update.");
+        descriptionMappingExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Skip initiating mobile verification when privileged users update mobile claims.");
         Map<String, String> descriptionMapping = userClaimUpdateConfig.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal.");
     }
@@ -190,6 +205,8 @@ public class UserClaimUpdateConfigImplTest {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -200,6 +217,8 @@ public class UserClaimUpdateConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = userClaimUpdateConfig.getPropertyNames();
@@ -240,11 +259,15 @@ public class UserClaimUpdateConfigImplTest {
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_OTP_ON_UPDATE));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER));
     }
 
     @Test
@@ -252,6 +275,8 @@ public class UserClaimUpdateConfigImplTest {
 
         String[] propertyNames = new String[]{IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, IdentityRecoveryConstants.ConnectorConfig.
+                ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                IdentityRecoveryConstants.ConnectorConfig.
                 EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL, IdentityRecoveryConstants.ConnectorConfig.
                 EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP, IdentityRecoveryConstants.ConnectorConfig.
                 EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP, IdentityRecoveryConstants.ConnectorConfig.
@@ -259,7 +284,8 @@ public class UserClaimUpdateConfigImplTest {
                 EMAIL_VERIFICATION_ON_UPDATE_OTP_LENGTH, IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, IdentityRecoveryConstants.ConnectorConfig
-                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, "testproperty"};
+                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, "testproperty"};
 
         IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
         mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
@@ -270,9 +296,99 @@ public class UserClaimUpdateConfigImplTest {
     }
 
     @Test
+    public void testGetDefaultPropertyValuesWithSkipInitiatingEmailVerificationByPrivilegedUserFromIdentityXML()
+            throws IdentityGovernanceException {
+
+        IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
+        mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
+
+        OMElement userClaimUpdateElement = mock(OMElement.class);
+        OMElement emailClaimElement = mock(OMElement.class);
+        OMElement verificationOnUpdateElement = mock(OMElement.class);
+        OMElement enableElement = mock(OMElement.class);
+        OMElement enableSkipInitiatingVerificationByPrivilegedUserElement = mock(OMElement.class);
+        OMElement verificationCodeElement = mock(OMElement.class);
+        OMElement expiryTimeElement = mock(OMElement.class);
+
+        when(mockConfigParser.getConfigElement(USER_CLAIM_UPDATE_ELEMENT)).thenReturn(userClaimUpdateElement);
+        when(userClaimUpdateElement.getChildrenWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                CLAIM_ELEMENT))).thenReturn(List.of(emailClaimElement).iterator());
+        when(emailClaimElement.getAttributeValue(new QName(CLAIM_URI)))
+                .thenReturn(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        when(emailClaimElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                VERIFICATION_ON_UPDATE_ELEMENT))).thenReturn(verificationOnUpdateElement);
+
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                ENABLE_ELEMENT))).thenReturn(enableElement);
+        when(enableElement.getText()).thenReturn("true");
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER_ELEMENT)))
+                .thenReturn(enableSkipInitiatingVerificationByPrivilegedUserElement);
+        when(enableSkipInitiatingVerificationByPrivilegedUserElement.getText()).thenReturn("true");
+
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                VERIFICATION_CODE_ELEMENT))).thenReturn(verificationCodeElement);
+        when(verificationCodeElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                EXPIRY_TIME_ELEMENT))).thenReturn(expiryTimeElement);
+        when(expiryTimeElement.getText()).thenReturn("1440");
+
+        Properties defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(TENANT_DOMAIN);
+        assertEquals(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER), "true");
+    }
+
+    @Test
+    public void testGetDefaultPropertyValuesWithSkipInitiatingMobileVerificationByPrivilegedUserFromIdentityXML()
+            throws IdentityGovernanceException {
+
+        IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
+        mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
+
+        OMElement userClaimUpdateElement = mock(OMElement.class);
+        OMElement mobileClaimElement = mock(OMElement.class);
+        OMElement verificationOnUpdateElement = mock(OMElement.class);
+        OMElement enableElement = mock(OMElement.class);
+        OMElement enableVerificationByPrivilegedUserElement = mock(OMElement.class);
+        OMElement enableSkipInitiatingVerificationByPrivilegedUserElement = mock(OMElement.class);
+        OMElement verificationCodeElement = mock(OMElement.class);
+        OMElement expiryTimeElement = mock(OMElement.class);
+
+        when(mockConfigParser.getConfigElement(USER_CLAIM_UPDATE_ELEMENT)).thenReturn(userClaimUpdateElement);
+        when(userClaimUpdateElement.getChildrenWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                CLAIM_ELEMENT))).thenReturn(List.of(mobileClaimElement).iterator());
+        when(mobileClaimElement.getAttributeValue(new QName(CLAIM_URI)))
+                .thenReturn(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+        when(mobileClaimElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                VERIFICATION_ON_UPDATE_ELEMENT))).thenReturn(verificationOnUpdateElement);
+
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                ENABLE_ELEMENT))).thenReturn(enableElement);
+        when(enableElement.getText()).thenReturn("true");
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                "EnableVerificationByPrivilegedUser"))).thenReturn(enableVerificationByPrivilegedUserElement);
+        when(enableVerificationByPrivilegedUserElement.getText()).thenReturn("false");
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER_ELEMENT)))
+                .thenReturn(enableSkipInitiatingVerificationByPrivilegedUserElement);
+        when(enableSkipInitiatingVerificationByPrivilegedUserElement.getText()).thenReturn("true");
+
+        when(verificationOnUpdateElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                VERIFICATION_CODE_ELEMENT))).thenReturn(verificationCodeElement);
+        when(verificationCodeElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                EXPIRY_TIME_ELEMENT))).thenReturn(expiryTimeElement);
+        when(expiryTimeElement.getText()).thenReturn("5");
+
+        Properties defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(TENANT_DOMAIN);
+        assertEquals(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER), "true");
+    }
+
+    @Test
     public void testGetMetaData() {
 
         Map<String, Property> metaData = userClaimUpdateConfig.getMetaData();
-        Assert.assertEquals(metaData.size(), 11);
+        Assert.assertEquals(metaData.size(), 13);
+        assertNotNull(metaData.get(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER));
     }
 }

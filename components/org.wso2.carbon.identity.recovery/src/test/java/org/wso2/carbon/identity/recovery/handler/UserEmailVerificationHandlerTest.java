@@ -32,6 +32,8 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -114,6 +116,9 @@ public class UserEmailVerificationHandlerTest {
     @AfterMethod
     public void close() {
 
+        if (IdentityContext.getThreadLocalIdentityContext().getCurrentFlow() != null) {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
+        }
         mockedJDBCRecoveryDataStore.close();
         mockedUtils.close();
         mockedIdentityRecoveryServiceDataHolder.close();
@@ -818,11 +823,123 @@ public class UserEmailVerificationHandlerTest {
                 "'emailVerified' claim should be cleared (empty string) when primary email is set to empty string.");
     }
 
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminPrimaryEmailUpdate()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
+        enterAdminInitiatedFlow();
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM));
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), NEW_EMAIL);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM));
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminVerifiedEmailListUpdate()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                NEW_EMAIL, null, null);
+        mockUtilMethods(true, true, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
+        enterAdminInitiatedFlow();
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+        Assert.assertNotEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM),
+                Boolean.TRUE.toString());
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsDoesNotSkipVerificationOnUserPersona()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
+        enterUserInitiatedFlow();
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM));
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsDoesNotSkipVerificationWithoutFlow()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM));
+        Assert.assertNotEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM),
+                Boolean.TRUE.toString());
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsDoesNotSkipVerificationWhenConfigDisabledForAdminPersona()
+            throws IdentityEventException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, false, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, false);
+        enterAdminInitiatedFlow();
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM));
+        Assert.assertNotEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM),
+                Boolean.TRUE.toString());
+    }
+
     private void mockExistingEmailAddressesList(List<String> existingEmails) {
 
         mockedUtils.when(() -> Utils.getMultiValuedClaim(any(), any(),
                         eq(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)))
                 .thenReturn(existingEmails);
+    }
+
+    private void enterAdminInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
+    }
+
+    private void enterUserInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.USER)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
     }
 
     private void mockExistingVerifiedEmailAddressesList(List<String> existingVerifiedEmails) {
