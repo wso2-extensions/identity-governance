@@ -668,7 +668,8 @@ public class MobileNumberVerificationHandlerTest {
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), NEW_MOBILE_NUMBER);
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM), Boolean.TRUE.toString());
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM));
     }
 
     @Test
@@ -688,14 +689,10 @@ public class MobileNumberVerificationHandlerTest {
         mobileNumberVerificationHandler.handleEvent(event);
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM),
-                EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER);
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
-                NEW_MOBILE_NUMBER);
-        Assert.assertNotEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM),
-                Boolean.TRUE.toString());
-        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ADMIN_UPDATE.toString()));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM));
     }
 
     @Test
@@ -716,20 +713,6 @@ public class MobileNumberVerificationHandlerTest {
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
                 NEW_MOBILE_NUMBER);
         Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
-    }
-
-    @Test
-    public void testHandleEventPostSetUserClaimsSkipVerificationOnAdminUpdateState()
-            throws IdentityEventException {
-
-        Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
-                null, null, null);
-        mockUtilMethods(true, true, false);
-        mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate).thenReturn(
-                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ADMIN_UPDATE.toString());
-
-        mobileNumberVerificationHandler.handleEvent(event);
-        verify(identityEventService, never()).handleEvent(any());
     }
 
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {

@@ -1076,10 +1076,6 @@ public class IdentityRecoveryConstants {
 
         /* State maintained to skip triggering an SMS OTP verification, when the mobile number to be updated is included
         in the verifiedMobileNumbers claim, which has been already verified. */
-        SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS,
-
-        /* State maintained to skip triggering an SMS OTP verification when the update is initiated by an admin and
-        the corresponding connector configuration is enabled. */
-        SKIP_ON_ADMIN_UPDATE
+        SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS
     }
 }
