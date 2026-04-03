@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -271,16 +272,83 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
     }
 
+    /**
+     * Determine whether email verification on update should run for the current context.
+     * <p>
+     * Verification is enabled only when:
+     * <ul>
+     *     <li>The tenant-level {@code EnableVerification} config is enabled.</li>
+     *     <li>The request is not an admin-initiated flow with privileged-user skip enabled.</li>
+     * </ul>
+     *
+     * @param tenantDomain Tenant domain.
+     * @return {@code true} if email verification on update should be triggered; {@code false} otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
+     */
     private boolean isEmailVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
-        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
+        boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
+
+        if (log.isDebugEnabled()) {
+            log.debug("Email verification on update config value is: " + isEmailVerificationEnabled +
+                    " for tenant: " + tenantDomain);
+        }
+        if (!isEmailVerificationEnabled) {
+            return false;
+        }
+
+        boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
+        if (log.isDebugEnabled()) {
+            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
+        }
+
+        if (isAdminInitiatedFlow) {
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled
+                    = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
+            if (log.isDebugEnabled()) {
+                log.debug("Admin-initiated flow to update email. Privileged-user skip-initiation config value is: " +
+                        isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");
+            }
+            return !isSkipInitiatingVerificationForPrivilegedUserEnabled;
+        }
+        return true;
     }
 
     private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
 
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+    }
+
+    /**
+     * Check whether skipping email verification initiation is enabled for privileged-user initiated updates.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return true if skipping verification initiation is enabled, false otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
+     */
+    private boolean isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(String tenantDomain)
+            throws IdentityEventException {
+
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, tenantDomain));
+    }
+
+    /**
+     * Check whether the current flow is initiated by an admin persona.
+     *
+     * @return true if the current flow exists and the initiating persona is ADMIN, false otherwise.
+     */
+    private boolean isAdminInitiatedFlow() {
+
+        Flow currentFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        if (currentFlow == null || currentFlow.getInitiatingPersona() == null) {
+            return false;
+        }
+
+        Flow.InitiatingPersona initiatingPersona = currentFlow.getInitiatingPersona();
+        return Flow.InitiatingPersona.ADMIN.equals(initiatingPersona);
     }
 
     @Override

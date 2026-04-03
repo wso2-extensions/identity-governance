@@ -28,6 +28,8 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -614,16 +616,74 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Check whether mobile verification on update feature is enabled via connector configuration.
+     * Determine whether mobile verification on update should run for the current context.
+     * <p>
+     * Verification is enabled only when:
+     * <ul>
+     *     <li>The tenant-level {@code EnableVerification} config is enabled.</li>
+     *     <li>The request is not an admin-initiated flow with privileged-user skip enabled.</li>
+     * </ul>
      *
      * @param userTenantDomain Tenant domain of the user.
-     * @return True if the feature is enabled, false otherwise.
-     * @throws IdentityEventException
+     * @return {@code true} if mobile verification on update should be triggered; {@code false} otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
      */
     private boolean isMobileVerificationOnUpdateEnabled(String userTenantDomain) throws IdentityEventException {
 
+        boolean isMobileVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                userTenantDomain));
+        if (log.isDebugEnabled()) {
+            log.debug("Mobile number verification on update config value is: " + isMobileVerificationEnabled +
+                    " for tenant: " + userTenantDomain);
+        }
+        if (!isMobileVerificationEnabled) {
+            return false;
+        }
+
+        boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
+        if (log.isDebugEnabled()) {
+            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
+        }
+        if (isAdminInitiatedFlow) {
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled =
+                    isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
+            if (log.isDebugEnabled()) {
+                log.debug("Admin-initiated flow to update mobile number. " +
+                        "Privileged-user skip-initiation config value is: " +
+                        isSkipInitiatingVerificationForPrivilegedUserEnabled);
+            }
+            return !isSkipInitiatingVerificationForPrivilegedUserEnabled;
+        }
+        return true;
+    }
+
+    /**
+     * Check whether skipping mobile verification initiation is enabled for privileged-user initiated updates.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return true if skipping verification initiation is enabled, false otherwise.
+     * @throws IdentityEventException If an error occurs while reading connector configuration.
+     */
+    private boolean isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(String tenantDomain)
+            throws IdentityEventException {
+
         return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, userTenantDomain));
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, tenantDomain));
+    }
+
+    /**
+     * Check whether the current flow is initiated by an admin persona.
+     *
+     * @return true if the current flow exists and the initiating persona is ADMIN, false otherwise.
+     */
+    private boolean isAdminInitiatedFlow() {
+
+        Flow currentFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        if (currentFlow == null || currentFlow.getInitiatingPersona() == null) {
+            return false;
+        }
+        return Flow.InitiatingPersona.ADMIN.equals(currentFlow.getInitiatingPersona());
     }
 
     /**

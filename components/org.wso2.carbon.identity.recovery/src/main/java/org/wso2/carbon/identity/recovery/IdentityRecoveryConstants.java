@@ -729,6 +729,8 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
         public static final String ENABLE_EMAIL_OTP_ON_UPDATE = "UserClaimUpdate.Email.EnableEmailOTP";
+        public static final String ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER =
+                "UserClaimUpdate.Email.EnableSkipInitiatingVerificationByPrivilegedUser";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "UserClaimUpdate.OTP.SendOTPInEmail";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "UserClaimUpdate." +
                 "OTP.UseUppercaseCharactersInOTP";
@@ -746,6 +748,8 @@ public class IdentityRecoveryConstants {
                 "VerificationCode.ExpiryTime";
         public static final String ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER = "UserClaimUpdate.MobileNumber." +
                 "EnableVerificationByPrivilegedUser";
+        public static final String ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER =
+                "UserClaimUpdate.MobileNumber.EnableSkipInitiatingVerificationByPrivilegedUser";
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         // This config enables the support to store multiple mobile numbers and email addresses per user.
         public static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
