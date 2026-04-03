@@ -160,55 +160,6 @@ public class UserEmailVerificationHandlerTest {
         Assert.assertEquals(userEmailVerificationHandler.getFriendlyName(), "User Email Verification");
     }
 
-    @Test(description = "Verification - Disabled, Multi attribute - Disabled")
-    public void testHandleEventPreSetUserClaimsVerificationDisabledMultiDisabled()
-            throws IdentityEventException, UserStoreException {
-
-        /*
-         Notification on email update is enabled.
-         Expected: Notification event should be triggered, pending email claim should be set to empty string.
-         */
-        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, NEW_EMAIL);
-
-        mockUtilMethods(false, false, false,
-                true);
-        mockPrimaryEmail(EXISTING_EMAIL_1);
-        mockPendingVerificationEmail(EXISTING_EMAIL_2);
-
-        userEmailVerificationHandler.handleEvent(event);
-        verify(identityEventService).handleEvent(any());
-        Map<String, String> userClaims = getUserClaimsFromEvent(event);
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
-                StringUtils.EMPTY);
-
-        // Case 2: Throw error when triggering event.
-        doThrow(new IdentityEventException("error")).when(identityEventService).handleEvent(any());
-        try {
-            userEmailVerificationHandler.handleEvent(event);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IdentityEventException);
-        }
-
-        // Reset.
-        doNothing().when(identityEventService).handleEvent(any());
-
-        // Case 2: Throw UserStoreException when getting the primary email.
-        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, NEW_EMAIL);
-        mockUtilMethods(false, false, false,
-                true);
-        mockPendingVerificationEmail(EXISTING_EMAIL_2);
-        when(userStoreManager.getUserClaimValue(anyString(), eq(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
-                any())).thenThrow(new UserStoreException("error"));
-
-        try {
-            userEmailVerificationHandler.handleEvent(event2);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IdentityEventException);
-        }
-    }
-
     @Test(description = "Verification - Disabled, Multi attribute - Enabled")
     public void testHandleEventPreSetUserClaimsVerificationDisabledMultiEnabled()
             throws IdentityEventException, IdentityRecoveryException, UserStoreException {
@@ -220,8 +171,7 @@ public class UserEmailVerificationHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
 
-        mockUtilMethods(false, true, false,
-                false);
+        mockUtilMethods(false, false, false);
         List<String> existingEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1, EXISTING_EMAIL_2));
         mockExistingEmailAddressesList(existingEmails);
 
@@ -236,8 +186,7 @@ public class UserEmailVerificationHandlerTest {
         Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, emailsClaim, NEW_EMAIL);
 
-        mockUtilMethods(false, true, false,
-                false);
+        mockUtilMethods(false, false, false);
 
         userEmailVerificationHandler.handleEvent(event2);
         Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
@@ -251,8 +200,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, false,
-                false);
+        mockUtilMethods(true, false, false);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         userEmailVerificationHandler.handleEvent(event);
@@ -302,8 +250,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.TRUE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, true,
-                false);
+        mockUtilMethods(true, true, false);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         userEmailVerificationHandler.handleEvent(event);
@@ -313,8 +260,7 @@ public class UserEmailVerificationHandlerTest {
         // Case 2: verifyEmail claim is false.
         Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, true,
-                false);
+        mockUtilMethods(true, true, false);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         userEmailVerificationHandler.handleEvent(event2);
@@ -334,8 +280,7 @@ public class UserEmailVerificationHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
 
-        mockUtilMethods(true, true, false,
-                false);
+        mockUtilMethods(true, false, false);
         List<String> existingEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1, EXISTING_EMAIL_2));
         mockExistingEmailAddressesList(existingEmails);
 
@@ -360,8 +305,7 @@ public class UserEmailVerificationHandlerTest {
             Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                     null, null, NEW_EMAIL);
 
-            mockUtilMethods(true, true, false,
-                    false);
+            mockUtilMethods(true, false, false);
             List<String> existingEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1, NEW_EMAIL));
             mockExistingEmailAddressesList(existingEmails);
 
@@ -390,7 +334,7 @@ public class UserEmailVerificationHandlerTest {
         Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 newVerifiedEmails1, null, null);
 
-        mockUtilMethods(true, true, false, false);
+        mockUtilMethods(true, false, false);
         List<String> existingEmails1 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingEmailAddressesList(existingEmails1);
 
@@ -420,7 +364,7 @@ public class UserEmailVerificationHandlerTest {
         Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 newVerifiedEmails2, null, null);
 
-        mockUtilMethods(true, true, false, false);
+        mockUtilMethods(true, false, false);
         List<String> existingEmails2 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingEmailAddressesList(existingEmails2);
 
@@ -447,7 +391,7 @@ public class UserEmailVerificationHandlerTest {
         */
         String newVerifiedEmails3 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
 
-        mockUtilMethods(true, true, false, false);
+        mockUtilMethods(true, false, false);
         List<String> existingEmails3 = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingEmailAddressesList(existingEmails3);
 
@@ -484,7 +428,7 @@ public class UserEmailVerificationHandlerTest {
         Event event5 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 newVerifiedEmails5, null, null);
 
-        mockUtilMethods(true, true, false, false);
+        mockUtilMethods(true, false, false);
         mockExistingEmailAddressesList(new ArrayList<>());
         mockExistingVerifiedEmailAddressesList(new ArrayList<>());
 
@@ -507,8 +451,7 @@ public class UserEmailVerificationHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, EXISTING_EMAIL_1, null);
 
-        mockUtilMethods(true, true, false,
-                false);
+        mockUtilMethods(true, false, false);
         List<String> existingEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1, EXISTING_EMAIL_2));
         mockExistingEmailAddressesList(existingEmails);
 
@@ -524,8 +467,7 @@ public class UserEmailVerificationHandlerTest {
     @Test
     public void testHandleEventThreadLocalValues() throws IdentityEventException, UserStoreException {
 
-        mockUtilMethods(true, false, false,
-                false);
+        mockUtilMethods(true, false, false);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         // Case 1: Thread local value = SKIP_ON_CONFIRM.
@@ -570,8 +512,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, null);
-        mockUtilMethods(true, true, false,
-                true);
+        mockUtilMethods(true, false, true);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         userEmailVerificationHandler.handleEvent(event);
@@ -580,8 +521,7 @@ public class UserEmailVerificationHandlerTest {
         // Case 2: Error is thrown when retrieving verification pending email.
         Event event1 = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, null);
-        mockUtilMethods(true, true, false,
-                true);
+        mockUtilMethods(true, false, true);
         when(userStoreManager.getUserClaimValues(TEST_USERNAME, new String[]{
                 IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM}, null))
                 .thenThrow(new UserStoreException());
@@ -598,8 +538,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, null);
-        mockUtilMethods(true, true, false,
-                true);
+        mockUtilMethods(true, false, true);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
         // Case 1: Change primary email address.
@@ -635,7 +574,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, null);
-        mockUtilMethods(true, true, false, true);
+        mockUtilMethods(true, false, true);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE, true);
         mockPendingVerificationEmail(EXISTING_EMAIL_1);
 
@@ -783,21 +722,12 @@ public class UserEmailVerificationHandlerTest {
         }
     }
 
-    @DataProvider(name = "multiAttributeEnabledData")
-    public Object[][] multiAttributeEnabledData() {
-
-        return new Object[][]{
-                {false},
-                {true}
-        };
-    }
-
     @Test(description = "Test handling of primary email deletion — primary email set to EMPTY should clear" +
-            "emailVerified claim", dataProvider = "multiAttributeEnabledData")
-    public void testHandleEventPreSetUserClaimsPrimaryEmailDeletionClearsVerification(boolean multiAttributeEnabled)
+            "emailVerified claim")
+    public void testHandleEventPreSetUserClaimsPrimaryEmailDeletionClearsVerification()
             throws IdentityEventException {
 
-        mockUtilMethods(true, multiAttributeEnabled, false, false);
+        mockUtilMethods(true, false, false);
 
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
@@ -853,11 +783,9 @@ public class UserEmailVerificationHandlerTest {
                 .thenReturn(String.valueOf(isVerified));
     }
 
-    private void mockUtilMethods(boolean emailVerificationEnabled, boolean multiAttributeEnabled,
-                                 boolean userVerifyClaimEnabled, boolean notificationOnEmailUpdate) {
+    private void mockUtilMethods(boolean emailVerificationEnabled, boolean userVerifyClaimEnabled,
+                                 boolean notificationOnEmailUpdate) {
 
-        mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
-                .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(userVerifyClaimEnabled);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 emailVerificationEnabled);
