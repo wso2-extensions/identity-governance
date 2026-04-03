@@ -266,6 +266,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
     }
 
+    private boolean isEmailOTPOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
+
+        log.debug("Checking if email OTP on update is enabled for tenant: " + tenantDomain);
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+    }
+
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
@@ -335,22 +342,46 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         try {
             UserRecoveryData recoveryDataDO;
+            String notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE;
+
             if (Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated()) {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                // Handles multiple email addresses scenario.
+                if (isEmailOTPOnUpdateEnabled(user.getTenantDomain())) {
+                    // Handles verification with OTP scenario.
+                    userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
                         RecoverySteps.VERIFY_EMAIL);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                    recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE;
+                    log.info("Email OTP verification enabled for user: " + user.getUserName() + " in tenant: " + user.getTenantDomain());
+                } else {
+                    // Handles verification with confirmation link scenario.
+                    userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                    recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                }
             } else {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
+                if (isEmailOTPOnUpdateEnabled(user.getTenantDomain())) {
+                    // Handles verification with OTP scenario.
+                    userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE,
                         RecoverySteps.VERIFY_EMAIL);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                    recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                    notificationTemplateType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE;
+                } else {
+                    // Handles verification with confirmation link scenario.
+                    userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                    recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                }
             }
             /* Email address persisted in remaining set ids to maintain context information about the email address
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE, secretKey,
+            triggerNotification(user, notificationTemplateType, secretKey,
                     Utils.getArbitraryProperties(), verificationPendingEmailAddress, recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
@@ -450,10 +481,16 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 properties.put(prop.getKey(), prop.getValue());
             }
         }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
+        
         try {
+            if (StringUtils.isNotBlank(code)) {
+                if (isEmailOTPOnUpdateEnabled(user.getTenantDomain())) {
+                    properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+                } else {
+                    properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+                }
+            }
+
             String selectedNotificationType = type;
             if (recoveryDataDO != null) {
                 String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
