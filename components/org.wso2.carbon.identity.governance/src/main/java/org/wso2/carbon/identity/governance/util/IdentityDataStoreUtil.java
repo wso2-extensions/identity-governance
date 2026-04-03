@@ -184,6 +184,17 @@ public class IdentityDataStoreUtil {
     }
 
     /**
+     * Mask sensitive values in logs if masking is enabled.
+     *
+     * @param value Value to be masked.
+     * @return Masked or original value depending on configuration.
+     */
+    public static String maskIfRequired(String value) {
+
+        return LoggerUtils.isLogMaskingEnable ? LoggerUtils.getMaskedContent(value) : value;
+    }
+
+    /**
      * Retrieve the local claim for the given claim URI and tenant domain.
      *
      * @param claimUri     Claim URI under evaluation.
