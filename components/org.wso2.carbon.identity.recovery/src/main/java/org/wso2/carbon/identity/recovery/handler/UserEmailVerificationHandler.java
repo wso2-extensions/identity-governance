@@ -304,7 +304,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (isAdminInitiatedFlow) {
-            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled
+                    = isSkipInitiatingEmailVerificationByPrivilegedUserEnabled(tenantDomain);
             if (log.isDebugEnabled()) {
                 log.debug("Admin-initiated flow to update email. Privileged-user skip-initiation config value is: " +
                         isSkipInitiatingVerificationForPrivilegedUserEnabled + ".");

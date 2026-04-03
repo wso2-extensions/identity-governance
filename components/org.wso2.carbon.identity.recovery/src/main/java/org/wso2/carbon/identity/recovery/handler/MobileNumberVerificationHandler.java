@@ -646,9 +646,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
         }
         if (isAdminInitiatedFlow) {
-            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled = isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
+            boolean isSkipInitiatingVerificationForPrivilegedUserEnabled =
+                    isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
             if (log.isDebugEnabled()) {
-                log.debug("Admin-initiated flow to update mobile number. Privileged-user skip-initiation config value is: " +
+                log.debug("Admin-initiated flow to update mobile number. " +
+                        "Privileged-user skip-initiation config value is: " +
                         isSkipInitiatingVerificationForPrivilegedUserEnabled);
             }
             return !isSkipInitiatingVerificationForPrivilegedUserEnabled;
