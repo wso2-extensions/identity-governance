@@ -841,8 +841,6 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
-        boolean supportMultipleEmailsAndMobileNumbers =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
         Map<String, String> userClaimsToBeAdded = new HashMap<>();
         Map<String, String> userClaimsToBeModified = new HashMap<>();
@@ -850,7 +848,7 @@ public class UserSelfRegistrationManager {
         Flow.InitiatingPersona flowInitiatingPersona = Flow.InitiatingPersona.USER;
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
-            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user, supportMultipleEmailsAndMobileNumbers,
+            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user,
                     multiAttributeSeparator, userClaims, userClaimsToBeAdded, userClaimsToBeModified,
                     userClaimsToBeDeleted, eventProperties, false);
         }
@@ -873,8 +871,7 @@ public class UserSelfRegistrationManager {
                 if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
                             recoveryData.getRecoveryScenario())
                             || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
-                            .equals(recoveryData.getRecoveryScenario()))
-                        && supportMultipleEmailsAndMobileNumbers) {
+                            .equals(recoveryData.getRecoveryScenario()))) {
                     try {
                         List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                                 user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
@@ -1009,7 +1006,6 @@ public class UserSelfRegistrationManager {
      * @param recoveryData User recovery data associated with the verification code.
      * @param userStoreManager User store manager for the target user.
      * @param user User being verified.
-     * @param supportMultipleEmailsAndMobileNumbers Whether multi email/mobile support is enabled.
      * @param multiAttributeSeparator Multi-attribute claim separator.
      * @param userClaims Claims map that will be persisted.
      * @param userClaimsToBeAdded Claims that are tracked as new additions for profile update events.
@@ -1022,8 +1018,8 @@ public class UserSelfRegistrationManager {
      *                                   encounters an error.
      */
     private void processEmailVerificationOnUpdate(UserRecoveryData recoveryData, UserStoreManager userStoreManager,
-                                                  User user, boolean supportMultipleEmailsAndMobileNumbers,
-                                                  String multiAttributeSeparator, Map<String, String> userClaims,
+                                                  User user, String multiAttributeSeparator,
+                                                  Map<String, String> userClaims,
                                                   Map<String, String> userClaimsToBeAdded,
                                                   Map<String, String> userClaimsToBeModified,
                                                   Map<String, String> userClaimsToBeDeleted,
@@ -1063,8 +1059,7 @@ public class UserSelfRegistrationManager {
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
         }
 
-        if (isVerifiedListEmailUpdateScenario(recoveryData, includeEmailOtpVerifiedListUpdateScenario) &&
-                supportMultipleEmailsAndMobileNumbers) {
+        if (isVerifiedListEmailUpdateScenario(recoveryData, includeEmailOtpVerifiedListUpdateScenario)) {
             try {
                 List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
@@ -1273,11 +1268,8 @@ public class UserSelfRegistrationManager {
         Map<String, String> userClaimsToBeModified = new HashMap<>();
         Map<String, String> userClaimsToBeDeleted = new HashMap<>();
 
-        boolean supportMultipleEmailsAndMobileNumbers =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
-
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
-            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user, supportMultipleEmailsAndMobileNumbers,
+            processEmailVerificationOnUpdate(recoveryData, userStoreManager, user,
                     FrameworkUtils.getMultiAttributeSeparator(), userClaims, userClaimsToBeAdded, userClaimsToBeModified,
                     userClaimsToBeDeleted, null, true);
         } else {
@@ -1300,7 +1292,7 @@ public class UserSelfRegistrationManager {
                 if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
                         recoveryData.getRecoveryScenario()) ||
                         RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                                recoveryData.getRecoveryScenario())) && supportMultipleEmailsAndMobileNumbers) {
+                                recoveryData.getRecoveryScenario()))) {
                     try {
                         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
                         List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,

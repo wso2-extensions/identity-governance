@@ -122,9 +122,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             claims = new HashMap<>();
         }
 
-        boolean supportMultipleEmails =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
-
         boolean enable = false;
 
         if (IdentityEventConstants.Event.PRE_ADD_USER.equals(eventName) ||
@@ -135,14 +132,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
 
             enable = isEmailVerificationOnUpdateEnabled(user.getTenantDomain());
-
-            if (!supportMultipleEmails) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Supporting multiple email addresses per user is disabled.");
-                }
-                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-                claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-            }
 
             if (!enable) {
                 /* We need to empty 'EMAIL_ADDRESS_PENDING_VALUE_CLAIM' because having a value in that claim implies
@@ -259,7 +248,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
             Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
-            if (supportMultipleEmails && !claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+            if (!claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
                 Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(true);
             }
             preSetUserClaimsOnEmailUpdate(claims, userStoreManager, user);
@@ -653,8 +642,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
 
-        boolean supportMultipleEmails =
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
         // Update multiple email address related claims only if they’re in the claims map.
         // This avoids issues with updating the primary email address due to user store limitations on multiple
         // email addresses.
@@ -680,74 +667,64 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         String primaryEmail = getEmailClaimValue(user, userStoreManager);
 
         // Handle email addresses and verified email addresses claims.
-        if (supportMultipleEmails) {
-            List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+        List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-            List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
-                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
 
-            if (isPrimaryEmailVerified(userStoreManager, user)) {
-                // Add primary email address to verifiedEmailAddress claim if not available.
-                if (existingAllEmailAddresses.contains(primaryEmail) &&
-                        !existingVerifiedEmailAddresses.contains(primaryEmail)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Added primary email to verifiedEmailAddresses claim for user: " +
-                                maskIfRequired(user.getUserName()));
-                    }
-                    existingVerifiedEmailAddresses.add(primaryEmail);
+        if (isPrimaryEmailVerified(userStoreManager, user)) {
+            // Add primary email address to verifiedEmailAddress claim if not available.
+            if (existingAllEmailAddresses.contains(primaryEmail) &&
+                    !existingVerifiedEmailAddresses.contains(primaryEmail)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Added primary email to verifiedEmailAddresses claim for user: " +
+                            maskIfRequired(user.getUserName()));
                 }
+                existingVerifiedEmailAddresses.add(primaryEmail);
             }
+        }
 
-            updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
-                    VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
-                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
-            updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
-                    getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
-                    existingAllEmailAddresses;
+        updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
+                VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
+                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
+        updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
+                getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
+                existingAllEmailAddresses;
 
-            if (updatedAllEmailAddresses == null) {
-                updatedAllEmailAddresses = new ArrayList<>();
-            }
-            if (updatedVerifiedEmailAddresses == null) {
-                updatedVerifiedEmailAddresses = new ArrayList<>();
-            }
+        if (updatedAllEmailAddresses == null) {
+            updatedAllEmailAddresses = new ArrayList<>();
+        }
+        if (updatedVerifiedEmailAddresses == null) {
+            updatedVerifiedEmailAddresses = new ArrayList<>();
+        }
 
-            // Find the verification pending email address and remove it from verified email addresses in the payload.
-            if (emailAddress == null && CollectionUtils.isNotEmpty(updatedVerifiedEmailAddresses)) {
-                emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
-                        updatedVerifiedEmailAddresses);
-                updatedVerifiedEmailAddresses.remove(emailAddress);
-            } else {
-                /*
-                 * When both primary email address and verified email addresses are provided, give the primary‑email
-                 * change the precedence; leave the updated verified‑emails list exactly as it exists in the
-                 * user store.
-                 */
-                updatedVerifiedEmailAddresses = existingVerifiedEmailAddresses;
-            }
+        // Find the verification pending email address and remove it from verified email addresses in the payload.
+        if (emailAddress == null && CollectionUtils.isNotEmpty(updatedVerifiedEmailAddresses)) {
+            emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
+                    updatedVerifiedEmailAddresses);
+            updatedVerifiedEmailAddresses.remove(emailAddress);
+        } else {
+            /*
+             * When both primary email address and verified email addresses are provided, give the primary‑email
+             * change the precedence; leave the updated verified‑emails list exactly as it exists in the
+             * user store.
+             */
+            updatedVerifiedEmailAddresses = existingVerifiedEmailAddresses;
+        }
 
             /*
             Find the removed numbers from the existing email addresses list and remove them from the verified email
             addresses list, as verified email addresses list should not contain email addresses that are not in the
             email addresses list.
             */
-            final List<String> tempUpdatedAllEmailAddresses = new ArrayList<>(updatedAllEmailAddresses);
-            updatedVerifiedEmailAddresses.removeIf(number -> !tempUpdatedAllEmailAddresses.contains(number));
+        final List<String> tempUpdatedAllEmailAddresses = new ArrayList<>(updatedAllEmailAddresses);
+        updatedVerifiedEmailAddresses.removeIf(number -> !tempUpdatedAllEmailAddresses.contains(number));
 
-            if (shouldUpdateMultiMobilesRelatedClaims) {
-                claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                        StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-                claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                        StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
-            }
-        } else {
-            /*
-            email addresses and verified email addresses should not be updated when support for multiple email
-            addresses is disabled.
-             */
-            claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-            claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-            updatedAllEmailAddresses = new ArrayList<>();
+        if (shouldUpdateMultiMobilesRelatedClaims) {
+            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
         }
 
         if (StringUtils.isBlank(emailAddress)) {
@@ -756,7 +733,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        if (supportMultipleEmails && updatedVerifiedEmailAddresses.contains(emailAddress)) {
+        if (updatedVerifiedEmailAddresses.contains(emailAddress)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("The email address to be updated: %s is already verified and contains" +
                         " in the verified email addresses list for user: %s in domain %s. Hence an email " +
@@ -772,7 +749,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (emailAddress.equals(primaryEmail)) {
 
-            if (supportMultipleEmails && shouldUpdateMultiMobilesRelatedClaims &&
+            if (shouldUpdateMultiMobilesRelatedClaims &&
                     !updatedAllEmailAddresses.contains(primaryEmail)) {
                 updatedAllEmailAddresses.add(primaryEmail);
                 claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
@@ -790,7 +767,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
                 invalidatePendingEmailVerification(user, userStoreManager, claims);
 
-                if (supportMultipleEmails && shouldUpdateMultiMobilesRelatedClaims &&
+                if (shouldUpdateMultiMobilesRelatedClaims &&
                         !updatedVerifiedEmailAddresses.contains(primaryEmail)) {
                     updatedVerifiedEmailAddresses.add(primaryEmail);
                     claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
