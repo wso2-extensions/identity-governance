@@ -488,7 +488,7 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_MOBILE_NUMBER);
-        mockUtilMethods(true, false, false);
+        mockUtilMethods(true, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
         mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
@@ -508,7 +508,7 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 NEW_MOBILE_NUMBER, null, null);
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
         mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
@@ -531,7 +531,7 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_MOBILE_NUMBER);
-        mockUtilMethods(true, false, false);
+        mockUtilMethods(true, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
         mockVerificationPendingMobileNumber();
