@@ -759,7 +759,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, false, false);
+        mockUtilMethods(true, false, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
         enterAdminInitiatedFlow();
@@ -778,7 +778,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 NEW_EMAIL, null, null);
-        mockUtilMethods(true, true, false, false);
+        mockUtilMethods(true, false, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
         enterAdminInitiatedFlow();
@@ -799,7 +799,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, false, false);
+        mockUtilMethods(true, false, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
         enterUserInitiatedFlow();
@@ -816,7 +816,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, false, false);
+        mockUtilMethods(true, false, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, true);
 
@@ -834,7 +834,7 @@ public class UserEmailVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-        mockUtilMethods(true, false, false, false);
+        mockUtilMethods(true, false, false);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER, false);
         enterAdminInitiatedFlow();
