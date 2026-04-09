@@ -129,7 +129,15 @@ public class UserProvisioningExecutor implements Executor {
             FlowUser user = updateUserProfile(context);
             Map<String, String> userClaims = user.getClaims();
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            // Prefer the userStoreDomain explicitly set on FlowUser (populated during flow initiation for
+            // secondary store users). Fall back to parsing the domain from the username string.
+            String userStoreDomainName;
+            if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+                userStoreDomainName = user.getUserStoreDomain().toUpperCase(ENGLISH);
+            } else {
+                userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            }
+
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
             String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
