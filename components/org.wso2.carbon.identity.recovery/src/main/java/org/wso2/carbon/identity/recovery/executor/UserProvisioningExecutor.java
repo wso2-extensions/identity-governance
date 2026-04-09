@@ -133,7 +133,7 @@ public class UserProvisioningExecutor implements Executor {
             // secondary store users). Fall back to parsing the domain from the username string.
             String userStoreDomainName;
             if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
-                userStoreDomainName = user.getUserStoreDomain().toUpperCase(ENGLISH);
+                userStoreDomainName = user.getUserStoreDomain();
             } else {
                 userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             }
@@ -180,7 +180,7 @@ public class UserProvisioningExecutor implements Executor {
             // secondary store users). Fall back to parsing the domain from the username string.
             String userStoreDomainName;
             if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
-                userStoreDomainName = user.getUserStoreDomain().toUpperCase(ENGLISH);
+                userStoreDomainName = user.getUserStoreDomain();
             } else {
                 userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             }
@@ -285,7 +285,7 @@ public class UserProvisioningExecutor implements Executor {
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             int separatorIndex = resolvedUsername.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
             if (separatorIndex >= 0) {
-                user.setUserStoreDomain(resolvedUsername.substring(0, separatorIndex).toUpperCase(ENGLISH));
+                user.setUserStoreDomain(resolveUserStoreDomain(resolvedUsername));
                 resolvedUsername = resolvedUsername.substring(separatorIndex + 1);
             }
         }
