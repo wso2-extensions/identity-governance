@@ -176,7 +176,15 @@ public class UserProvisioningExecutor implements Executor {
             password =
                     credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            // Prefer the userStoreDomain explicitly set on FlowUser (populated during flow initiation for
+            // secondary store users). Fall back to parsing the domain from the username string.
+            String userStoreDomainName;
+            if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+                userStoreDomainName = user.getUserStoreDomain().toUpperCase(ENGLISH);
+            } else {
+                userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            }
+
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
@@ -269,7 +277,19 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         });
-        user.setUsername(resolveUsername(user, context.getTenantDomain()));
+         String resolvedUsername = resolveUsername(user, context.getTenantDomain());
+        // For registration flows the FlowUser has no userStoreDomain pre-populated (unlike password-reset flows
+        // where the user is identified during flow initiation). If the submitted username carries a domain
+        // prefix (e.g. "SecondaryJDBC/john"), extract it now so that the downstream domain resolution logic
+        // can rely on FlowUser.getUserStoreDomain() as the single source of truth.
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            int separatorIndex = resolvedUsername.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
+            if (separatorIndex >= 0) {
+                user.setUserStoreDomain(resolvedUsername.substring(0, separatorIndex).toUpperCase(ENGLISH));
+                resolvedUsername = resolvedUsername.substring(separatorIndex + 1);
+            }
+        }
+        user.setUsername(resolvedUsername);
         setUsernamePatternValidation(context);
         return user;
     }
