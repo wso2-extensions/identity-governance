@@ -176,8 +176,6 @@ public class UserProvisioningExecutor implements Executor {
             password =
                     credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
 
-            // Prefer the userStoreDomain explicitly set on FlowUser (populated during flow initiation for
-            // secondary store users). Fall back to parsing the domain from the username string.
             String userStoreDomainName;
             if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
                 userStoreDomainName = user.getUserStoreDomain();
@@ -277,7 +275,7 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         });
-         String resolvedUsername = resolveUsername(user, context.getTenantDomain());
+        String resolvedUsername = resolveUsername(user, context.getTenantDomain());
         // For registration flows the FlowUser has no userStoreDomain pre-populated (unlike password-reset flows
         // where the user is identified during flow initiation). If the submitted username carries a domain
         // prefix (e.g. "SecondaryJDBC/john"), extract it now so that the downstream domain resolution logic
