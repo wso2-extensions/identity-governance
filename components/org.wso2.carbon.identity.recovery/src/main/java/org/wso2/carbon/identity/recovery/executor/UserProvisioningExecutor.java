@@ -286,7 +286,6 @@ public class UserProvisioningExecutor implements Executor {
             int separatorIndex = resolvedUsername.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
             if (separatorIndex >= 0) {
                 user.setUserStoreDomain(resolveUserStoreDomain(resolvedUsername));
-                resolvedUsername = resolvedUsername.substring(separatorIndex + 1);
             }
         }
         user.setUsername(resolvedUsername);
