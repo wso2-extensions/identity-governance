@@ -199,7 +199,6 @@ public class UserProvisioningExecutor implements Executor {
             userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName),
                     String.valueOf(password), userRoles, userClaims, null);
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
-            user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
@@ -277,14 +276,10 @@ public class UserProvisioningExecutor implements Executor {
         });
         String resolvedUsername = resolveUsername(user, context.getTenantDomain());
         // For registration flows the FlowUser has no userStoreDomain pre-populated (unlike password-reset flows
-        // where the user is identified during flow initiation). If the submitted username carries a domain
-        // prefix (e.g. "SecondaryJDBC/john"), extract it now so that the downstream domain resolution logic
+        // where the user is identified during flow initiation). Resolve and set it now so that downstream logic
         // can rely on FlowUser.getUserStoreDomain() as the single source of truth.
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            int separatorIndex = resolvedUsername.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
-            if (separatorIndex >= 0) {
-                user.setUserStoreDomain(resolveUserStoreDomain(resolvedUsername));
-            }
+            user.setUserStoreDomain(resolveUserStoreDomain(resolvedUsername));
         }
         user.setUsername(resolvedUsername);
         setUsernamePatternValidation(context);
