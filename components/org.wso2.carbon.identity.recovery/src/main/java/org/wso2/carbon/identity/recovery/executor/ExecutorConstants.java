@@ -60,7 +60,10 @@ public class ExecutorConstants {
         ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE("65003",
                 "Error while resolving notification properties.",
                 "Error occurred while resolving notification properties for user: %s " +
-                        "in the request of flow id: %s");
+                        "in the request of flow id: %s"),
+        ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE("65004",
+                "Error while checking user existence.",
+                "Error occurred while checking the existence of user: %s in the request of flow id: %s.");
 
         private static final String ERROR_PREFIX = "FEE";
         private final String code;
