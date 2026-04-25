@@ -74,6 +74,7 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 
 /**
@@ -700,6 +701,7 @@ public class UserProvisioningExecutorTest {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), STATUS_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE.getCode());
     }
 
     private FlowUser createTestFlowUser(String username) {
