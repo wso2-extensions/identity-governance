@@ -65,6 +65,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
@@ -635,6 +636,70 @@ public class UserProvisioningExecutorTest {
 
         assertEquals(response.getResult(), STATUS_USER_ERROR);
         assertEquals(response.getErrorCode(), ERROR_CODE_INVALID_USERNAME.getCode());
+    }
+
+    @Test
+    public void testIsExistingUserWithUserStoreDomainSet() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+        when(flowUser.getUserStoreDomain()).thenReturn(SECONDARY_DOMAIN);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        mockedIdentityUtil.when(IdentityUtil::isEmailUsernameEnabled).thenReturn(true);
+
+        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
+        RealmService realmService = mock(RealmService.class);
+        UserRealm userRealm = mock(UserRealm.class);
+        AbstractUserStoreManager primaryStoreManager = mock(AbstractUserStoreManager.class);
+        AbstractUserStoreManager secondaryStoreManager = mock(AbstractUserStoreManager.class);
+
+        mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+        when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(primaryStoreManager);
+        when(primaryStoreManager.getSecondaryUserStoreManager(SECONDARY_DOMAIN)).thenReturn(secondaryStoreManager);
+        // User exists in secondary domain, so isExistingUser returns true and validation is skipped.
+        when(secondaryStoreManager.isExistingUser(USERNAME)).thenReturn(true);
+
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(PRIMARY_DOMAIN);
+        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
+                .thenReturn(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(secondaryStoreManager).isExistingUser(USERNAME);
+    }
+
+    @Test
+    public void testIsExistingUserThrowsExceptionOnUserStoreFailure() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        mockedIdentityUtil.when(IdentityUtil::isEmailUsernameEnabled).thenReturn(true);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("User store connection error"))
+                .when(userStoreManager).isExistingUser(USERNAME);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
     }
 
     private FlowUser createTestFlowUser(String username) {
