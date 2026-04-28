@@ -242,6 +242,13 @@ public class UserSelfRegistrationManager {
                 String preferredChannel;
                 try {
 
+                    // Fail early if the user already exists to avoid triggering downstream listeners unnecessarily.
+                    if (userStoreManager.isExistingUser(
+                            IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()))) {
+                        throw Utils.handleClientException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName());
+                    }
+
                     //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
                     if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
                         Permission permission =
