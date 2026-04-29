@@ -310,7 +310,12 @@ public class MeApiServiceImpl extends MeApiService {
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Valid recovery scenario found: " + recoveryScenario);
+            }
             return recoveryScenario;
         }
 
@@ -322,11 +327,13 @@ public class MeApiServiceImpl extends MeApiService {
                                                               ResendCodeRequestDTO resendCodeRequestDTO) {
 
         UserRecoveryData userRecoveryData = null;
-        // Currently this me/resend-code API supports resend code during mobile verification and
-        // self-registration account confirmation scenarios only.
+        // Currently this me/resend-code API supports resend code during mobile verification,
+        // self-registration account confirmation, email OTP verification on claim update scenarios only.
         if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)) {
+                RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
             userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
         }
         if (userRecoveryData == null) {
@@ -376,6 +383,19 @@ public class MeApiServiceImpl extends MeApiService {
                     RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
                     notificationType, resendCodeRequestDTO);
         }
+
+        if ((RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) || (
+                    RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) &&
+                    RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
+                    RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep()))) {
+                        notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                            userRecoveryData.getRecoveryScenario().toString(),
+                            RecoverySteps.VERIFY_EMAIL.toString(),
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE,
+                            resendCodeRequestDTO);
+                    }
 
         return notificationResponseBean;
     }

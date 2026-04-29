@@ -381,6 +381,82 @@ public class ResendConfirmationManagerTest {
                 capturedRecoveryData2.getRemainingSetIds());
     }
 
+    @Test
+    public void testResendConfirmationCodeEmailOTPVerificationOnUpdate() throws Exception {
+
+        String verificationPendingEmail = "testuser@gmail.com";
+        String oldCode = "dummy-code";
+        String newCode = "new-code";
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE)).thenReturn(userRecoveryData);
+
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData,
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())).thenReturn(false);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE, TEST_TENANT_DOMAIN))
+                .thenReturn("true");
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+        mockUtilsErrors();
+
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE.toString(),
+                RecoverySteps.VERIFY_EMAIL.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE, properties);
+        assertNotNull(responseBean);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingEmail, capturedRecoveryData.getRemainingSetIds());
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        Assert.assertEquals(verificationPendingEmail, eventProperties.get(IdentityRecoveryConstants.SEND_TO));
+        Assert.assertEquals(newCode, eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE));
+        Assert.assertEquals(newCode, eventProperties.get(IdentityRecoveryConstants.OTP_CODE));
+        Assert.assertEquals(IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE,
+                eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE));
+
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        // Case 2: EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE recovery scenario.
+        UserRecoveryData userRecoveryData2 = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        userRecoveryData2.setRemainingSetIds(verificationPendingEmail);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE)).thenReturn(userRecoveryData2);
+
+        NotificationResponseBean responseBean2 = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
+                RecoverySteps.VERIFY_EMAIL.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE, properties);
+        assertNotNull(responseBean2);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor2 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor2.capture());
+        UserRecoveryData capturedRecoveryData2 = recoveryDataCaptor2.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_OTP_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData2.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingEmail, capturedRecoveryData2.getRemainingSetIds());
+    }
+
     @DataProvider(name = "recoveryScenariosDataProvider")
     public Object[][] getForcedPasswordResetDataProvider() {
 
