@@ -129,7 +129,15 @@ public class UserProvisioningExecutor implements Executor {
             FlowUser user = updateUserProfile(context);
             Map<String, String> userClaims = user.getClaims();
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            // Prefer the userStoreDomain explicitly set on FlowUser (populated during flow initiation for
+            // secondary store users). Fall back to parsing the domain from the username string.
+            String userStoreDomainName;
+            if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+                userStoreDomainName = user.getUserStoreDomain();
+            } else {
+                userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            }
+
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
             String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
@@ -168,7 +176,13 @@ public class UserProvisioningExecutor implements Executor {
             password =
                     credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            String userStoreDomainName;
+            if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+                userStoreDomainName = user.getUserStoreDomain();
+            } else {
+                userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            }
+
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
@@ -185,7 +199,6 @@ public class UserProvisioningExecutor implements Executor {
             userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName),
                     String.valueOf(password), userRoles, userClaims, null);
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
-            user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
@@ -261,7 +274,14 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         });
-        user.setUsername(resolveUsername(user, context.getTenantDomain()));
+        String resolvedUsername = resolveUsername(user, context.getTenantDomain());
+        // For registration flows the FlowUser has no userStoreDomain pre-populated (unlike password-reset flows
+        // where the user is identified during flow initiation). Resolve and set it now so that downstream logic
+        // can rely on FlowUser.getUserStoreDomain() as the single source of truth.
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(resolveUserStoreDomain(resolvedUsername));
+        }
+        user.setUsername(resolvedUsername);
         setUsernamePatternValidation(context);
         return user;
     }
