@@ -106,7 +106,8 @@ public class UserProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(UserProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
-    private static final String COLLECTION_METHOD_LOGIN = "Login";
+    private static final String COLLECTION_METHOD_REGISTRATION = "Registration";
+    private static final String SYSTEM_APP_ID = "SYSTEM";
 
     @Override
     public String getName() {
@@ -198,8 +199,10 @@ public class UserProvisioningExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
-            createConsent(user.getUsername(), context.getTenantDomain(), user.getUserConsents());
-            createRejectedConsents(user.getUsername(), context.getTenantDomain(), user.getRejectedUserConsents());
+            String usernameWithUserStoreDomain = UserCoreUtil.addDomainToName(user.getUsername(), userStoreDomainName);
+            createConsent(usernameWithUserStoreDomain, context.getTenantDomain(), user.getUserConsents());
+            createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
+                    user.getRejectedUserConsents());
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
@@ -399,8 +402,8 @@ public class UserProvisioningExecutor implements Executor {
                             Utils.maskIfRequired(username) + ", Purposes: " + purposeMap.keySet());
                 }
                 IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
-                        .addConsent(username, "SYSTEM", tenantDomain, consentType, purposeMap,
-                                COLLECTION_METHOD_LOGIN, REJECTED_STATE);
+                        .addConsent(username, SYSTEM_APP_ID, tenantDomain, consentType, purposeMap,
+                                COLLECTION_METHOD_REGISTRATION, REJECTED_STATE);
             } catch (ConsentManagementException e) {
                 LOG.error("Error while creating rejected consent of type: " + consentType + " for user: " +
                         Utils.maskIfRequired(username), e);
@@ -422,8 +425,8 @@ public class UserProvisioningExecutor implements Executor {
 
         // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
         IdentityRecoveryServiceDataHolder.getInstance().getConsentManager()
-                .addConsent(subjectId, "SYSTEM", tenantDomain, consentType, purposeMap,
-                        COLLECTION_METHOD_LOGIN, ACTIVE_STATE);
+                .addConsent(subjectId, SYSTEM_APP_ID, tenantDomain, consentType, purposeMap,
+                        COLLECTION_METHOD_REGISTRATION, ACTIVE_STATE);
     }
 
     private PIICategory getOrCreatePiiCategory(String consentType)
