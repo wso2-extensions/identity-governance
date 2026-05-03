@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2025-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -192,11 +192,9 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
 
             // If account lock on creation is enabled, lock the account by persisting the account lock claim.
             if (isEffectiveAccountLockOnCreation && isNotificationClaimAvailable) {
-                lockUserAccount(true, true, tenantDomain,
-                        userStoreManager, userName);
+                lockUserAccount(true, true, tenantDomain, userStoreManager, userName);
             } else if (isEnableConfirmationOnCreation) {
-                lockUserAccount(false, true, tenantDomain,
-                        userStoreManager, userName);
+                lockUserAccount(false, true, tenantDomain, userStoreManager, userName);
             }
 
             // If notifications are externally managed, no notification are sent from the server.
