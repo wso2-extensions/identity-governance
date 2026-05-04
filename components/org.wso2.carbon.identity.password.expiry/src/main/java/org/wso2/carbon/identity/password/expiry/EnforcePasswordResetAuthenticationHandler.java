@@ -119,10 +119,12 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
                                 log.error("User id not found.", e);
                             }
                         }
-                        // Redirect to the password reset page.
+                        if (authenticatedUser.isSharedUser()) {
+                            redirectToErrorPage(httpServletResponse, tenantDomain);
+                            return PostAuthnHandlerFlowStatus.INCOMPLETE;
+                        }
                         String confirmationCode = generateNewConfirmationCode(authenticatedUser);
-                        redirectToPasswordResetPage(httpServletResponse, tenantDomain, confirmationCode,
-                                authenticatedUser.isSharedUser());
+                        redirectToPasswordResetPage(httpServletResponse, tenantDomain, confirmationCode);
                         return PostAuthnHandlerFlowStatus.INCOMPLETE;
                     }
                     return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
@@ -192,16 +194,13 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
      */
     @SuppressFBWarnings("UNVALIDATED_REDIRECT")
     private void redirectToPasswordResetPage(HttpServletResponse httpServletResponse, String tenantDomain,
-                                             String confirmationCode, boolean isSharedUser)
+                                             String confirmationCode)
             throws PostAuthenticationFailedException {
 
         String queryString = PasswordPolicyConstants.CONFIRMATION_QUERY_PARAM + confirmationCode +
                 PasswordPolicyConstants.PASSWORD_EXPIRED_QUERY_PARAMS
                 + PasswordPolicyConstants.PASSWORD_EXPIRED_MSG_QUERY_PARAM +
                 PasswordPolicyConstants.ENCODED_PASSWORD_EXPIRED_MSG;
-        if (isSharedUser) {
-            queryString = queryString + PasswordPolicyConstants.IS_SHARED_USER_QUERY_PARAM + true;
-        }
 
         String passwordRestPage;
         try {
@@ -213,6 +212,29 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
                     ERROR_WHILE_REDIRECTING_TO_PASSWORD_RESET_PAGE.getCode(),
                     PasswordPolicyConstants.ErrorMessages.
                             ERROR_WHILE_REDIRECTING_TO_PASSWORD_RESET_PAGE.getMessage(), e);
+        }
+    }
+
+    /**
+     * Redirect to error page when password reset is not supported (e.g., for shared users).
+     *
+     * @param httpServletResponse HttpServletResponse.
+     * @param tenantDomain        Tenant domain.
+     * @throws PostAuthenticationFailedException If an error occurred while redirecting to the error page.
+     */
+    @SuppressFBWarnings("UNVALIDATED_REDIRECT")
+    private void redirectToErrorPage(HttpServletResponse httpServletResponse, String tenantDomain)
+            throws PostAuthenticationFailedException {
+
+        try {
+            String errorPageBaseUrl = PasswordPolicyUtils.getErrorPageUrl(tenantDomain);
+            String url = FrameworkUtils.appendQueryParamsStringToUrl(errorPageBaseUrl,
+                    PasswordPolicyConstants.SHARED_USER_ERROR_KEY_QUERY_PARAM);
+            httpServletResponse.sendRedirect(url);
+        } catch (IOException e) {
+            throw new PostAuthenticationFailedException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_ERROR_PAGE_URL.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_ERROR_PAGE_URL.getMessage(), e);
         }
     }
 }

@@ -33,6 +33,7 @@ public class PasswordPolicyConstants {
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
     public static final String PASSWORD_EXPIRY_TIME_CLAIM = "http://wso2.org/claims/identity/passwordExpiryTime";
     public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
+    public static final String ERROR_PAGE = "/accountrecoveryendpoint/error.jsp";
     public static final String PASSWORD_CHANGE_EVENT_HANDLER_NAME = "enforcePasswordResetEventHandler";
     public static final String ENFORCE_PASSWORD_RESET_HANDLER = "EnforcePasswordResetHandler";
     public static final String CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS = "passwordExpiry.passwordExpiryInDays";
@@ -73,7 +74,8 @@ public class PasswordPolicyConstants {
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
-    public static final String IS_SHARED_USER_QUERY_PARAM = "&isSharedUser=";
+    public static final String SHARED_USER_ERROR_KEY_QUERY_PARAM =
+            "&errorKey=Password.Expired";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
 
@@ -107,7 +109,8 @@ public class PasswordPolicyConstants {
                 "Error while retrieving password expired users from database."),
         ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager."),
         ERROR_WHILE_RETRIEVING_USER_ROLES("80014", "Error while retrieving user roles."),
-        ERROR_WHILE_RETRIEVING_USER_GROUPS("80015", "Error while retrieving user groups.");
+        ERROR_WHILE_RETRIEVING_USER_GROUPS("80015", "Error while retrieving user groups."),
+        ERROR_WHILE_BUILDING_ERROR_PAGE_URL("80016", "Error building error page URL");
 
         private final String code;
         private final String message;

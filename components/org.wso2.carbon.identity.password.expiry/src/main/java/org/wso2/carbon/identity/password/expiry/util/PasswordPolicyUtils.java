@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.password.expiry.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
@@ -62,6 +63,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.CONNECTOR_CONFIG_NAME;
+import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.ERROR_PAGE;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.HUNDREDS_OF_NANOSECONDS;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.PASSWORD_RESET_PAGE;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.WINDOWS_EPOCH_DIFF;
@@ -729,6 +731,25 @@ public class PasswordPolicyUtils {
             throw new PostAuthenticationFailedException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getMessage());
+        }
+    }
+
+    /**
+     * Get error page URL of the recovery portal.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return The error page URL.
+     * @throws PostAuthenticationFailedException If an error occurred while building the error page URL.
+     */
+    public static String getErrorPageUrl(String tenantDomain) throws PostAuthenticationFailedException {
+
+        try {
+            return ServiceURLBuilder.create().addPath(ERROR_PAGE).setTenant(tenantDomain).build(
+                    IdentityUtil.getHostName()).getAbsolutePublicURL();
+        } catch (URLBuilderException e) {
+            throw new PostAuthenticationFailedException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_ERROR_PAGE_URL.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_ERROR_PAGE_URL.getMessage());
         }
     }
 
