@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2025-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -50,7 +50,11 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 
@@ -79,11 +83,13 @@ public class AccountConfirmationValidationHandlerTest {
     @Mock
     private MessageContext<?,?> messageContext;
 
+    @Mock
+    private FlowConfigDTO mockedFlowConfigDTO;
+
     private MockedStatic<Utils> utilsMockedStatic;
     private MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMockedStatic;
     private MockedStatic<UserSelfRegistrationManager> userSelfRegistrationManagerMockedStatic;
     private MockedStatic<IdentityUtil> identityUtilMockedStatic;
-    private FlowConfigDTO mockedFlowConfigDTO;
 
     private AccountConfirmationValidationHandler handler;
 
@@ -96,7 +102,6 @@ public class AccountConfirmationValidationHandlerTest {
         jdbcRecoveryDataStoreMockedStatic = mockStatic(JDBCRecoveryDataStore.class);
         userSelfRegistrationManagerMockedStatic = mockStatic(UserSelfRegistrationManager.class);
         identityUtilMockedStatic = mockStatic(IdentityUtil.class);
-        mockedFlowConfigDTO = mock(FlowConfigDTO.class);
 
         when(mockedFlowConfigDTO.getIsEnabled()).thenReturn(false);
     }
@@ -126,10 +131,10 @@ public class AccountConfirmationValidationHandlerTest {
 
     @Test
     public void testHandleEvent_SelfSignupDisabled_EmailVerificationDisabled() throws Exception {
-        // Given
+        // Mock self-signup and email verification as disabled in the connector config.
         Event event = createPostAuthenticationEvent();
         setupUserStoreManager();
-        
+
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, TENANT_DOMAIN))
                 .thenReturn("false");
@@ -137,42 +142,38 @@ public class AccountConfirmationValidationHandlerTest {
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, TENANT_DOMAIN))
                 .thenReturn("false");
 
-        // When
+        // Handle the event and verify the handler returns early without processing user claims.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
             handler.handleEvent(event);
 
-            // Then - should return early without processing
             verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
         }
     }
 
     @Test
     public void testHandleEvent_AccountUnlocked() throws Exception {
-        // Given
+        // Self-signup is enabled and the account is not locked.
         Event event = createPostAuthenticationEvent();
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(false);
 
-        // When
+        // Handle the event and verify no exception is thrown since the account is already unlocked.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
             handler.handleEvent(event);
         }
-
-        // Then - should return early since account is unlocked
-        // No exceptions should be thrown
     }
 
     @Test
     public void testHandleEvent_AccountLocked_UserConfirmed_SelfSignup() throws Exception {
-        // Given
+        // Self-signup enabled, account locked, and user has already confirmed via self-signup.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(true);
@@ -185,28 +186,27 @@ public class AccountConfirmationValidationHandlerTest {
         when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
                 .thenReturn(recoveryData);
 
-        // When
+        // Handle the event and verify no exception is thrown since user confirmation is complete.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
             handler.handleEvent(event);
         }
-        // Then - should not throw exception since user is confirmed
     }
 
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*not confirmed yet.*")
     public void testHandleEvent_AccountLocked_UserNotConfirmed_SelfSignup() throws Exception {
-        // Given
+        // Self-signup enabled, account locked, and user has not confirmed registration yet.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(true);
         setupUserConfirmed(false);
 
-        // When
+        // Handle the event — expected to throw IdentityEventException for unconfirmed self-signup user.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -217,16 +217,16 @@ public class AccountConfirmationValidationHandlerTest {
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*email is not confirmed yet.*")
     public void testHandleEvent_AccountLocked_UserNotConfirmed_EmailVerification() throws Exception {
-        // Given
+        // Email verification enabled, account locked, and user email has not been confirmed yet.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(false, true);
         setupAccountLocked(true);
         setupUserConfirmed(false);
 
-        // When
+        // Handle the event — expected to throw IdentityEventException for unconfirmed email verification user.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -237,17 +237,17 @@ public class AccountConfirmationValidationHandlerTest {
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*email is not verified yet.*")
     public void testHandleEvent_EmailVerificationScenario() throws Exception {
-        // Given
+        // Email verification enabled, account locked, user confirmed but recovery data indicates email is not yet verified.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(false, true);
         setupAccountLocked(true);
         setupUserConfirmed(true); // User is confirmed but in email verification scenario
         setupEmailVerificationScenario();
 
-        // When
+        // Handle the event — expected to throw IdentityEventException since email verification is pending.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -258,16 +258,16 @@ public class AccountConfirmationValidationHandlerTest {
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*Invalid login attempt.*")
     public void testHandleEvent_InvalidCredentialsScenario_SelfRegisteredUser() throws Exception {
-        // Given
+        // Self-signup enabled, failed authentication attempt, account locked, and user is self-registered.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, false);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(true);
         setupSelfRegisteredUser();
 
-        // When
+        // Handle the event — expected to throw IdentityEventException for invalid login on an unconfirmed account.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -277,55 +277,53 @@ public class AccountConfirmationValidationHandlerTest {
 
     @Test
     public void testHandleEvent_UserDoesNotExist_AuthPolicyEnabled() throws Exception {
-        // Given
+        // Self-signup enabled, account existence check policy active, and user does not exist in the store.
         Event event = createPostAuthenticationEvent();
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
-        
+
         when(userStoreManager.isExistingUser(USERNAME)).thenReturn(false);
         identityUtilMockedStatic.when(() -> IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist"))
                 .thenReturn("true");
 
-        // When
+        // Handle the event and verify the handler skips claim retrieval for non-existent users.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
             handler.handleEvent(event);
 
-            // Then
             verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
         }
     }
 
     @Test
     public void testHandleEvent_NonPostAuthenticationEvent() throws Exception {
-        // Given
+        // A non-POST_AUTHENTICATION event is fired with self-signup enabled.
         Event event = new Event("SOME_OTHER_EVENT", createEventProperties());
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
 
-        // When
+        // Handle the event and verify the handler skips processing for unrelated event types.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
             handler.handleEvent(event);
 
-            // Then - should return early for non-POST_AUTHENTICATION events
             verify(userStoreManager, never()).getUserClaimValues(anyString(), any(String[].class), anyString());
         }
     }
 
     @Test
     public void testIsUserEmailVerificationScenario_EmailVerification() throws Exception {
-        // Given
+        // Email verification enabled, account locked, user confirmed but recovery data shows an EMAIL_VERIFICATION scenario.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(false, true);
         setupAccountLocked(true);
         setupUserConfirmed(true); // User confirmed but email verification scenario
-        
+
         User user = createUser();
         UserRecoveryData recoveryData = new UserRecoveryData(user, "12345", RecoveryScenarios.EMAIL_VERIFICATION);
 
@@ -336,19 +334,18 @@ public class AccountConfirmationValidationHandlerTest {
             when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
                     .thenReturn(recoveryData);
 
-            // FlowMgtConfigUtils mock
             flowConfigMockedStatic.when(() ->
                             FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
                     .thenReturn(mockedFlowConfigDTO);
 
-            // When & Then - this should throw an exception since the email is not verified
+            // Handle the event — expected to throw IdentityEventException since the email is not yet verified.
             try {
                 handler.handleEvent(event);
             } catch (IdentityEventException e) {
-                // Expected exception for email not verified scenario
+                // Expected exception.
             }
 
-            // Verify the recovery data store was called
+            // Verify the recovery data store was queried to determine the verification scenario.
             verify(userRecoveryDataStore, times(1))
                     .loadWithoutCodeExpiryValidation(any(User.class));
         }
@@ -356,36 +353,35 @@ public class AccountConfirmationValidationHandlerTest {
 
     @Test
     public void testIsUserEmailVerificationScenario_SelfSignup() throws Exception {
-        // Given
+        // Self-signup enabled, failed authentication, account locked, and recovery data shows a SELF_SIGN_UP scenario.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, false);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(true);
-        
+
         User user = createUser();
         UserRecoveryData recoveryData = new UserRecoveryData(user, "12345", RecoveryScenarios.SELF_SIGN_UP);
-        
+
         try (MockedStatic<FlowMgtConfigUtils> flowConfigMockedStatic = mockStatic(FlowMgtConfigUtils.class)){
             jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance)
                     .thenReturn(userRecoveryDataStore);
             when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class)))
                     .thenReturn(recoveryData);
 
-            // FlowMgtConfigUtils mock
             flowConfigMockedStatic.when(() ->
                             FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
                     .thenReturn(mockedFlowConfigDTO);
 
-            // When & Then - this should throw an exception for invalid credentials
+            // Handle the event — expected to throw IdentityEventException for invalid credentials on an unconfirmed account.
             try {
                 handler.handleEvent(event);
             } catch (IdentityEventException e) {
-                // Expected exception for invalid credentials scenario
+                // Expected exception.
             }
 
-            // Verify the recovery data store was called
+            // Verify the recovery data store was queried to determine the registration scenario.
             verify(userRecoveryDataStore, times(1))
                     .loadWithoutCodeExpiryValidation(any(User.class));
         }
@@ -394,15 +390,15 @@ public class AccountConfirmationValidationHandlerTest {
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*Error while retrieving account lock claim value.*")
     public void testHandleEvent_UserStoreException() throws Exception {
-        // Given
+        // Self-signup enabled and user store throws an exception when fetching account lock claims.
         Event event = createPostAuthenticationEvent();
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
-        
+
         when(userStoreManager.getUserClaimValues(eq(USERNAME), any(String[].class), anyString()))
                 .thenThrow(new UserStoreException("UserStore error"));
 
-        // When
+        // Handle the event — expected to throw IdentityEventException wrapping the UserStoreException.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -413,20 +409,20 @@ public class AccountConfirmationValidationHandlerTest {
     @Test(expectedExceptions = IdentityEventException.class,
             expectedExceptionsMessageRegExp = ".*Error occurred while checking whether this user is confirmed or not.*")
     public void testHandleEvent_IdentityRecoveryException() throws Exception {
-        // Given
+        // Self-signup enabled, account locked, and isUserConfirmed throws an IdentityRecoveryException.
         Event event = createPostAuthenticationEvent();
         event.getEventProperties().put(IdentityEventConstants.EventProperty.OPERATION_STATUS, true);
-        
+
         setupUserStoreManager();
         setupEnabledFeatures(true, false);
         setupAccountLocked(true);
-        
+
         userSelfRegistrationManagerMockedStatic.when(UserSelfRegistrationManager::getInstance)
                 .thenReturn(userSelfRegistrationManager);
         when(userSelfRegistrationManager.isUserConfirmed(any(User.class)))
                 .thenThrow(new IdentityRecoveryException("Recovery error"));
 
-        // When
+        // Handle the event — expected to throw IdentityEventException wrapping the IdentityRecoveryException.
         try (MockedStatic<FlowMgtConfigUtils> mockedStatic = mockStatic(FlowMgtConfigUtils.class)) {
             mockedStatic.when(() -> FlowMgtConfigUtils.getFlowConfig(any(), any()))
                     .thenReturn(mockedFlowConfigDTO);
@@ -434,7 +430,7 @@ public class AccountConfirmationValidationHandlerTest {
         }
     }
 
-    // Helper methods
+    // Helper methods.
 
     private Event createPostAuthenticationEvent() {
         return new Event(IdentityEventConstants.Event.POST_AUTHENTICATION, createEventProperties());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -84,26 +84,26 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
-        // Get the flow control configurations for orchestrated flows.
-        FlowConfigDTO flowConfigDTO;
+        // Get the flow control configurations for registration flow in orchestrated flows.
+        FlowConfigDTO regFlowConfigDTO;
         try {
-            flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(REGISTRATION.getType(), tenantDomain);
+            regFlowConfigDTO = FlowMgtConfigUtils.getFlowConfig(REGISTRATION.getType(), tenantDomain);
         } catch (FlowMgtServerException e) {
             throw new IdentityEventException("Error while retrieving flow configuration for tenant: " +
                     tenantDomain, e);
         }
 
         boolean isSelfSignupEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()))
-                || flowConfigDTO.getIsEnabled();
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()))
+                || regFlowConfigDTO.getIsEnabled();
 
         boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()))
-                || Boolean.parseBoolean(flowConfigDTO.getFlowCompletionConfig(
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()))
+                || Boolean.parseBoolean(regFlowConfigDTO.getFlowCompletionConfig(
                         Constants.FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED));
 
         boolean isEmailOTPVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP, user.getTenantDomain()));
+                        IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP, user.getTenantDomain()));
 
         if (!isSelfSignupEnabled && !isEmailVerificationEnabled) {
             if (log.isDebugEnabled()) {
