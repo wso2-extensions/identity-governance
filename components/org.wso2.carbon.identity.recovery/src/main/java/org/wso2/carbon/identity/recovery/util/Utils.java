@@ -109,6 +109,7 @@ import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainName;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
@@ -1401,7 +1402,14 @@ public class Utils {
         int otpLength = IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH;
         // Set connector specific OTP configuration values, for connectors that have separate OTP configurations.
         if (StringUtils.isNotBlank(connectorName)) {
-            sendOTPInEmail = Boolean.parseBoolean(getRecoveryConfigs(
+            // Set new email claim update specific OTP configuration value.
+            boolean isEmailOTPEnabledOnUpdate = "UserClaimUpdate".equals(connectorName) &&
+                    Boolean.parseBoolean(getRecoveryConfigs(ENABLE_EMAIL_OTP_ON_UPDATE, tenantDomain));
+            if (log.isDebugEnabled()) {
+                log.debug("Email OTP enabled on update: " + isEmailOTPEnabledOnUpdate + " for tenant: " + tenantDomain);
+            }
+            // Set OTP behavior by prioritizing the new config and falling back to legacy config.
+            sendOTPInEmail = isEmailOTPEnabledOnUpdate || Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.SendOTPInEmail", tenantDomain));
             isSelfRegistrationOTPEnabled = "SelfRegistration".equals(connectorName) &&
                     Boolean.parseBoolean(getRecoveryConfigs(SELF_REGISTRATION_EMAIL_OTP_ENABLE, tenantDomain));
@@ -1524,75 +1532,6 @@ public class Utils {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty
                 (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
-    }
-
-    /**
-     * Check whether the supporting multiple email addresses and mobile numbers per user feature is enabled.
-     *
-     * @param tenantDomain   Tenant domain.
-     * @param userStoreDomain User store domain.
-     * @return True if the config is set to true, false otherwise.
-     */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
-
-        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
-            return false;
-        }
-
-        if (StringUtils.isBlank(tenantDomain) || StringUtils.isBlank(userStoreDomain)) {
-            return false;
-        }
-
-        try {
-            List<LocalClaim> localClaims =
-                    IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
-                            .getLocalClaims(tenantDomain);
-
-            List<String> requiredClaims = Arrays.asList(
-                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-
-            // Check if all required claims are valid for the user store.
-            return requiredClaims.stream().allMatch(claimUri ->
-                            isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
-        } catch (ClaimMetadataException e) {
-            log.error("Error while retrieving multiple emails and mobiles config.", e);
-            return false;
-        }
-    }
-
-    /**
-     * Check if a claim is supported and not excluded for a specific user store.
-     *
-     * @param localClaims     List of local claims.
-     * @param claimUri        URI of the claim to check.
-     * @param userStoreDomain User store domain to validate against.
-     * @return True if claim is supported and not excluded.
-     */
-    private static boolean isClaimSupportedForUserStore(List<LocalClaim> localClaims, String claimUri,
-                                                        String userStoreDomain) {
-
-        return localClaims.stream()
-            .filter(claim -> claimUri.equals(claim.getClaimURI()))
-            .anyMatch(claim -> {
-                Map<String, String> properties = claim.getClaimProperties();
-
-                // Check if claim is supported by default.
-                boolean isSupported = Boolean.parseBoolean(
-                        properties.getOrDefault(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY,
-                                Boolean.FALSE.toString()));
-
-                // Check if user store is not in excluded list.
-                String excludedUserStoreDomains = properties.get(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY);
-                boolean isNotExcluded = StringUtils.isBlank(excludedUserStoreDomains) ||
-                        !Arrays.asList(excludedUserStoreDomains.toUpperCase().split(","))
-                                .contains(userStoreDomain.toUpperCase());
-
-                return isSupported && isNotExcluded;
-            });
     }
 
     /**

@@ -157,6 +157,7 @@ public class FlowRegistrationCompletionHandlerTest {
 
     @Test
     public void testHandleEventWhenAccountUnlockedButConfirmationRequire() throws IdentityEventException {
+
         Map<String, Object> eventProperties = createCompleteEventProperties();
         Event event = new Event(POST_ADD_USER, eventProperties);
 

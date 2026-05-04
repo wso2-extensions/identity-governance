@@ -28,6 +28,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -154,6 +156,9 @@ public class MobileNumberVerificationHandlerTest {
     @AfterMethod
     public void tearDown() {
 
+        if (IdentityContext.getThreadLocalIdentityContext().getCurrentFlow() != null) {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
+        }
         mockedJDBCRecoveryDataStore.close();
         mockedUtils.close();
         mockedIdentityRecoveryServiceDataHolder.close();
@@ -161,7 +166,7 @@ public class MobileNumberVerificationHandlerTest {
         Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
-        Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
+        Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
     }
 
     @Test
@@ -171,34 +176,6 @@ public class MobileNumberVerificationHandlerTest {
         Assert.assertEquals(mobileNumberVerificationHandler.getFriendlyName(), "User Mobile Number Verification");
     }
 
-    @Test(description = "Verification disabled, Multi-attribute disabled, Change primary mobile")
-    public void testHandleEventVerificationDisabledMultiAttributeDisabled()
-            throws UserStoreException, IdentityEventException, IdentityRecoveryException {
-
-        Event event =
-                createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
-                        null, null, NEW_MOBILE_NUMBER);
-        mockVerificationPendingMobileNumber();
-        mockUtilMethods(false, false, false);
-
-        mobileNumberVerificationHandler.handleEvent(event);
-
-        // Expectation: Any pending mobile verification should be invalidated.
-        verify(userRecoveryDataStore).invalidate(any(), eq(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE),
-                eq(RecoverySteps.VERIFY_MOBILE_NUMBER));
-        Map<String, String> userClaims = getUserClaimsFromEvent(event);
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                StringUtils.EMPTY);
-
-        reset(userRecoveryDataStore);
-        // Case 2: User claims null.
-        Event event2 =
-                createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
-                        null, null, null);
-        mobileNumberVerificationHandler.handleEvent(event2);
-        verify(userRecoveryDataStore, never()).invalidate(any(), eq(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), any());
-    }
-
     @Test(description = "Verification disabled, Multi-attribute enabled, Change primary mobile")
     public void testHandleEventVerificationDisabledMultiAttributeEnabled()
             throws UserStoreException, IdentityEventException, IdentityRecoveryException {
@@ -206,7 +183,7 @@ public class MobileNumberVerificationHandlerTest {
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
                 null, null, NEW_MOBILE_NUMBER);
         mockVerificationPendingMobileNumber();
-        mockUtilMethods(false, true, false);
+        mockUtilMethods(false, false);
 
         // New primary mobile number is not included in existing all mobile numbers list.
         List<String> allMobileNumbers = new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1, EXISTING_NUMBER_2));
@@ -232,143 +209,10 @@ public class MobileNumberVerificationHandlerTest {
         Assert.assertFalse(userClaims3.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
     }
 
-    @Test(description = "PRE_SET_USER_CLAIMS: Verification enabled, Multi-attribute disabled, Claims null")
-    public void testHandleEventVerificationEnabledMultiAttributeDisabledThreadLocal() throws Exception {
-
-        /*
-         Case 1: Claims null, skipSendingSmsOtpVerificationOnUpdate set to skip.
-         */
-        mockVerificationPendingMobileNumber();
-        mockUtilMethods(true, false, false);
-        Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, null);
-
-        mobileNumberVerificationHandler.handleEvent(event1);
-        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
-
-        /*
-         Case 2: skipSendingSmsOtpVerificationOnUpdate set to skip.
-         */
-        // Case 2.1: skipSendingSmsOtpVerificationOnUpdate set to SKIP_ON_CONFIRM.
-        mockVerificationPendingMobileNumber();
-        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-        mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate)
-                .thenReturn(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_CONFIRM.toString());
-
-        mobileNumberVerificationHandler.handleEvent(event2);
-        Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
-        Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                StringUtils.EMPTY);
-
-        // Case 2.2: skipSendingSmsOtpVerificationOnUpdate set to SKIP_ON_SMS_OTP_FLOW.
-        mockVerificationPendingMobileNumber();
-        Event event2_1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-        mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate)
-                .thenReturn(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_SMS_OTP_FLOW.toString());
-
-        mobileNumberVerificationHandler.handleEvent(event2_1);
-        Map<String, String> userClaims2_1 = getUserClaimsFromEvent(event2_1);
-        Assert.assertEquals(userClaims2_1.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                StringUtils.EMPTY);
-
-        /*
-         Case 3: skipSendingSmsOtpVerificationOnUpdate set to some value.
-         */
-        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-        mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate)
-                .thenReturn("test");
-
-        mobileNumberVerificationHandler.handleEvent(event3);
-        mockedUtils.verify(Utils::unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate);
-    }
-
-    @Test(description = "PRE_SET_USER_CLAIMS: Verification enabled, Multi-attribute disabled, Change primary mobile")
-    public void testHandleEventVerificationEnabledMultiAttributeDisabled() throws Exception {
-
-        mockVerificationPendingMobileNumber();
-        mockUtilMethods(true, false, false);
-        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-
-        mobileNumberVerificationHandler.handleEvent(event);
-
-        Map<String, String> userClaims = getUserClaimsFromEvent(event);
-        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                NEW_MOBILE_NUMBER);
-
-        /*
-         Case 2: New mobile number is same as existing verified primary mobile number.
-         */
-        mockExistingPrimaryMobileNumber(NEW_MOBILE_NUMBER);
-        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-        mockPrimaryMobileVerificationStatus(true);
-
-        mobileNumberVerificationHandler.handleEvent(event2);
-        Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
-        Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                StringUtils.EMPTY);
-
-        /*
-         Case 3: New mobile number is same as existing unverified primary mobile number.
-         */
-        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                null, null, NEW_MOBILE_NUMBER);
-        mockPrimaryMobileVerificationStatus(false);
-
-        mobileNumberVerificationHandler.handleEvent(event3);
-        Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
-        Assert.assertEquals(userClaims3.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
-                NEW_MOBILE_NUMBER);
-
-        /*
-         Case 4: Enable userVerify and send verifyMobileClaim as false.
-         */
-        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
-        mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(true);
-        Event event4 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, NEW_MOBILE_NUMBER);
-
-        mobileNumberVerificationHandler.handleEvent(event4);
-        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
-
-        /*
-         Case 5: Mobile number claim is null.
-         */
-        Event event5 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, null);
-
-        mobileNumberVerificationHandler.handleEvent(event5);
-        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
-
-        /*
-         Case 6: Throw error when retrieving existing mobile number.
-         */
-        when(userStoreManager.getUserClaimValue(anyString(),
-                eq(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), isNull()))
-                .thenThrow(new org.wso2.carbon.user.core.UserStoreException());
-        try {
-            mobileNumberVerificationHandler.handleEvent(event);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IdentityEventException);
-        }
-    }
-
     @Test(description = "Verification enabled, Multi-attribute enabled, Update primary mobile not in verified list")
     public void testUpdatePrimaryMobileNotInVerifiedList() throws Exception {
 
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
                 null, null, NEW_MOBILE_NUMBER);
         mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
@@ -400,7 +244,7 @@ public class MobileNumberVerificationHandlerTest {
     public void testUpdatePrimaryMobileInVerifiedList() throws Exception {
 
         mockVerificationPendingMobileNumber();
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
         String newVerifiedMobileNumbers = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
         String newMobileNumbers = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS,
@@ -420,7 +264,7 @@ public class MobileNumberVerificationHandlerTest {
     public void testAddNewMobileToVerifiedList() throws Exception {
 
         mockVerificationPendingMobileNumber();
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
         String newVerifiedMobileNumbers = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS,
                 IdentityRecoveryConstants.FALSE,
@@ -494,7 +338,7 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
                 null, null, null);
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
 
         MockedStatic<RecoveryScenarios> mockedStaticRecoveryScenarios = mockStatic(RecoveryScenarios.class);
         mockedStaticRecoveryScenarios.when(() ->
@@ -542,7 +386,7 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
                 null, null, null);
-        mockUtilMethods(true, true, false);
+        mockUtilMethods(true, false);
 
         MockedStatic<RecoveryScenarios> mockedStaticRecoveryScenarios = mockStatic(RecoveryScenarios.class);
         mockedStaticRecoveryScenarios.when(() ->
@@ -612,21 +456,12 @@ public class MobileNumberVerificationHandlerTest {
         }
     }
 
-    @DataProvider(name = "multiAttributeEnabledData")
-    public Object[][] multiAttributeEnabledData() {
-
-        return new Object[][]{
-                {false},
-                {true}
-        };
-    }
-
     @Test(description = "Test handling of primary mobile deletion — primary mobile set to EMPTY should clear" +
-            "phoneVerified claim.", dataProvider = "multiAttributeEnabledData")
-    public void testHandleEventPreSetUserClaimsPrimaryMobileDeletionClearsVerification(boolean multiAttributeEnabled)
+            "phoneVerified claim.")
+    public void testHandleEventPreSetUserClaimsPrimaryMobileDeletionClearsVerification()
             throws IdentityEventException {
 
-        mockUtilMethods(true, multiAttributeEnabled, false);
+        mockUtilMethods(true, false);
 
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
@@ -645,6 +480,69 @@ public class MobileNumberVerificationHandlerTest {
                 "'phoneVerified' claim not found in user claims map.");
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM), StringUtils.EMPTY,
                 "'phoneVerified' claim should be cleared (empty string) when primary mobile is set to empty string.");
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminPrimaryMobileUpdate()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_MOBILE_NUMBER);
+        mockUtilMethods(true, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        enterAdminInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), NEW_MOBILE_NUMBER);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM));
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsSkipVerificationOnAdminVerifiedMobileListUpdate()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                NEW_MOBILE_NUMBER, null, null);
+        mockUtilMethods(true, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        enterAdminInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM));
+    }
+
+    @Test
+    public void testHandleEventPreSetUserClaimsDoesNotSkipVerificationOnUserPersona()
+            throws IdentityEventException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_MOBILE_NUMBER);
+        mockUtilMethods(true, false);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER, true);
+        mockVerificationPendingMobileNumber();
+        mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
+        enterUserInitiatedFlow();
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                NEW_MOBILE_NUMBER);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
     }
 
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
@@ -681,16 +579,39 @@ public class MobileNumberVerificationHandlerTest {
         return (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS);
     }
 
-    private void mockUtilMethods(boolean mobileVerificationEnabled, boolean multiAttributeEnabled,
-                                 boolean useVerifyClaimEnabled) {
+    private void mockUtilMethods(boolean mobileVerificationEnabled, boolean useVerifyClaimEnabled) {
 
-        mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
-                .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(useVerifyClaimEnabled);
-        mockedUtils.when(() -> Utils.getConnectorConfig(
-                        eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE),
-                        anyString()))
-                .thenReturn(String.valueOf(mobileVerificationEnabled));
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                mobileVerificationEnabled);
+        mockGetConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                false);
+    }
+
+    private void mockGetConnectorConfig(String connectorConfig, boolean value) {
+
+        mockedUtils.when(() -> Utils.getConnectorConfig(eq(connectorConfig), anyString()))
+                .thenReturn(String.valueOf(value));
+    }
+
+    private void enterAdminInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
+    }
+
+    private void enterUserInitiatedFlow() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.PROFILE_UPDATE)
+                .initiatingPersona(Flow.InitiatingPersona.USER)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
     }
 
     private void mockVerificationPendingMobileNumber() throws UserStoreException {

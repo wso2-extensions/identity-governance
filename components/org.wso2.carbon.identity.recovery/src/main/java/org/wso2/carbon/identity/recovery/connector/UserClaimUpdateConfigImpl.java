@@ -50,6 +50,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE = "false";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_OTP_ON_UPDATE = "false";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER =
+            "false";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "false";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "true";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP = "true";
@@ -59,6 +62,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "5";
     private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS = "false";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER =
+            "false";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
     private static final String ENABLE_ELEMENT = "Enable";
     private static final String SEND_OTP_IN_EMAIL_ELEMENT = "SendOTPInEmail";
@@ -72,9 +77,14 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String ENABLE_EMAIL_OTP_ON_UPDATE_ELEMENT = "EnableEmailOTP";
+    private static final String ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER =
+            "EnableSkipInitiatingVerificationByPrivilegedUser";
     private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
     private static final String ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER = "EnableVerificationByPrivilegedUser";
     private static String enableEmailVerificationOnUpdateProperty = null;
+    private static String enableEmailOTPOnUpdateProperty = null;
+    private static String enableSkipInitiatingEmailVerificationByPrivilegedUserProperty = null;
     private static String enableSendOTPInEmailProperty = null;
     private static String useUppercaseCharactersInOTPProperty = null;
     private static String useLowercaseCharactersInOTPProperty = null;
@@ -85,6 +95,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static String enableMobileNumVerificationOnUpdateProperty = null;
     private static String mobileNumVerificationOnUpdateCodeExpiryProperty = null;
     private static String mobileNumVerificationByPrivilegedUsersProperty = null;
+    private static String enableSkipInitiatingMobileVerificationByPrivilegedUsersProperty = null;
 
     @Override
     public String getName() {
@@ -122,6 +133,11 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Enable user email verification on update");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Enable user email OTP verification on update");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable skipping initiating email verification by privileged users");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -140,6 +156,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Enable user mobile number verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Enable mobile number verification by privileged users");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable skipping initiating mobile verification by privileged users");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Mobile number verification on update SMS OTP expiry time");
         return nameMapping;
@@ -151,6 +170,12 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 "Trigger a verification notification when user's email address is updated.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                "Trigger an email OTP verification when user's email address is updated.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                "Skip initiating email verification when privileged users update email claims.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
         descriptionMapping.put(
@@ -174,6 +199,10 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Validity time of the mobile number confirmation OTP in minutes.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Allow privileged users to initiate mobile number verification on update.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Skip initiating mobile verification when privileged users update mobile claims.");
         return descriptionMapping;
     }
 
@@ -182,6 +211,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -192,6 +224,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
         return properties.toArray(new String[0]);
     }
 
@@ -199,6 +233,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     public Properties getDefaultPropertyValues(String tenantDomain) {
 
         String enableEmailVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE;
+        String enableEmailOTPOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_OTP_ON_UPDATE;
+        String enableSkipInitiatingEmailVerificationByPrivilegedUser =
+                DEFAULT_ENABLE_VALUE_FOR_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER;
         String enableSendOTPInEmail = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL;
         String useUppercaseCharactersInOTP = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP;
         String useLowercaseCharactersInOTP = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP;
@@ -209,11 +246,20 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
         String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
         String mobileNumVerificationByPrivilegedUsers = DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS;
+        String enableSkipInitiatingMobileVerificationByPrivilegedUser =
+                DEFAULT_ENABLE_VALUE_FOR_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER;
 
         loadConfigurations();
 
         if (StringUtils.isNotBlank(enableEmailVerificationOnUpdateProperty)) {
             enableEmailVerificationOnUpdate = enableEmailVerificationOnUpdateProperty;
+        }
+        if (StringUtils.isNotBlank(enableEmailOTPOnUpdateProperty)) {
+            enableEmailOTPOnUpdate = enableEmailOTPOnUpdateProperty;
+        }
+        if (StringUtils.isNotBlank(enableSkipInitiatingEmailVerificationByPrivilegedUserProperty)) {
+            enableSkipInitiatingEmailVerificationByPrivilegedUser =
+                    enableSkipInitiatingEmailVerificationByPrivilegedUserProperty;
         }
         if (StringUtils.isNotEmpty(enableSendOTPInEmailProperty)) {
             enableSendOTPInEmail = enableSendOTPInEmailProperty;
@@ -245,10 +291,19 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotBlank(mobileNumVerificationByPrivilegedUsersProperty)) {
             mobileNumVerificationByPrivilegedUsers = mobileNumVerificationByPrivilegedUsersProperty;
         }
+        if (StringUtils.isNotBlank(enableSkipInitiatingMobileVerificationByPrivilegedUsersProperty)) {
+            enableSkipInitiatingMobileVerificationByPrivilegedUser =
+                    enableSkipInitiatingMobileVerificationByPrivilegedUsersProperty;
+        }
 
         Properties properties = new Properties();
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 enableEmailVerificationOnUpdate);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                enableEmailOTPOnUpdate);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                enableSkipInitiatingEmailVerificationByPrivilegedUser);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 enableSendOTPInEmail);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -269,6 +324,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 mobileNumVerificationOnUpdateCodeExpiry);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 mobileNumVerificationByPrivilegedUsers);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                enableSkipInitiatingMobileVerificationByPrivilegedUser);
         return properties;
     }
 
@@ -316,6 +374,18 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     if (verificationOnUpdate != null) {
                         enableEmailVerificationOnUpdateProperty = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
+                        OMElement enableEmailOTPOnUpdate = verificationOnUpdate.getFirstChildWithName(new QName
+                                (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_EMAIL_OTP_ON_UPDATE_ELEMENT));
+                        if (enableEmailOTPOnUpdate != null) {
+                            enableEmailOTPOnUpdateProperty = enableEmailOTPOnUpdate.getText();
+                        }
+                        OMElement enableSkipInitiatingEmailVerificationByPrivilegedUser = verificationOnUpdate
+                                .getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                                        ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER));
+                        if (enableSkipInitiatingEmailVerificationByPrivilegedUser != null) {
+                            enableSkipInitiatingEmailVerificationByPrivilegedUserProperty =
+                                    enableSkipInitiatingEmailVerificationByPrivilegedUser.getText();
+                        }
                         OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
                         if (verificationCode != null) {
@@ -341,6 +411,13 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                         ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER));
                         if (privilegeUserMobileVerification != null) {
                             mobileNumVerificationByPrivilegedUsersProperty = privilegeUserMobileVerification.getText();
+                        }
+                        OMElement enableSkipInitiatingMobileVerificationByPrivilegedUsers = verificationOnUpdate
+                                .getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                                        ENABLE_SKIP_INITIATING_VERIFICATION_BY_PRIVILEGED_USER));
+                        if (enableSkipInitiatingMobileVerificationByPrivilegedUsers != null) {
+                            enableSkipInitiatingMobileVerificationByPrivilegedUsersProperty =
+                                    enableSkipInitiatingMobileVerificationByPrivilegedUsers.getText();
                         }
                         OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
@@ -375,6 +452,13 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_ON_UPDATE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
@@ -401,6 +485,10 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig
+                        .ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         return meta;
     }

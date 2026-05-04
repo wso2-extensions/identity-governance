@@ -65,6 +65,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
+    public static final String NOTIFICATION_TYPE_EMAIL_OTP_VERIFY_EMAIL_ON_UPDATE = "emailOTPVerificationOnUpdate";
     // This type of notification is used to send a notification when the user updates the email with verification.
     public static final String NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE = "notifyOnExistingEmailUpdate";
     // This type of notification is used to send a notification when the user updates the email without verification.
@@ -271,6 +272,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
         ERROR_CODE_MOBILE_NOT_FOUND("18021", "Mobile number is not found for the user %s."),
         ERROR_CODE_EXPIRED_OTP("18022", "Expired OTP '%s'."),
+        ERROR_CODE_NO_LONGER_VALID_LINK("18023", "The link is no longer valid. Please initiate the verification again."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -726,6 +728,9 @@ public class IdentityRecoveryConstants {
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
+        public static final String ENABLE_EMAIL_OTP_ON_UPDATE = "UserClaimUpdate.Email.EnableEmailOTP";
+        public static final String ENABLE_SKIP_INITIATING_EMAIL_VERIFICATION_BY_PRIVILEGED_USER =
+                "UserClaimUpdate.Email.EnableSkipInitiatingVerificationByPrivilegedUser";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "UserClaimUpdate.OTP.SendOTPInEmail";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "UserClaimUpdate." +
                 "OTP.UseUppercaseCharactersInOTP";
@@ -743,6 +748,8 @@ public class IdentityRecoveryConstants {
                 "VerificationCode.ExpiryTime";
         public static final String ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER = "UserClaimUpdate.MobileNumber." +
                 "EnableVerificationByPrivilegedUser";
+        public static final String ENABLE_SKIP_INITIATING_MOBILE_VERIFICATION_BY_PRIVILEGED_USER =
+                "UserClaimUpdate.MobileNumber.EnableSkipInitiatingVerificationByPrivilegedUser";
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         // This config enables the support to store multiple mobile numbers and email addresses per user.
         public static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER =

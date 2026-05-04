@@ -97,6 +97,65 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
     }
 
     @Override
+    public void storeOnRead(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        try {
+            if (userIdentityDTO != null && userIdentityDTO.getUserName() != null) {
+                String userName = UserCoreUtil.removeDomainFromName(userIdentityDTO.getUserName());
+                if (userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
+                    if (!IdentityUtil.isUserStoreCaseSensitive((org.wso2.carbon.user.core.UserStoreManager)
+                            userStoreManager)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Case insensitive user store found. Changing username from : " + userName +
+                                    " to : " + userName.toLowerCase(Locale.ENGLISH));
+                        }
+                        userName = userName.toLowerCase(Locale.ENGLISH);
+                    } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(
+                            (org.wso2.carbon.user.core.UserStoreManager) userStoreManager)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Case insensitive username for cache key is used. Changing username from : "
+                                    + userName + " to : " + userName.toLowerCase(Locale.ENGLISH));
+                        }
+                        userName = userName.toLowerCase(Locale.ENGLISH);
+                    }
+                }
+
+                if (log.isDebugEnabled()) {
+                    StringBuilder data = new StringBuilder("{");
+                    if (userIdentityDTO.getUserIdentityDataMap() != null) {
+                        for (Map.Entry<String, String> entry : userIdentityDTO.getUserIdentityDataMap().entrySet()) {
+                            data.append("[").append(entry.getKey()).append(" = ").append(entry.getValue()).append("], ");
+                        }
+                    }
+                    if (data.indexOf(",") >= 0) {
+                        data.deleteCharAt(data.lastIndexOf(","));
+                    }
+                    data.append("}");
+                    log.debug("Storing UserIdentityClaimsDO to cache for user: " + userName + " with claims: " + data);
+                }
+
+                org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager) userStoreManager;
+                String domainName = store.getRealmConfiguration().getUserStoreProperty(
+                    UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME
+                );
+
+                IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
+                int tenantId = userStoreManager.getTenantId();
+                UserIdentityClaim cachedUserIdentityDTO = identityDataStoreCache.getValueFromCache(key, tenantId);
+                if (cachedUserIdentityDTO != null) {
+                    cachedUserIdentityDTO.getUserIdentityDataMap().putAll(userIdentityDTO.getUserIdentityDataMap());
+                    identityDataStoreCache.addToCacheOnRead(key, cachedUserIdentityDTO, tenantId);
+                } else {
+                    identityDataStoreCache.addToCache(key, userIdentityDTO, tenantId);
+                }
+            }
+        } catch (UserStoreException e) {
+            log.error("Error while obtaining tenant ID from user store manager", e);
+        }
+    }
+
+    @Override
     public UserIdentityClaim load(String userName, UserStoreManager userStoreManager) {
 
         try {
