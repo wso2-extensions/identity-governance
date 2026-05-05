@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -81,6 +82,7 @@ import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.Execu
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.USER_ALREADY_EXISTING_USERNAME;
@@ -261,7 +263,7 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         });
-        user.setUsername(resolveUsername(user, context.getTenantDomain()));
+        user.setUsername(resolveUsername(user, context));
         setUsernamePatternValidation(context);
         return user;
     }
@@ -315,8 +317,9 @@ public class UserProvisioningExecutor implements Executor {
                 IdentityUtil.getPrimaryDomainName().toUpperCase(ENGLISH);
     }
 
-    private String resolveUsername(FlowUser user, String tenantDomain) throws FlowEngineException {
+    private String resolveUsername(FlowUser user, FlowExecutionContext context) throws FlowEngineException {
 
+        String tenantDomain = context.getTenantDomain();
         String username = Optional.ofNullable(user.getClaims().get(USERNAME_CLAIM_URI)).orElse("");
         if (StringUtils.isBlank(username)) {
             if ((FlowExecutionEngineUtils.isEmailUsernameValidator(tenantDomain) ||
@@ -329,10 +332,28 @@ public class UserProvisioningExecutor implements Executor {
             username = UUID.randomUUID().toString();
             UserCoreUtil.setSkipUsernamePatternValidationThreadLocal(true);
             return username;
-        } else if (IdentityUtil.isEmailUsernameEnabled() && !username.contains("@")) {
+        } else if (IdentityUtil.isEmailUsernameEnabled() && !username.contains("@")
+                && !isExistingUser(user, context)) {
             throw handleClientException(ERROR_CODE_INVALID_USERNAME, username);
         }
         return username;
+    }
+
+    private boolean isExistingUser(FlowUser user, FlowExecutionContext context) throws FlowEngineException {
+
+        try {
+            String userStoreDomain = StringUtils.isNotBlank(user.getUserStoreDomain())
+                    ? user.getUserStoreDomain()
+                    : resolveUserStoreDomain(user.getUsername());
+            UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomain,
+                    context.getContextIdentifier(), context.getFlowType());
+            return userStoreManager.isExistingUser(user.getUsername());
+        } catch (UserStoreException e) {
+            String maskedUsername = LoggerUtils.isLogMaskingEnable
+                    ? LoggerUtils.getMaskedContent(user.getUsername()) : user.getUsername();
+            throw handleServerException(ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE, e,
+                    maskedUsername, context.getContextIdentifier());
+        }
     }
 
     private void createFederatedAssociations(FlowUser user, String tenantDomain, String flowId) {
