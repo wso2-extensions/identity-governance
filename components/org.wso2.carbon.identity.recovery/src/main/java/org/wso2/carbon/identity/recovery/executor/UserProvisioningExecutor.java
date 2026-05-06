@@ -27,14 +27,18 @@ import org.wso2.carbon.consent.mgt.core.model.PIICategory;
 import org.wso2.carbon.consent.mgt.core.model.PurposePIICategoryBinding;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.util.ConsentReceiptUtils;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
+import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
+import org.wso2.carbon.utils.DiagnosticLog;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
@@ -103,6 +107,7 @@ import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
 public class UserProvisioningExecutor implements Executor {
 
     private static final Log LOG = LogFactory.getLog(UserProvisioningExecutor.class);
+    private static final String COMPONENT_ID = "UserProvisioningExecutor";
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
     private static final String SYSTEM_APP_ID = "SYSTEM";
@@ -198,9 +203,19 @@ public class UserProvisioningExecutor implements Executor {
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
             String usernameWithUserStoreDomain = UserCoreUtil.addDomainToName(user.getUsername(), userStoreDomainName);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Processing consent for user: " + user.getUsername() + " in tenant: " +
+                        context.getTenantDomain());
+            }
             createConsent(usernameWithUserStoreDomain, context.getTenantDomain(), user.getUserConsents());
             createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
                     user.getRejectedUserConsents());
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Consent processing completed for user: " + user.getUsername() + " in tenant: " +
+                        context.getTenantDomain());
+            }
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
@@ -352,21 +367,61 @@ public class UserProvisioningExecutor implements Executor {
     private void createConsent(String username, String tenantDomain, Map<String, String> acceptedConsents) {
 
         if (acceptedConsents == null || acceptedConsents.isEmpty()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No accepted consents found for user: " + Utils.maskIfRequired(username));
+            }
             return;
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating accepted consents for user: " + Utils.maskIfRequired(username) +
+                    " with consent count: " + acceptedConsents.size());
         }
 
         acceptedConsents.forEach((key, value) -> {
             String consentType = key.substring(CONSENT_PREFIX.length());
 
             try {
+                int purposeCount = 0;
                 for (String purposeUuid : value.split(",")) {
                     purposeUuid = purposeUuid.trim();
                     if (StringUtils.isBlank(purposeUuid)) {
                         continue;
                     }
                     processPolicyConsent(username, tenantDomain, purposeUuid, consentType);
+                    purposeCount++;
+                }
+
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                            COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                            .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                    LoggerUtils.getMaskedContent(username) : username)
+                            .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                            .inputParam("consent_type", consentType)
+                            .inputParam("purpose_count", purposeCount)
+                            .resultMessage("Accepted consents successfully created.")
+                            .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                            .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
+                }
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Successfully created " + purposeCount + " accepted consent(s) of type: " +
+                            consentType + " for user: " + Utils.maskIfRequired(username));
                 }
             } catch (ConsentManagementException e) {
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                            COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                            .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                    LoggerUtils.getMaskedContent(username) : username)
+                            .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                            .inputParam("consent_type", consentType)
+                            .inputParam(LogConstants.InputKeys.ERROR_MESSAGE, e.getMessage())
+                            .resultMessage("Failed to create accepted consents.")
+                            .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                            .resultStatus(DiagnosticLog.ResultStatus.FAILED));
+                }
                 LOG.error("Error while creating consent of type: " + consentType + " for user: " +
                         Utils.maskIfRequired(username), e);
             }
@@ -376,7 +431,15 @@ public class UserProvisioningExecutor implements Executor {
     private void createRejectedConsents(String subjectId, String tenantDomain, Map<String, String> rejectedConsents) {
 
         if (rejectedConsents == null || rejectedConsents.isEmpty()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No rejected consents found for user: " + Utils.maskIfRequired(subjectId));
+            }
             return;
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating rejected consents for user: " + Utils.maskIfRequired(subjectId) +
+                    " with consent count: " + rejectedConsents.size() + ", tenant domain: " + tenantDomain);
         }
 
         rejectedConsents.forEach((key, value) -> {
@@ -395,17 +458,51 @@ public class UserProvisioningExecutor implements Executor {
                             new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
                 }
                 if (purposeBindings.isEmpty()) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("No purpose bindings found for rejected consent type: " + consentType +
+                                " for user: " + Utils.maskIfRequired(subjectId));
+                    }
                     return;
                 }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Creating rejected consent. Type: " + consentType + ", User: " +
-                            Utils.maskIfRequired(subjectId) );
+                            Utils.maskIfRequired(subjectId) + ", Purpose count: " + purposeBindings.size());
                 }
                 ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
                         null, true, null, null, SYSTEM_APP_ID, purposeBindings,
                         IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
                 IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                            COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                            .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                    LoggerUtils.getMaskedContent(subjectId) : subjectId)
+                            .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                            .inputParam("consent_type", consentType)
+                            .inputParam("purpose_count", purposeBindings.size())
+                            .resultMessage("Rejected consent successfully created.")
+                            .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                            .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
+                }
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Successfully created rejected consent of type: " + consentType +
+                            " for user: " + Utils.maskIfRequired(subjectId));
+                }
             } catch (ConsentManagementException e) {
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                            COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                            .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                    LoggerUtils.getMaskedContent(subjectId) : subjectId)
+                            .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                            .inputParam("consent_type", consentType)
+                            .inputParam(LogConstants.InputKeys.ERROR_MESSAGE, e.getMessage())
+                            .resultMessage("Failed to create rejected consent.")
+                            .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                            .resultStatus(DiagnosticLog.ResultStatus.FAILED));
+                }
                 LOG.error("Error while creating rejected consent of type: " + consentType + " for user: " +
                         Utils.maskIfRequired(subjectId), e);
             }
@@ -415,21 +512,65 @@ public class UserProvisioningExecutor implements Executor {
     private void processPolicyConsent(String subjectId, String tenantDomain, String purposeUuid, String consentType)
             throws ConsentManagementException {
 
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Processing policy consent. Type: " + consentType + ", User: " +
+                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid +
+                    ", Tenant: " + tenantDomain);
+        }
+
         PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(consentType,
                 IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
         List<PurposePIICategoryBinding> purposeBindings = new ArrayList<>();
         purposeBindings.add(new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating policy consent. Type: " + consentType + ", User: " +
-                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid);
+            LOG.debug("Creating policy consent receipt. Type: " + consentType + ", User: " +
+                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid +
+                    ", PII Category: " + (piiCategory != null ? piiCategory.getName() : "N/A"));
         }
 
-        // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
-        ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
-                 null, true, null, null, SYSTEM_APP_ID, purposeBindings,
-                 IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-        IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+        try {
+            // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
+            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
+                     null, true, null, null, SYSTEM_APP_ID, purposeBindings,
+                     IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
+            IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+
+            if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                        COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                        .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                LoggerUtils.getMaskedContent(subjectId) : subjectId)
+                        .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                        .inputParam("consent_type", consentType)
+                        .inputParam("purpose_uuid", purposeUuid)
+                        .resultMessage("Policy consent successfully processed.")
+                        .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                        .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
+            }
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Successfully processed policy consent. Type: " + consentType + ", User: " +
+                        Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid);
+            }
+        } catch (ConsentManagementException e) {
+            if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                        COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                        .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                                LoggerUtils.getMaskedContent(subjectId) : subjectId)
+                        .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
+                        .inputParam("consent_type", consentType)
+                        .inputParam("purpose_uuid", purposeUuid)
+                        .inputParam(LogConstants.InputKeys.ERROR_MESSAGE, e.getMessage())
+                        .resultMessage("Failed to process policy consent.")
+                        .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                        .resultStatus(DiagnosticLog.ResultStatus.FAILED));
+            }
+            LOG.error("Failed to process policy consent. Type: " + consentType + ", User: " +
+                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid, e);
+            throw e;
+        }
     }
 
     private void createFederatedAssociations(FlowUser user, String tenantDomain, String flowId) {
