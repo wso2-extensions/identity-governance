@@ -622,15 +622,15 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             return false;
         }
 
-        boolean isAdminInitiatedFlow = isAdminInitiatedFlow();
+        boolean isAdministrativeFlow = isAdministrativeFlow();
         if (log.isDebugEnabled()) {
-            log.debug("Is admin-initiated flow: " + isAdminInitiatedFlow);
+            log.debug("Is administrative flow: " + isAdministrativeFlow);
         }
-        if (isAdminInitiatedFlow) {
+        if (isAdministrativeFlow) {
             boolean isSkipInitiatingVerificationForPrivilegedUserEnabled =
                     isSkipInitiatingMobileVerificationByPrivilegedUserEnabled(userTenantDomain);
             if (log.isDebugEnabled()) {
-                log.debug("Admin-initiated flow to update mobile number. " +
+                log.debug("Administrative flow to update mobile number. " +
                         "Privileged-user skip-initiation config value is: " +
                         isSkipInitiatingVerificationForPrivilegedUserEnabled);
             }
@@ -654,17 +654,18 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Check whether the current flow is initiated by an admin persona.
+     * Check whether the current flow is initiated by an admin persona or an application which have the proper access.
      *
-     * @return true if the current flow exists and the initiating persona is ADMIN, false otherwise.
+     * @return true if the current flow exists and the initiating persona is ADMIN or APPLICATION, false otherwise.
      */
-    private boolean isAdminInitiatedFlow() {
+    private boolean isAdministrativeFlow() {
 
         Flow currentFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
         if (currentFlow == null || currentFlow.getInitiatingPersona() == null) {
             return false;
         }
-        return Flow.InitiatingPersona.ADMIN.equals(currentFlow.getInitiatingPersona());
+        return Flow.InitiatingPersona.ADMIN.equals(currentFlow.getInitiatingPersona()) ||
+                Flow.InitiatingPersona.APPLICATION.equals(currentFlow.getInitiatingPersona());
     }
 
     /**
