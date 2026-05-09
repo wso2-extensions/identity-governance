@@ -372,8 +372,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             return false;
         } catch (IdentityRuntimeException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Unable to resolve tenant from username while loading captcha "
-                        + "connector configuration; skipping connector.", e);
+                log.debug("Unable to load connector configuration.", e);
             }
             return false;
         }
