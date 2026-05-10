@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
@@ -365,6 +366,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
                     tenantDomain);
         } catch (IdentityGovernanceException e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration.
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load connector configuration.", e);
+            }
+            return false;
+        } catch (IdentityRuntimeException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to load connector configuration.", e);
             }
