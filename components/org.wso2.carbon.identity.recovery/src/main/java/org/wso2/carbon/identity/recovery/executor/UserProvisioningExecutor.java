@@ -27,7 +27,9 @@ import org.wso2.carbon.consent.mgt.core.model.PIICategory;
 import org.wso2.carbon.consent.mgt.core.model.PurposePIICategoryBinding;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.util.ConsentReceiptUtils;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -35,7 +37,6 @@ import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
 import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
-import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
@@ -204,20 +205,23 @@ public class UserProvisioningExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
-            String usernameWithUserStoreDomain = UserCoreUtil.addDomainToName(user.getUsername(), userStoreDomainName);
 
-            if (LOG.isDebugEnabled()) {
+            if (FrameworkUtils.isConsentV2APIEnabled()) {
+                String usernameWithUserStoreDomain = UserCoreUtil.addDomainToName(user.getUsername(), userStoreDomainName);
+                if (LOG.isDebugEnabled()) {
                 LOG.debug("Processing consent for user: " + user.getUsername() + " in tenant: " +
                         context.getTenantDomain());
-            }
-            createConsent(usernameWithUserStoreDomain, context.getTenantDomain(), user.getUserConsents());
-            createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
-                    user.getRejectedUserConsents());
+                }
+                createConsent(usernameWithUserStoreDomain, context.getTenantDomain(), user.getUserConsents());
+                createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
+                        user.getRejectedUserConsents());
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Consent processing completed for user: " + user.getUsername() + " in tenant: " +
-                        context.getTenantDomain());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Consent processing completed for user: " + user.getUsername() + " in tenant: " +
+                            context.getTenantDomain());
+                }
             }
+
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
@@ -492,7 +496,14 @@ public class UserProvisioningExecutor implements Executor {
                 ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
                         null, true, null, null, SYSTEM_APP_ID, purposeBindings,
                         IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-                IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+                try {
+                    PrivilegedCarbonContext.startTenantFlow();
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(subjectId);
+                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+                } finally {
+                    PrivilegedCarbonContext.endTenantFlow();
+                }
 
                 if (LoggerUtils.isDiagnosticLogsEnabled()) {
                     LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
@@ -555,7 +566,14 @@ public class UserProvisioningExecutor implements Executor {
             ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
                      null, false, null, null, SYSTEM_APP_ID, purposeBindings,
                      IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+            try {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(subjectId);
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
+            } finally {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
 
             if (LoggerUtils.isDiagnosticLogsEnabled()) {
                 LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
