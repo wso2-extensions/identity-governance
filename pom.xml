@@ -756,7 +756,7 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
-        <carbon.consent.mgt.version>2.9.1-SNAPSHOT</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version>2.9.4</carbon.consent.mgt.version>
         <carbon.consent.mgt.version.range>[2.2.4, 3.0.0)</carbon.consent.mgt.version.range>
 
         <carbon.multitenancy.version>4.11.0</carbon.multitenancy.version>
