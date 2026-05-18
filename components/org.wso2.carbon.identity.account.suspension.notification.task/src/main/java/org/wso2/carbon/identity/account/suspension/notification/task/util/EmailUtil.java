@@ -76,8 +76,9 @@ public class EmailUtil {
         }
 
         try {
+            String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
             String remainingDates = calculateRemainingDays(receiver.getExpireDate(),
-                    NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat());
+                    NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(tenantDomain));
             properties.put(REMAINING_DATES, remainingDates);
         } catch (ParseException e) {
             log.error("Error while calculating remaining days", e);

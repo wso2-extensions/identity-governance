@@ -25,9 +25,12 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -54,9 +57,24 @@ public class NotificationReceiversRetrievalUtil {
     public static final String NOTIFICATION_RECEIVERS_RETRIEVAL_CLASS = "NotificationReceiversRetrievalClass";
     private static final Log log = LogFactory.getLog(NotificationReceiversRetrievalUtil.class);
 
-    public static String resolveSuspensionDateFormat() {
+    public static String resolveSuspensionDateFormat(String tenantDomain) {
 
-        String configured = IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG);
+        String configured = null;
+        IdentityGovernanceService governanceService = NotificationTaskDataHolder.getInstance()
+                .getIdentityGovernanceService();
+        if (governanceService != null) {
+            try {
+                Property[] props = governanceService.getConfiguration(
+                        new String[]{NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT}, tenantDomain);
+                if (props != null && props.length > 0 && props[0] != null) {
+                    configured = props[0].getValue();
+                }
+            } catch (IdentityGovernanceException e) {
+                log.warn("Failed to read " + NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT
+                        + " from governance service for tenant: " + tenantDomain
+                        + "; falling back to " + NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT, e);
+            }
+        }
         if (StringUtils.isBlank(configured)) {
             return NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT;
         }
@@ -64,8 +82,8 @@ public class NotificationReceiversRetrievalUtil {
             new SimpleDateFormat(configured);
             return configured;
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid SimpleDateFormat pattern '" + configured + "' configured under "
-                    + NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG
+            log.warn("Invalid SimpleDateFormat pattern configured under "
+                    + NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT
                     + "; falling back to " + NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
             return NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT;
         }
@@ -216,7 +234,7 @@ public class NotificationReceiversRetrievalUtil {
 
         List<NotificationReceiver> users = new ArrayList<>();
         String sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME_IDENTITY_CLAIM;
-        SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(resolveSuspensionDateFormat());
+        SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(resolveSuspensionDateFormat(tenantDomain));
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
                 prepStmt.setString(1, NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM);

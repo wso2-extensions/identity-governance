@@ -28,7 +28,7 @@ public class NotificationConstants {
     public static final String SUSPENSION_NOTIFICATION_DELAYS="suspension.notification.delays";
     public static final String USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME = "AccountSuspension.UseIdentityClaims";
     public static final String EXECUTE_TASK_IN_MASTER_NODE = "AccountSuspension.ExecuteTaskOnMasterNode";
-    public static final String SUSPENSION_DATE_FORMAT_CONFIG = "AccountSuspension.SuspensionDateFormat";
+    public static final String SUSPENSION_NOTIFICATION_DATE_FORMAT = "suspension.notification.date.format";
     public static final String DEFAULT_SUSPENSION_DATE_FORMAT = "dd-MM-yyyy";
     public static final String TRIGGER_TIME_FORMAT = "HH:mm:ss";
     public static final long SCHEDULER_DELAY = 24; // In hours

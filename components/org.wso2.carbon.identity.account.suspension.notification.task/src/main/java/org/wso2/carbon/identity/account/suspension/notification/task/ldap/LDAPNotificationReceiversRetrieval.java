@@ -123,7 +123,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 }
 
                 SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(
-                        NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat());
+                        NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(tenantDomain));
 
                 while (results.hasMoreElements()) {
                     SearchResult result = results.nextElement();

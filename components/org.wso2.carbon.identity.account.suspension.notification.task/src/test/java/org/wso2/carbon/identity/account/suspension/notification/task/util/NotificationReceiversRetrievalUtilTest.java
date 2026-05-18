@@ -17,61 +17,76 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
-import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 public class NotificationReceiversRetrievalUtilTest {
 
-    private MockedStatic<IdentityUtil> identityUtilMock;
-
-    @BeforeMethod
-    public void setUp() {
-
-        identityUtilMock = mockStatic(IdentityUtil.class);
-    }
+    private static final String TENANT_DOMAIN = "carbon.super";
 
     @AfterMethod
     public void tearDown() {
 
-        identityUtilMock.close();
+        NotificationTaskDataHolder.getInstance().setIdentityGovernanceService(null);
     }
 
     @Test
-    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyNotSet() {
+    public void testResolveSuspensionDateFormatReturnsDefaultWhenGovernanceServiceNull() {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG)).thenReturn(null);
-
-        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(),
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
                 NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
         assertEquals(NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT, "dd-MM-yyyy");
     }
 
     @Test
-    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyEmpty() {
+    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyNotSet() throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG)).thenReturn("");
+        mockGovernanceProperty(null);
 
-        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(),
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
                 NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
     }
 
     @Test
-    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyWhitespace() {
+    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyEmpty() throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG)).thenReturn("   ");
+        mockGovernanceProperty("");
 
-        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(),
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
+                NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
+    }
+
+    @Test
+    public void testResolveSuspensionDateFormatReturnsDefaultWhenPropertyWhitespace() throws Exception {
+
+        mockGovernanceProperty("   ");
+
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
+                NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
+    }
+
+    @Test
+    public void testResolveSuspensionDateFormatFallsBackWhenGovernanceThrows() throws Exception {
+
+        IdentityGovernanceService service = mock(IdentityGovernanceService.class);
+        when(service.getConfiguration(any(String[].class), any(String.class)))
+                .thenThrow(new IdentityGovernanceException("test failure"));
+        NotificationTaskDataHolder.getInstance().setIdentityGovernanceService(service);
+
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
                 NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
     }
 
@@ -88,12 +103,11 @@ public class NotificationReceiversRetrievalUtilTest {
     }
 
     @Test(dataProvider = "validPatterns")
-    public void testResolveSuspensionDateFormatReturnsConfiguredPattern(String configuredPattern) {
+    public void testResolveSuspensionDateFormatReturnsConfiguredPattern(String configuredPattern) throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG))
-                .thenReturn(configuredPattern);
+        mockGovernanceProperty(configuredPattern);
 
-        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(), configuredPattern);
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN), configuredPattern);
     }
 
     @DataProvider(name = "invalidPatterns")
@@ -106,47 +120,58 @@ public class NotificationReceiversRetrievalUtilTest {
     }
 
     @Test(dataProvider = "invalidPatterns")
-    public void testResolveSuspensionDateFormatFallsBackOnInvalidPattern(String invalidPattern) {
+    public void testResolveSuspensionDateFormatFallsBackOnInvalidPattern(String invalidPattern) throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG))
-                .thenReturn(invalidPattern);
+        mockGovernanceProperty(invalidPattern);
 
-        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(),
+        assertEquals(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN),
                 NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
     }
 
-    // Date(126, 4, 17) = 2026-05-17 anchored at local midnight (timezone-stable for the assertion).
+    // Date(126, 4, 17) = 2026-05-17 anchored at local midnight (timezone-stable).
     @Test
-    public void testConfiguredPatternIsAppliedWhenFormattingExpireDate() {
+    public void testConfiguredPatternIsAppliedWhenFormattingExpireDate() throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG))
-                .thenReturn("MM-dd-yyyy");
+        mockGovernanceProperty("MM-dd-yyyy");
 
         Date someDate = new Date(126, 4, 17);
-        String rendered = new SimpleDateFormat(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat())
+        String rendered = new SimpleDateFormat(
+                NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN))
                 .format(someDate);
 
         assertEquals(rendered, "05-17-2026");
     }
 
     @Test
-    public void testDefaultPatternIsAppliedWhenFormattingExpireDate() {
+    public void testDefaultPatternIsAppliedWhenFormattingExpireDate() throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG)).thenReturn(null);
+        mockGovernanceProperty(null);
 
         Date someDate = new Date(126, 4, 17);
-        String rendered = new SimpleDateFormat(NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat())
+        String rendered = new SimpleDateFormat(
+                NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN))
                 .format(someDate);
 
         assertEquals(rendered, "17-05-2026");
     }
 
-    // Pin customer-facing TOML/XML key + default value — patch contract surface.
+    // Pin customer-facing governance property name + default value — patch contract surface.
     @Test
     public void testConstantsForCustomerFacingContract() {
 
-        assertEquals(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG,
-                "AccountSuspension.SuspensionDateFormat");
+        assertEquals(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT,
+                "suspension.notification.date.format");
         assertEquals(NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT, "dd-MM-yyyy");
+    }
+
+    private void mockGovernanceProperty(String value) throws IdentityGovernanceException {
+
+        IdentityGovernanceService service = mock(IdentityGovernanceService.class);
+        Property property = new Property();
+        property.setName(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT);
+        property.setValue(value);
+        when(service.getConfiguration(any(String[].class), any(String.class)))
+                .thenReturn(new Property[]{property});
+        NotificationTaskDataHolder.getInstance().setIdentityGovernanceService(service);
     }
 }

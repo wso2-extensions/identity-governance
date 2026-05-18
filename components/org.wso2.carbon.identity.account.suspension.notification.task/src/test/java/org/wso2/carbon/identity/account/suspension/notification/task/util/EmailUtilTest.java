@@ -17,12 +17,13 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
-import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +31,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -38,19 +40,14 @@ import static org.testng.Assert.fail;
 
 public class EmailUtilTest {
 
-    private MockedStatic<IdentityUtil> identityUtilMock;
+    private static final String TENANT_DOMAIN = "carbon.super";
+
     private static final int DAY_DELTA_TOLERANCE = 1;
-
-    @BeforeMethod
-    public void setUp() {
-
-        identityUtilMock = mockStatic(IdentityUtil.class);
-    }
 
     @AfterMethod
     public void tearDown() {
 
-        identityUtilMock.close();
+        NotificationTaskDataHolder.getInstance().setIdentityGovernanceService(null);
     }
 
     @Test
@@ -123,13 +120,12 @@ public class EmailUtilTest {
     }
 
     @Test
-    public void testResolverProducesSamePatternForFormatterAndParser() {
+    public void testResolverProducesSamePatternForFormatterAndParser() throws Exception {
 
         String configuredPattern = "MM-dd-yyyy";
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG))
-                .thenReturn(configuredPattern);
+        mockGovernanceProperty(configuredPattern);
 
-        String resolved = NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat();
+        String resolved = NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN);
         assertEquals(resolved, configuredPattern);
 
         try {
@@ -144,10 +140,9 @@ public class EmailUtilTest {
     @Test
     public void testResolverDefaultFallbackKeepsParserOnDdMMyyyy() throws Exception {
 
-        when(IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG))
-                .thenReturn(null);
+        mockGovernanceProperty(null);
 
-        String resolved = NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat();
+        String resolved = NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(TENANT_DOMAIN);
         assertEquals(resolved, NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
 
         String suspensionDate = futureDateAsString(5, resolved);
@@ -174,5 +169,16 @@ public class EmailUtilTest {
         long diff = Math.abs(actual - expected);
         assertTrue(diff <= DAY_DELTA_TOLERANCE,
                 "actual=" + actual + " expected=~" + expected + " diff=" + diff);
+    }
+
+    private void mockGovernanceProperty(String value) throws IdentityGovernanceException {
+
+        IdentityGovernanceService service = mock(IdentityGovernanceService.class);
+        Property property = new Property();
+        property.setName(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT);
+        property.setValue(value);
+        when(service.getConfiguration(any(String[].class), any(String.class)))
+                .thenReturn(new Property[]{property});
+        NotificationTaskDataHolder.getInstance().setIdentityGovernanceService(service);
     }
 }
