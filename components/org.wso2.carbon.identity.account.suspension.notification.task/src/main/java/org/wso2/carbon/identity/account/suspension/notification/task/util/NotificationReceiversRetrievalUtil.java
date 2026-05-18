@@ -54,6 +54,23 @@ public class NotificationReceiversRetrievalUtil {
     public static final String NOTIFICATION_RECEIVERS_RETRIEVAL_CLASS = "NotificationReceiversRetrievalClass";
     private static final Log log = LogFactory.getLog(NotificationReceiversRetrievalUtil.class);
 
+    public static String resolveSuspensionDateFormat() {
+
+        String configured = IdentityUtil.getProperty(NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG);
+        if (StringUtils.isBlank(configured)) {
+            return NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT;
+        }
+        try {
+            new SimpleDateFormat(configured);
+            return configured;
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid SimpleDateFormat pattern '" + configured + "' configured under "
+                    + NotificationConstants.SUSPENSION_DATE_FORMAT_CONFIG
+                    + "; falling back to " + NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
+            return NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT;
+        }
+    }
+
     public static Set<String> getSuspensionNotificationEnabledUserStores(String tenantDomain)
             throws AccountSuspensionNotificationException {
 
@@ -227,7 +244,8 @@ public class NotificationReceiversRetrievalUtil {
 
                                 long lastLoginTime = Long.parseLong(resultSet.getString(2));
                                 long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                                receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                                receiver.setExpireDate(new SimpleDateFormat(resolveSuspensionDateFormat())
+                                        .format(new Date(expireDate)));
                                 users.add(receiver);
                             }
                         }

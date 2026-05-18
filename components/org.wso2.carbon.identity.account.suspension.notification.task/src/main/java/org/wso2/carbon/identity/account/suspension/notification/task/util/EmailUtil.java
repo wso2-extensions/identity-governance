@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 
 public class EmailUtil {
     private static final Log log = LogFactory.getLog(EmailUtil.class);
-    private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String REMAINING_DATES ="remaining-days";
 
     private NotificationSender notificationSender;
@@ -77,7 +76,8 @@ public class EmailUtil {
         }
 
         try {
-            String remainingDates = calculateRemainingDays(receiver.getExpireDate(), DATE_FORMAT);
+            String remainingDates = calculateRemainingDays(receiver.getExpireDate(),
+                    NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat());
             properties.put(REMAINING_DATES, remainingDates);
         } catch (ParseException e) {
             log.error("Error while calculating remaining days", e);

@@ -134,7 +134,9 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
                                 long lastLoginTime = Long.parseLong(map.get(lastLoginClaim));
                                 long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                                receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                                receiver.setExpireDate(new SimpleDateFormat(
+                                        NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat())
+                                        .format(new Date(expireDate)));
                                 users.add(receiver);
                             }
                         }

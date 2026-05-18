@@ -134,7 +134,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     String lastLoginTimeValue = result.getAttributes().get(lastLoginTimeAttribute).get().toString();
                     long lastLoginTime = convertToWSO2DateFormat(lastLoginTimeValue);
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                    receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                    receiver.setExpireDate(new SimpleDateFormat(
+                            NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat())
+                            .format(new Date(expireDate)));
 
                     if (log.isDebugEnabled()) {
                         log.debug("Expire date was set to: " + receiver.getExpireDate());
