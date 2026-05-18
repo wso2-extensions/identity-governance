@@ -94,6 +94,8 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
             String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
             String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, lastLoginClaim);
+            SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(
+                    NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat());
 
             try (Connection dbConnection = getDBConnection(realmConfiguration)) {
                 String sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
@@ -134,9 +136,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
                                 long lastLoginTime = Long.parseLong(map.get(lastLoginClaim));
                                 long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                                receiver.setExpireDate(new SimpleDateFormat(
-                                        NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat())
-                                        .format(new Date(expireDate)));
+                                receiver.setExpireDate(suspensionDateFormatter.format(new Date(expireDate)));
                                 users.add(receiver);
                             }
                         }

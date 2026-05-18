@@ -216,6 +216,7 @@ public class NotificationReceiversRetrievalUtil {
 
         List<NotificationReceiver> users = new ArrayList<>();
         String sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME_IDENTITY_CLAIM;
+        SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(resolveSuspensionDateFormat());
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
                 prepStmt.setString(1, NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM);
@@ -244,8 +245,7 @@ public class NotificationReceiversRetrievalUtil {
 
                                 long lastLoginTime = Long.parseLong(resultSet.getString(2));
                                 long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                                receiver.setExpireDate(new SimpleDateFormat(resolveSuspensionDateFormat())
-                                        .format(new Date(expireDate)));
+                                receiver.setExpireDate(suspensionDateFormatter.format(new Date(expireDate)));
                                 users.add(receiver);
                             }
                         }
