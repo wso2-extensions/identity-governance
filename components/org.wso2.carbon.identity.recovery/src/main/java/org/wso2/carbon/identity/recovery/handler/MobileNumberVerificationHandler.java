@@ -255,6 +255,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL,
                 NotificationChannels.SMS_CHANNEL.getChannelType());
+        /*
+         Adding SMS confirmation code expiry time to event properties so from the downstream services can use
+         the expiry time based on the requirements.
+        */
+        String expiryTime = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, user.getTenantDomain());
+        properties.put(IdentityRecoveryConstants.VERIFICATION_OTP_EXPIRY_TIME, expiryTime);
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, notificationType);
         if (StringUtils.isNotBlank(verificationPendingMobileNumber)) {
             properties.put(IdentityRecoveryConstants.SEND_TO, verificationPendingMobileNumber);

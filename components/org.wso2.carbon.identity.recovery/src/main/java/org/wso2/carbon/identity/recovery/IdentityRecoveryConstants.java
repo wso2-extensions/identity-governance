@@ -96,7 +96,8 @@ public class IdentityRecoveryConstants {
     public static final String CONFIRMATION_CODE_INPUT = "confirmationCode";
     public static final String NOTIFICATION_CHANNEL = "notification-channel";
     public static final String RECOVERY_SCENARIO = "recovery-scenario";
-    public static final String USER = "user";;
+    public static final String USER = "user";
+    public static final String VERIFICATION_OTP_EXPIRY_TIME = "verificationOtpExpiryTime";
 
     public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
