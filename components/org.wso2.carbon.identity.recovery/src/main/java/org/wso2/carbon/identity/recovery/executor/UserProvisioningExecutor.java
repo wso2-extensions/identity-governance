@@ -113,7 +113,7 @@ public class UserProvisioningExecutor implements Executor {
     private static final String COMPONENT_ID = "UserProvisioningExecutor";
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
-    private static final String SYSTEM_APP_ID = "SYSTEM";
+    private static final String SYSTEM_APP_ID = "Resident IDP";
 
     @Override
     public String getName() {
