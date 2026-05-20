@@ -116,7 +116,7 @@ public class UserProvisioningExecutor implements Executor {
     @Override
     public String getName() {
 
-        return "UserProvisioningExecutor";
+        return COMPONENT_ID;
     }
 
     @Override
