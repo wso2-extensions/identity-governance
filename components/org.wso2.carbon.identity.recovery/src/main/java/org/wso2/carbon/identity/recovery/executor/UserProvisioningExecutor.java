@@ -485,6 +485,13 @@ public class UserProvisioningExecutor implements Executor {
         try {
             PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(purposeType,
                     IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
+            if (piiCategory == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Default PII category not found for consent type: " + purposeType +
+                            ". Skipping rejected consent processing for user: " + Utils.maskIfRequired(subjectId));
+                }
+                return;
+            }
             List<PurposePIICategoryBinding> purposeBindings = new ArrayList<>();
             for (String purposeUuid : rejectedConsents) {
                 if (StringUtils.isBlank(purposeUuid)) {
