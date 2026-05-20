@@ -130,6 +130,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Allowed idle time span " +
                 "in days");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert sending time periods in days");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT, "Alert date format");
         return nameMapping;
 
     }
@@ -143,6 +144,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                 "days before locking the user account.");
         descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Send warning alerts to users " +
                 "before locking the account, after each period. Comma separated multiple values accepted.");
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT, "Date format of the " +
+                "suspension date in the idle account reminder email. Examples: dd-MM-yyyy, MM-dd-yyyy, yyyy/MM/dd.");
         return descriptionMapping;
     }
 
@@ -170,6 +173,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
+        properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT);
         return properties.toArray(new String[0]);
     }
 
@@ -186,6 +190,13 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS,
                 configs.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS));
+
+        String dateFormat = configs.getModuleProperties()
+                .getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT);
+        defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_DATE_FORMAT,
+                StringUtils.isNotBlank(dateFormat)
+                        ? dateFormat
+                        : NotificationConstants.DEFAULT_SUSPENSION_DATE_FORMAT);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

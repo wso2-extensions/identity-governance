@@ -122,6 +122,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     log.debug("LDAP user list retrieved.");
                 }
 
+                SimpleDateFormat suspensionDateFormatter = new SimpleDateFormat(
+                        NotificationReceiversRetrievalUtil.resolveSuspensionDateFormat(tenantDomain));
+
                 while (results.hasMoreElements()) {
                     SearchResult result = results.nextElement();
 
@@ -134,7 +137,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     String lastLoginTimeValue = result.getAttributes().get(lastLoginTimeAttribute).get().toString();
                     long lastLoginTime = convertToWSO2DateFormat(lastLoginTimeValue);
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                    receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                    receiver.setExpireDate(suspensionDateFormatter.format(new Date(expireDate)));
 
                     if (log.isDebugEnabled()) {
                         log.debug("Expire date was set to: " + receiver.getExpireDate());
