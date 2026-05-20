@@ -395,7 +395,16 @@ public class UserProvisioningExecutor implements Executor {
             LOG.debug("Consent processing completed for user: " + user.getUsername() + " in tenant: " +
                     context.getTenantDomain());
         }
-        // add diag log
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            LoggerUtils.triggerDiagnosticLogEvent(new DiagnosticLog.DiagnosticLogBuilder(
+                    COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
+                    .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                            LoggerUtils.getMaskedContent(user.getUsername()) : user.getUsername())
+                    .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, context.getTenantDomain())
+                    .resultMessage("Consent processing completed for user.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
+        }
     }
 
     private void createConsent(String username, String tenantDomain, String purposeType,
