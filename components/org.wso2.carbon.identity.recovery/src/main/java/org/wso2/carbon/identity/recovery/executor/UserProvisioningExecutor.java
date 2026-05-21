@@ -511,7 +511,7 @@ public class UserProvisioningExecutor implements Executor {
                 LOG.debug("Creating rejected consent. Type: " + purposeType + ", User: " +
                         Utils.maskIfRequired(subjectId) + ", Purpose count: " + purposeBindings.size());
             }
-            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
+            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("en", subjectId, tenantDomain,
                     null, true, null, null, RESIDENT_IDP, purposeBindings,
                     IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
             try {
@@ -580,7 +580,7 @@ public class UserProvisioningExecutor implements Executor {
 
         try {
             // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
-            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("", subjectId, tenantDomain,
+            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("en", subjectId, tenantDomain,
                      null, false, null, null, RESIDENT_IDP, purposeBindings,
                      IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
             try {
