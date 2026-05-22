@@ -455,7 +455,7 @@ public class UserProvisioningExecutor implements Executor {
     }
 
     private void createRejectedConsents(String subjectId, String tenantDomain, String purposeType,
-                                        List<String> consents) throws FlowEngineServerException {
+                                        List<String> consents) throws FlowEngineException {
 
         if (consents == null || consents.isEmpty()) {
             if (LOG.isDebugEnabled()) {
@@ -482,7 +482,8 @@ public class UserProvisioningExecutor implements Executor {
             List<PurposePIICategoryBinding> purposeBindings = new ArrayList<>();
             for (String purposeUuid : consents) {
                 if (StringUtils.isBlank(purposeUuid)) {
-                    continue;
+                    throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
+                            purposeType + " consent");
                 }
                 purposeBindings.add(
                         new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
@@ -527,7 +528,7 @@ public class UserProvisioningExecutor implements Executor {
             throws FlowEngineServerException {
 
         try {
-            // ApplicationId is SYSTEM — policy consent is system-wide, not per-application.
+            // Use Resident IDP as the ApplicationId since the policy consent is system-wide.
             ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("en", subjectId, tenantDomain,
                     null, isRejected, null, null, RESIDENT_IDP, purposeBindings,
                     IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
