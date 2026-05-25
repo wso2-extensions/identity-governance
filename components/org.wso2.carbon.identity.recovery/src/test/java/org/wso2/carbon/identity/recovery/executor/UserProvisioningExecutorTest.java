@@ -1009,6 +1009,123 @@ public class UserProvisioningExecutorTest {
         verify(consentManager, org.mockito.Mockito.never()).addConsent(any(ReceiptInput.class));
     }
 
+    @Test
+    public void testProcessUserConsentCombinesDefaultAndAttributePiiCategories() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUserWithAcceptedConsentAndAttributes(USERNAME,
+                Collections.singletonList("attr-uuid-1"), "PROFILE");
+
+        when(context.getFlowType()).thenReturn(REGISTRATION.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        mockedFrameworkUtils.when(FrameworkUtils::isConsentV2APIEnabled).thenReturn(true);
+
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+
+        PIICategory defaultPiiCategory = new PIICategory("default-uuid", "Default", false, "Default Category");
+        PIICategory attrPiiCategory = new PIICategory("attr-uuid-1", "Attribute", false, "Attribute Category");
+        ReceiptInput receiptInput = mock(ReceiptInput.class);
+
+        ConsentManager consentManager = mock(ConsentManager.class);
+        IdentityRecoveryServiceDataHolder dataHolder = setupUserStoreManagerMocksWithConsentManager(consentManager);
+
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.getDefaultPiiCategory(eq("PROFILE"),
+                eq(consentManager))).thenReturn(defaultPiiCategory);
+        when(consentManager.getPIICategoryByUuid("attr-uuid-1")).thenReturn(attrPiiCategory);
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.buildReceiptInput(
+                anyString(), anyString(), anyString(), any(), eq(false), any(), any(), anyString(),
+                any(), eq(consentManager))).thenReturn(receiptInput);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(consentManager).addConsent(receiptInput);
+    }
+
+    @Test
+    public void testProcessUserConsentRejectedUsesOnlyDefaultCategory() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUserWithRejectedConsentAndAttributes(USERNAME,
+                Collections.singletonList("attr-uuid-1"), "PROFILE");
+
+        when(context.getFlowType()).thenReturn(REGISTRATION.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        mockedFrameworkUtils.when(FrameworkUtils::isConsentV2APIEnabled).thenReturn(true);
+
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+
+        PIICategory defaultPiiCategory = new PIICategory("default-uuid", "Default", false, "Default Category");
+        ReceiptInput receiptInput = mock(ReceiptInput.class);
+
+        ConsentManager consentManager = mock(ConsentManager.class);
+        setupUserStoreManagerMocksWithConsentManager(consentManager);
+
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.getDefaultPiiCategory(eq("PROFILE"),
+                eq(consentManager))).thenReturn(defaultPiiCategory);
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.buildReceiptInput(
+                anyString(), anyString(), anyString(), any(), eq(true), any(), any(), anyString(),
+                any(), eq(consentManager))).thenReturn(receiptInput);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(consentManager).addConsent(receiptInput);
+    }
+
+    @Test
+    public void testProcessUserConsentEmptyAttributesUsesOnlyDefaultCategory() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUserWithAcceptedConsentAndAttributes(USERNAME,
+                Collections.emptyList(), "PROFILE");
+
+        when(context.getFlowType()).thenReturn(REGISTRATION.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        mockedFrameworkUtils.when(FrameworkUtils::isConsentV2APIEnabled).thenReturn(true);
+
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(carbonContext);
+
+        PIICategory defaultPiiCategory = new PIICategory("default-uuid", "Default", false, "Default Category");
+        ReceiptInput receiptInput = mock(ReceiptInput.class);
+
+        ConsentManager consentManager = mock(ConsentManager.class);
+        setupUserStoreManagerMocksWithConsentManager(consentManager);
+
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.getDefaultPiiCategory(eq("PROFILE"),
+                eq(consentManager))).thenReturn(defaultPiiCategory);
+        mockedConsentReceiptUtils.when(() -> ConsentReceiptUtils.buildReceiptInput(
+                anyString(), anyString(), anyString(), any(), eq(false), any(), any(), anyString(),
+                any(), eq(consentManager))).thenReturn(receiptInput);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(consentManager).addConsent(receiptInput);
+        verify(consentManager, never()).getPIICategoryByUuid(anyString());
+    }
+
     private FlowUser createTestFlowUser(String username) {
 
         FlowUser flowUser = mock(FlowUser.class);
@@ -1037,10 +1154,6 @@ public class UserProvisioningExecutorTest {
         Map<String, char[]> credentials = new HashMap<>();
         credentials.put(PASSWORD_KEY, PASSWORD.toCharArray());
 
-        FlowUser.UserConsent userConsent = new FlowUser.UserConsent();
-        userConsent.getPurposeType(); // ensure fields exist
-
-        // Use a real UserConsent populated via reflection-free setters through fromJson-compatible approach.
         List<FlowUser.UserConsent> consents = FlowUser.UserConsent.fromJson(
                 buildConsentJson(purposeType, accepted, rejected));
 
@@ -1055,18 +1168,104 @@ public class UserProvisioningExecutorTest {
         return flowUser;
     }
 
+    private FlowUser createTestFlowUserWithAcceptedConsentAndAttributes(String username, List<String> attributes,
+                                                                        String purposeType) {
+
+        FlowUser flowUser = mock(FlowUser.class);
+        Map<String, String> claims = new HashMap<>();
+        claims.put(USERNAME_CLAIM_URI, USERNAME);
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put(PASSWORD_KEY, PASSWORD.toCharArray());
+
+        List<FlowUser.UserConsent> consents = FlowUser.UserConsent.fromJson(
+                buildConsentJsonWithAttributes(purposeType, Collections.singletonList("purpose-uuid-1"),
+                Collections.emptyList(), attributes));
+
+        when(flowUser.getUsername()).thenReturn(username);
+        when(flowUser.getClaims()).thenReturn(claims);
+        when(flowUser.getClaim(USERNAME_CLAIM_URI)).thenReturn(USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(null);
+        when(flowUser.getUserCredentials()).thenReturn(credentials);
+        when(flowUser.getFederatedAssociations()).thenReturn(new HashMap<>());
+        when(flowUser.getUserConsents()).thenReturn(consents);
+
+        return flowUser;
+    }
+
+    private FlowUser createTestFlowUserWithRejectedConsentAndAttributes(String username, List<String> attributes,
+                                                                        String purposeType) {
+
+        FlowUser flowUser = mock(FlowUser.class);
+        Map<String, String> claims = new HashMap<>();
+        claims.put(USERNAME_CLAIM_URI, USERNAME);
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put(PASSWORD_KEY, PASSWORD.toCharArray());
+
+        List<FlowUser.UserConsent> consents = FlowUser.UserConsent.fromJson(
+                buildConsentJsonWithAttributes(purposeType, Collections.emptyList(),
+                Collections.singletonList("purpose-uuid-2"), attributes));
+
+        when(flowUser.getUsername()).thenReturn(username);
+        when(flowUser.getClaims()).thenReturn(claims);
+        when(flowUser.getClaim(USERNAME_CLAIM_URI)).thenReturn(USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(null);
+        when(flowUser.getUserCredentials()).thenReturn(credentials);
+        when(flowUser.getFederatedAssociations()).thenReturn(new HashMap<>());
+        when(flowUser.getUserConsents()).thenReturn(consents);
+
+        return flowUser;
+    }
+
+    private String buildConsentJsonWithAttributes(String purposeType, List<String> accepted, List<String> rejected,
+                                                   List<String> attributes) {
+
+        StringBuilder json = new StringBuilder("{\"").append(purposeType).append("\":{\"purposes\":[");
+        boolean first = true;
+        for (String id : accepted) {
+            if (!first) json.append(",");
+            json.append("{\"id\":\"").append(id).append("\",\"accepted\":true");
+            if (!attributes.isEmpty()) {
+                json.append(",\"attributes\":[");
+                for (int i = 0; i < attributes.size(); i++) {
+                    if (i > 0) json.append(",");
+                    json.append("\"").append(attributes.get(i)).append("\"");
+                }
+                json.append("]");
+            }
+            json.append("}");
+            first = false;
+        }
+        for (String id : rejected) {
+            if (!first) json.append(",");
+            json.append("{\"id\":\"").append(id).append("\",\"accepted\":false");
+            if (!attributes.isEmpty()) {
+                json.append(",\"attributes\":[");
+                for (int i = 0; i < attributes.size(); i++) {
+                    if (i > 0) json.append(",");
+                    json.append("\"").append(attributes.get(i)).append("\"");
+                }
+                json.append("]");
+            }
+            json.append("}");
+            first = false;
+        }
+        json.append("]}}");
+        return json.toString();
+    }
+
     private String buildConsentJson(String purposeType, List<String> accepted, List<String> rejected) {
 
-        StringBuilder json = new StringBuilder("{\"").append(purposeType).append("\":{");
-        json.append("\"accepted\":[");
-        for (int i = 0; i < accepted.size(); i++) {
-            json.append("\"").append(accepted.get(i)).append("\"");
-            if (i < accepted.size() - 1) json.append(",");
+        StringBuilder json = new StringBuilder("{\"").append(purposeType).append("\":{\"purposes\":[");
+        boolean first = true;
+        for (String id : accepted) {
+            if (!first) json.append(",");
+            json.append("{\"id\":\"").append(id).append("\",\"accepted\":true}");
+            first = false;
         }
-        json.append("],\"rejected\":[");
-        for (int i = 0; i < rejected.size(); i++) {
-            json.append("\"").append(rejected.get(i)).append("\"");
-            if (i < rejected.size() - 1) json.append(",");
+        for (String id : rejected) {
+            if (!first) json.append(",");
+            json.append("{\"id\":\"").append(id).append("\",\"accepted\":false}");
+            first = false;
         }
         json.append("]}}");
         return json.toString();

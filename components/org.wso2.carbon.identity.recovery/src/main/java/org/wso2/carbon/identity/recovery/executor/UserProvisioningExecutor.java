@@ -71,8 +71,8 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -392,10 +392,10 @@ public class UserProvisioningExecutor implements Executor {
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(usernameWithUserStoreDomain);
         try {
             for (FlowUser.UserConsent userConsent : user.getUserConsents()) {
-                createAcceptedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
-                        userConsent.getPurposeType(), userConsent.getAccepted());
-                createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
-                        userConsent.getPurposeType(), userConsent.getRejected());
+                for (FlowUser.ConsentPurpose purpose : userConsent.getPurposes()) {
+                    createPurposeConsent(usernameWithUserStoreDomain, context.getTenantDomain(),
+                            userConsent.getPurposeType(), purpose);
+                }
             }
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
@@ -413,114 +413,71 @@ public class UserProvisioningExecutor implements Executor {
         }
     }
 
-    private void createAcceptedConsents(String username, String tenantDomain, String purposeType, List<String> consents)
-            throws FlowEngineException {
+    private void createPurposeConsent(String username, String tenantDomain, String purposeType,
+                                      FlowUser.ConsentPurpose purpose) throws FlowEngineException {
 
-        if (consents == null || consents.isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No accepted consents found for user: " + Utils.maskIfRequired(username));
-            }
-            return;
+        if (StringUtils.isBlank(purpose.getId())) {
+            throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
+                    purposeType + " consent");
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating accepted consents for user: " + Utils.maskIfRequired(username) +
-                    " with consent count: " + consents.size());
+            LOG.debug("Processing consent type: " + purposeType + ", User: " +
+                    Utils.maskIfRequired(username) + ", Purpose: " + purpose.getId() +
+                    ", Tenant: " + tenantDomain);
         }
 
-        int purposeCount = 0;
-        // One receipt per consent — batching would prevent individual revocation.
-        for (String purposeUuid : consents) {
-            if (StringUtils.isBlank(purposeUuid)) {
-                throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
-                        purposeType + " consent");
+        try {
+            List<String> attributes = purpose.getAttributes();
+            List<PIICategory> piiCategories = new ArrayList<>();
+
+            PIICategory defaultPiiCategory = ConsentReceiptUtils.getDefaultPiiCategory(purposeType,
+                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
+            if (defaultPiiCategory != null) {
+                piiCategories.add(defaultPiiCategory);
             }
-            processPolicyConsent(username, tenantDomain, purposeUuid, purposeType);
-            purposeCount++;
+
+            if (attributes != null && !attributes.isEmpty()) {
+                List<PIICategory> attributeCategories = getPiiCategories(attributes);
+                piiCategories.addAll(attributeCategories);
+            }
+
+            addConsentReceipt(username, tenantDomain, purposeType,
+                    Collections.singletonList(new PurposePIICategoryBinding(purpose.getId(), piiCategories)),
+                    !purpose.isAccepted());
+        } catch (ConsentManagementException e) {
+            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, purposeType,
+                    Utils.maskIfRequired(username));
         }
 
         if (LoggerUtils.isDiagnosticLogsEnabled()) {
             LoggerUtils.triggerDiagnosticLogEvent(
                     consentDiagnosticLogBuilder(username, tenantDomain)
                     .inputParam("consent_type", purposeType)
-                    .inputParam("purpose_count", purposeCount)
-                    .resultMessage("Accepted consents successfully created.")
+                    .inputParam("purpose_id", purpose.getId())
+                    .resultMessage("Policy consent successfully processed.")
                     .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
         }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Successfully created " + purposeCount + " accepted consent(s) of type: " +
-                    purposeType + " for user: " + Utils.maskIfRequired(username));
-        }
     }
 
-    private void createRejectedConsents(String subjectId, String tenantDomain, String purposeType,
-                                        List<String> consents) throws FlowEngineException {
+    private List<PIICategory> getPiiCategories(List<String> attributes)
+            throws FlowEngineException {
 
-        if (consents == null || consents.isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No rejected consents found for user: " + Utils.maskIfRequired(subjectId));
-            }
-            return;
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating rejected consents for user: " + Utils.maskIfRequired(subjectId) +
-                    " with consent count: " + consents.size() + ", tenant domain: " + tenantDomain);
-        }
-
+        org.wso2.carbon.consent.mgt.core.ConsentManager consentManager =
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
+        List<PIICategory> piiCategories = new ArrayList<>();
         try {
-            PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(purposeType,
-                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            if (piiCategory == null) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Default PII category not found for consent type: " + purposeType +
-                            ". Skipping rejected consent processing for user: " + Utils.maskIfRequired(subjectId));
+            for (String attributeUuid : attributes) {
+                PIICategory piiCategory = consentManager.getPIICategoryByUuid(attributeUuid);
+                if (piiCategory != null) {
+                    piiCategories.add(piiCategory);
                 }
-                return;
             }
-            List<PurposePIICategoryBinding> purposeBindings = new ArrayList<>();
-            for (String purposeUuid : consents) {
-                if (StringUtils.isBlank(purposeUuid)) {
-                    throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
-                            purposeType + " consent");
-                }
-                purposeBindings.add(
-                        new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
-            }
-            if (purposeBindings.isEmpty()) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No purpose bindings found for rejected consent type: " + purposeType +
-                            " for user: " + Utils.maskIfRequired(subjectId));
-                }
-                return;
-            }
-            addConsentReceipt(subjectId, tenantDomain, purposeType, purposeBindings, true);
         } catch (ConsentManagementException e) {
-            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, purposeType,
-                    Utils.maskIfRequired(subjectId));
+            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e,
+                    String.join(",", attributes), null);
         }
-    }
-
-    private void processPolicyConsent(String subjectId, String tenantDomain, String purposeUuid, String consentType)
-            throws FlowEngineServerException {
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Processing policy consent. Type: " + consentType + ", User: " +
-                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid +
-                    ", Tenant: " + tenantDomain);
-        }
-
-        try {
-            PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(consentType,
-                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            List<PurposePIICategoryBinding> purposeBindings = Collections.singletonList(
-                    new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
-            addConsentReceipt(subjectId, tenantDomain, consentType, purposeBindings, false);
-        } catch (ConsentManagementException e) {
-            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, consentType,
-                    Utils.maskIfRequired(subjectId));
-        }
+        return piiCategories;
     }
 
     private void addConsentReceipt(String subjectId, String tenantDomain, String purposeType,
