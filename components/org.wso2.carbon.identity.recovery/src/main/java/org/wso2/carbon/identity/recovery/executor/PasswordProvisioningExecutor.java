@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.AuthenticationExecutor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
@@ -39,6 +40,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.util.ExecutorConsentUtils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -159,8 +161,13 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             String userId = ((AbstractUserStoreManager) userStoreManager)
                     .getUserIDFromUserName(context.getFlowUser().getUsername());
             context.getFlowUser().setUserId(userId);
+            context.getFlowUser().setUserStoreDomain(user.getUserStoreDomain());
+
+            ExecutorConsentUtils.processUserConsent(getName(), context, context.getFlowUser(),
+                    user.getUserStoreDomain());
+
             return new ExecutorResponse(STATUS_COMPLETE);
-        } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
+        } catch (UserStoreException | IdentityEventException | IdentityRecoveryException | FlowEngineException e) {
             ExecutorResponse errorResponse = handleClientExceptionForActionFailure(e);
             if (errorResponse.getResult() != null) {
                 return errorResponse;
