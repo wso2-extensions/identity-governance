@@ -22,25 +22,15 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
-import org.wso2.carbon.consent.mgt.core.model.PIICategory;
-import org.wso2.carbon.consent.mgt.core.model.PurposePIICategoryBinding;
-import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
-import org.wso2.carbon.consent.mgt.core.util.ConsentReceiptUtils;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
-import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
-import org.wso2.carbon.utils.DiagnosticLog;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
@@ -55,6 +45,7 @@ import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErro
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.util.ExecutorConsentUtils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
@@ -71,15 +62,12 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
-import static org.wso2.carbon.identity.application.authentication.framework.handler.request.impl.consent.constant.SSOConsentConstants.RESIDENT_IDP;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
@@ -89,8 +77,6 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLICATE_CLAIMS_ERROR_CODE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLICATE_CLAIM_ERROR_CODE;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_INVALID_USER_INPUT;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_POLICY_CONSENT_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE;
@@ -152,6 +138,9 @@ public class UserProvisioningExecutor implements Executor {
                     context.getContextIdentifier(), context.getFlowType());
             String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+
+            ExecutorConsentUtils.processUserConsent(COMPONENT_ID, context, user, userStoreDomainName);
+
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (UserStoreException e) {
@@ -206,7 +195,7 @@ public class UserProvisioningExecutor implements Executor {
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
 
-            processUserConsent(context, user, userStoreDomainName);
+            ExecutorConsentUtils.processUserConsent(COMPONENT_ID, context, user, userStoreDomainName);
 
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
@@ -373,197 +362,6 @@ public class UserProvisioningExecutor implements Executor {
             throw handleServerException(ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE, e,
                     maskedUsername, context.getContextIdentifier());
         }
-    }
-
-    private void processUserConsent(FlowExecutionContext context, FlowUser user, String userStoreDomainName)
-            throws FlowEngineException {
-
-        if (!FrameworkUtils.isConsentV2APIEnabled()) {
-            return;
-        }
-
-        String usernameWithUserStoreDomain = UserCoreUtil.addDomainToName(user.getUsername(), userStoreDomainName);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Processing consent for user: " + user.getUsername() + " in tenant: " +
-                    context.getTenantDomain());
-        }
-        PrivilegedCarbonContext.startTenantFlow();
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(context.getTenantDomain(), true);
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(usernameWithUserStoreDomain);
-        try {
-            for (FlowUser.UserConsent userConsent : user.getUserConsents()) {
-                createAcceptedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
-                        userConsent.getPurposeType(), userConsent.getAccepted());
-                createRejectedConsents(usernameWithUserStoreDomain, context.getTenantDomain(),
-                        userConsent.getPurposeType(), userConsent.getRejected());
-            }
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Consent processing completed for user: " + user.getUsername() + " in tenant: " +
-                    context.getTenantDomain());
-        }
-        if (LoggerUtils.isDiagnosticLogsEnabled()) {
-            LoggerUtils.triggerDiagnosticLogEvent(
-                    consentDiagnosticLogBuilder(user.getUsername(), context.getTenantDomain())
-                    .resultMessage("Consent processing completed for user.")
-                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
-        }
-    }
-
-    private void createAcceptedConsents(String username, String tenantDomain, String purposeType, List<String> consents)
-            throws FlowEngineException {
-
-        if (consents == null || consents.isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No accepted consents found for user: " + Utils.maskIfRequired(username));
-            }
-            return;
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating accepted consents for user: " + Utils.maskIfRequired(username) +
-                    " with consent count: " + consents.size());
-        }
-
-        int purposeCount = 0;
-        // One receipt per consent — batching would prevent individual revocation.
-        for (String purposeUuid : consents) {
-            if (StringUtils.isBlank(purposeUuid)) {
-                throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
-                        purposeType + " consent");
-            }
-            processPolicyConsent(username, tenantDomain, purposeUuid, purposeType);
-            purposeCount++;
-        }
-
-        if (LoggerUtils.isDiagnosticLogsEnabled()) {
-            LoggerUtils.triggerDiagnosticLogEvent(
-                    consentDiagnosticLogBuilder(username, tenantDomain)
-                    .inputParam("consent_type", purposeType)
-                    .inputParam("purpose_count", purposeCount)
-                    .resultMessage("Accepted consents successfully created.")
-                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Successfully created " + purposeCount + " accepted consent(s) of type: " +
-                    purposeType + " for user: " + Utils.maskIfRequired(username));
-        }
-    }
-
-    private void createRejectedConsents(String subjectId, String tenantDomain, String purposeType,
-                                        List<String> consents) throws FlowEngineException {
-
-        if (consents == null || consents.isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No rejected consents found for user: " + Utils.maskIfRequired(subjectId));
-            }
-            return;
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating rejected consents for user: " + Utils.maskIfRequired(subjectId) +
-                    " with consent count: " + consents.size() + ", tenant domain: " + tenantDomain);
-        }
-
-        try {
-            PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(purposeType,
-                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            if (piiCategory == null) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Default PII category not found for consent type: " + purposeType +
-                            ". Skipping rejected consent processing for user: " + Utils.maskIfRequired(subjectId));
-                }
-                return;
-            }
-            List<PurposePIICategoryBinding> purposeBindings = new ArrayList<>();
-            for (String purposeUuid : consents) {
-                if (StringUtils.isBlank(purposeUuid)) {
-                    throw FlowExecutionEngineUtils.handleClientException(ERROR_CODE_INVALID_USER_INPUT,
-                            purposeType + " consent");
-                }
-                purposeBindings.add(
-                        new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
-            }
-            if (purposeBindings.isEmpty()) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No purpose bindings found for rejected consent type: " + purposeType +
-                            " for user: " + Utils.maskIfRequired(subjectId));
-                }
-                return;
-            }
-            addConsentReceipt(subjectId, tenantDomain, purposeType, purposeBindings, true);
-        } catch (ConsentManagementException e) {
-            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, purposeType,
-                    Utils.maskIfRequired(subjectId));
-        }
-    }
-
-    private void processPolicyConsent(String subjectId, String tenantDomain, String purposeUuid, String consentType)
-            throws FlowEngineServerException {
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Processing policy consent. Type: " + consentType + ", User: " +
-                    Utils.maskIfRequired(subjectId) + ", Purpose: " + purposeUuid +
-                    ", Tenant: " + tenantDomain);
-        }
-
-        try {
-            PIICategory piiCategory = ConsentReceiptUtils.getDefaultPiiCategory(consentType,
-                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            List<PurposePIICategoryBinding> purposeBindings = Collections.singletonList(
-                    new PurposePIICategoryBinding(purposeUuid, Collections.singletonList(piiCategory)));
-            addConsentReceipt(subjectId, tenantDomain, consentType, purposeBindings, false);
-        } catch (ConsentManagementException e) {
-            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, consentType,
-                    Utils.maskIfRequired(subjectId));
-        }
-    }
-
-    private void addConsentReceipt(String subjectId, String tenantDomain, String purposeType,
-                                   List<PurposePIICategoryBinding> purposeBindings, boolean isRejected)
-            throws FlowEngineServerException {
-
-        try {
-            // Use Resident IDP as the ApplicationId since the policy consent is system-wide.
-            ReceiptInput receiptInput = ConsentReceiptUtils.buildReceiptInput("en", subjectId, tenantDomain,
-                    null, isRejected, null, null, RESIDENT_IDP, purposeBindings,
-                    IdentityRecoveryServiceDataHolder.getInstance().getConsentManager());
-            IdentityRecoveryServiceDataHolder.getInstance().getConsentManager().addConsent(receiptInput);
-
-            if (LoggerUtils.isDiagnosticLogsEnabled()) {
-                LoggerUtils.triggerDiagnosticLogEvent(
-                        consentDiagnosticLogBuilder(subjectId, tenantDomain)
-                        .inputParam("consent_type", purposeType)
-                        .inputParam("purpose_count", purposeBindings.size())
-                        .resultMessage("Consent receipt successfully added.")
-                        .resultStatus(DiagnosticLog.ResultStatus.SUCCESS));
-            }
-        } catch (ConsentManagementException e) {
-            if (LoggerUtils.isDiagnosticLogsEnabled()) {
-                LoggerUtils.triggerDiagnosticLogEvent(
-                        consentDiagnosticLogBuilder(subjectId, tenantDomain)
-                        .inputParam("consent_type", purposeType)
-                        .inputParam(LogConstants.InputKeys.ERROR_MESSAGE, e.getMessage())
-                        .resultMessage("Failed to add consent receipt.")
-                        .resultStatus(DiagnosticLog.ResultStatus.FAILED));
-            }
-            throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, purposeType,
-                    Utils.maskIfRequired(subjectId));
-        }
-    }
-
-    private DiagnosticLog.DiagnosticLogBuilder consentDiagnosticLogBuilder(String subjectId, String tenantDomain) {
-
-        return new DiagnosticLog.DiagnosticLogBuilder(
-                COMPONENT_ID, FrameworkConstants.LogConstants.ActionIDs.PROCESS_POLICY_CONSENT)
-                .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
-                        LoggerUtils.getMaskedContent(subjectId) : subjectId)
-                .inputParam(LogConstants.InputKeys.TENANT_DOMAIN, tenantDomain)
-                .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION);
     }
 
     private void createFederatedAssociations(FlowUser user, String tenantDomain, String flowId) {
