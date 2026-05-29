@@ -121,6 +121,8 @@ public class ExecutorConsentUtils {
         }
 
         try {
+            // Attributes list contains only accepted attribute IDs when purpose is accepted,
+            // and only rejected attribute IDs when purpose is not accepted.
             List<String> attributes = purpose.getAttributes();
             List<PIICategory> piiCategories = new ArrayList<>();
 
