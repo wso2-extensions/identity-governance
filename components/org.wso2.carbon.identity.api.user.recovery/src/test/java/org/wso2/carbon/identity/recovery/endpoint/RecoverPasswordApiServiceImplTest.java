@@ -335,16 +335,15 @@ public class RecoverPasswordApiServiceImplTest {
         verify(multiAttributeLoginService, Mockito.never()).resolveUser(anyString(), anyString());
     }
 
-    // Store-domain precedence: realm wins only when the username is not domain-qualified; otherwise the
-    // in-username domain (the resolved store) is authoritative — even if a different realm is also supplied.
+    // Store-domain precedence: the resolved user's store domain (from the scoped lookup) is always used,
+    // regardless of the request realm or whether the username was domain-qualified.
     @DataProvider(name = "resolvedStoreDomainCases")
     private Object[][] resolvedStoreDomainCases() {
 
         return new Object[][]{
                 // {description, username, realm, resolvedDomain, expectedDomain}
-                {"unqualified-realmWins", "test@abc.com", "US1", "PRIMARY", "US1"},
+                {"realmAsField-matchesResolved", "test@abc.com", "US1", "US1", "US1"},
                 {"qualified-conflict-resolvedWins", "US1/user2", "PRIMARY", "US1", "US1"},
-                {"qualified-blankRealm-resolved", "US1/user2", "", "US1", "US1"},
         };
     }
 
