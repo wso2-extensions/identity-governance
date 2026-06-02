@@ -243,18 +243,14 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                 .ENABLE_EMAIL_VERIFICATION, tenantDomain));
     }
 
-    private static boolean isInviteUserRegistrationFlowEnabled(String tenantDomain) throws IdentityEventException {
+    private boolean isInviteUserRegistrationFlowEnabled(String tenantDomain) throws IdentityEventException {
 
         try {
             FlowConfigDTO flowConfigDTO = FlowMgtConfigUtils.getFlowConfig(
                     Constants.FlowTypes.INVITED_USER_REGISTRATION.getType(), tenantDomain);
             // A null flow configuration indicates that the Invited User Registration flow is not configured for the
             // tenant; therefore, invited user registration is not enabled.
-            if (flowConfigDTO != null) {
-                return flowConfigDTO.getIsEnabled();
-            } else {
-                return false;
-            }
+            return flowConfigDTO != null && flowConfigDTO.getIsEnabled();
         } catch (FlowMgtServerException e) {
             throw new IdentityEventException(
                     "Error while checking the invite user registration flow enablement for tenant: " +

@@ -374,6 +374,38 @@ public class AskPasswordBasedPasswordSetupHandlerTest {
         mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(), any(), any()), org.mockito.Mockito.never());
     }
 
+    @Test
+    public void testHandleEventProceedsWhenOnlyInviteUserRegistrationFlowEnabled() throws IdentityEventException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, false);
+        FlowConfigDTO enabledFlowConfig = mock(FlowConfigDTO.class);
+        when(enabledFlowConfig.getIsEnabled()).thenReturn(true);
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(
+                        eq(Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()), anyString()))
+                .thenReturn(enabledFlowConfig);
+
+        char[] password = "test1".toCharArray();
+        mockedUtils.when(() -> Utils.generateRandomPassword(anyInt()))
+                .thenReturn(password);
+
+        StringBuffer credentials = new StringBuffer("test1");
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credentials);
+
+        Map<String, String> additionalClaims = new HashMap<>();
+        additionalClaims.put(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM, Boolean.TRUE.toString());
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL, additionalProperties, additionalClaims);
+
+        askPasswordBasedPasswordSetupHandler.handleEvent(event);
+
+        // Verify the handler proceeded past the enablement gate.
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD),
+                any()));
+    }
+
     @Test(expectedExceptions = IdentityEventException.class,
           expectedExceptionsMessageRegExp = "Error while checking the invite user registration flow enablement " +
                   "for tenant: .*")

@@ -62,6 +62,7 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,8 +113,10 @@ public class UserProvisioningExecutor implements Executor {
     @Override
     public List<String> getInitiationData() {
 
-        LOG.debug("Initiation data is not required for the executor: " + getName());
-        return null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Initiation data is not required for the executor: " + getName());
+        }
+        return Collections.emptyList();
     }
 
     @Override
@@ -205,13 +208,14 @@ public class UserProvisioningExecutor implements Executor {
 
             createFederatedAssociations(user, context.getTenantDomain(), context.getContextIdentifier());
             if (LOG.isDebugEnabled()) {
-                LOG.debug("User: " + user.getUsername() + " successfully onboarded in user store: " +
-                        userStoreDomainName + " of tenant: " + context.getTenantDomain());
+                LOG.debug("User: " + Utils.maskIfRequired(user.getUsername()) +
+                        " successfully onboarded in user store: " + userStoreDomainName + " of tenant: " +
+                        context.getTenantDomain());
             }
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (UserStoreException e) {
-            response = handleAndThrowClientExceptionForActionFailure(response, e);
+            response = buildClientErrorResponseForActionFailure(response, e);
             if (response.getResult() != null) {
                 return response;
             }
@@ -248,7 +252,7 @@ public class UserProvisioningExecutor implements Executor {
         }
     }
 
-    private ExecutorResponse handleAndThrowClientExceptionForActionFailure(ExecutorResponse response, UserStoreException e) {
+    private ExecutorResponse buildClientErrorResponseForActionFailure(ExecutorResponse response, UserStoreException e) {
 
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
