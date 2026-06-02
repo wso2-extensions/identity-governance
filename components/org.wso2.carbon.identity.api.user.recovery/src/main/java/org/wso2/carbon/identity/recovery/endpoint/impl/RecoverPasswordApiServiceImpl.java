@@ -71,10 +71,13 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                     User resolvedUser = new User();
                     resolvedUser.setUserName(
                             UserCoreUtil.removeDomainFromName(resolvedUserResult.getUser().getUsername()));
-                    if (StringUtils.isBlank(user.getRealm())) {
-                        resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
-                    } else {
+                    // Realm wins only when the username is not already domain-qualified; otherwise the
+                    // in-username domain (honored by the resolver) is authoritative.
+                    if (StringUtils.isNotBlank(user.getRealm())
+                            && !user.getUsername().contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
                         resolvedUser.setUserStoreDomain(user.getRealm());
+                    } else {
+                        resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
                     }
                     resolvedUser.setTenantDomain(resolvedUserResult.getUser().getTenantDomain());
                     notificationResponseBean =

@@ -335,6 +335,65 @@ public class RecoverPasswordApiServiceImplTest {
         verify(multiAttributeLoginService, Mockito.never()).resolveUser(anyString(), anyString());
     }
 
+    // Store-domain precedence: realm wins only when the username is not domain-qualified; otherwise the
+    // in-username domain (the resolved store) is authoritative — even if a different realm is also supplied.
+    @DataProvider(name = "resolvedStoreDomainCases")
+    private Object[][] resolvedStoreDomainCases() {
+
+        return new Object[][]{
+                // {description, username, realm, resolvedDomain, expectedDomain}
+                {"unqualified-realmWins", "test@abc.com", "US1", "PRIMARY", "US1"},
+                {"qualified-conflict-resolvedWins", "US1/user2", "PRIMARY", "US1", "US1"},
+                {"qualified-blankRealm-resolved", "US1/user2", "", "US1", "US1"},
+        };
+    }
+
+    @Test(dataProvider = "resolvedStoreDomainCases")
+    public void testResolvedUserStoreDomainPrecedence(String description, String username, String realm,
+                                                      String resolvedDomain, String expectedDomain)
+            throws IdentityRecoveryException {
+
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager)
+                .thenReturn(notificationPasswordRecoveryManager);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.getProperties(Mockito.any())).thenReturn(new Property[0]);
+
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                .thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(true);
+
+        org.wso2.carbon.user.core.common.User resolvedCoreUser =
+                Mockito.mock(org.wso2.carbon.user.core.common.User.class);
+        when(resolvedCoreUser.getUsername()).thenReturn(resolvedDomain + "/user2");
+        when(resolvedCoreUser.getUserStoreDomain()).thenReturn(resolvedDomain);
+        when(resolvedCoreUser.getTenantDomain()).thenReturn("carbon.super");
+        ResolvedUserResult success = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.SUCCESS);
+        success.setUser(resolvedCoreUser);
+        when(multiAttributeLoginService.resolveUser(Mockito.any(), anyString())).thenReturn(success);
+
+        when(notificationPasswordRecoveryManager.sendRecoveryNotification(
+                Mockito.any(org.wso2.carbon.identity.application.common.model.User.class), anyString(), anyBoolean(),
+                Mockito.any())).thenReturn(notificationResponseBean);
+
+        RecoveryInitiatingRequestDTO request = new RecoveryInitiatingRequestDTO();
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername(username);
+        userDTO.setRealm(realm);
+        request.setUser(userDTO);
+        request.setProperties(buildPropertyDTO());
+
+        assertEquals(recoverPasswordApiService.recoverPasswordPost(request, "email", true).getStatus(), 202);
+
+        ArgumentCaptor<org.wso2.carbon.identity.application.common.model.User> captor =
+                ArgumentCaptor.forClass(org.wso2.carbon.identity.application.common.model.User.class);
+        verify(notificationPasswordRecoveryManager).sendRecoveryNotification(captor.capture(), anyString(),
+                anyBoolean(), Mockito.any());
+        assertEquals(captor.getValue().getUserStoreDomain(), expectedDomain,
+                "Case [" + description + "] — resolved user store domain did not match expected.");
+    }
+
     private RecoveryInitiatingRequestDTO buildRecoveryInitiatingRequestDTO() {
 
         RecoveryInitiatingRequestDTO recoveryInitiatingRequestDTO = new RecoveryInitiatingRequestDTO();
