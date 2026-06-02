@@ -73,6 +73,7 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
@@ -159,7 +160,8 @@ public class UserProvisioningExecutorTest {
     public void testGetInitiationData() {
 
         List<String> initiationData = executor.getInitiationData();
-        assertNull(initiationData);
+        assertNotNull(initiationData);
+        assertTrue(initiationData.isEmpty());
     }
 
     @Test
