@@ -207,8 +207,11 @@ public class UserProvisioningExecutorTest {
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = createTestFlowUser(USERNAME);
 
+        String givenNameClaim = WSO2_CLAIM_DIALECT + "givenname";
         Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(WSO2_CLAIM_DIALECT + "givenname", "John");
+        userInputData.put(givenNameClaim, "John");
+        flowUser.getClaims().put(givenNameClaim, "John");
+        when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(givenNameClaim));
 
         when(context.getFlowType()).thenReturn("INVITED_USER_REGISTRATION");
         when(context.getFlowUser()).thenReturn(flowUser);
@@ -224,7 +227,7 @@ public class UserProvisioningExecutorTest {
 
         assertEquals(response.getResult(), STATUS_COMPLETE);
         verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
-                any(Map.class), isNull());
+                eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
     }
 
     @Test
