@@ -22,6 +22,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
@@ -61,9 +62,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                     .isEnabled(user.getTenantDomain())) {
                 Property[] properties =
                         buildRecoveryPropertiesForMultiAttributeLogin(recoveryInitiatingRequest, user);
+                String loginAttribute = resolveLoginAttributeForMultiAttributeLookup(user);
                 ResolvedUserResult resolvedUserResult =
                         IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
-                                .resolveUser(user.getUsername(), user.getTenantDomain());
+                                .resolveUser(loginAttribute, user.getTenantDomain());
                 if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                         equals(resolvedUserResult.getResolvedStatus())) {
                     User resolvedUser = new User();
@@ -155,5 +157,23 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         propertyList.add(new Property(LOGIN_IDENTIFIER, user.getUsername()));
 
         return propertyList.toArray(new Property[0]);
+    }
+
+    /**
+     * Prefix the request realm to the username (e.g. {@code "US1/test@abc.com"}) so the multi-attribute lookup
+     * is scoped to that user store. Returns the bare username when realm/username is blank or already
+     * domain-qualified.
+     */
+    private String resolveLoginAttributeForMultiAttributeLookup(UserDTO user) {
+
+        String username = user.getUsername();
+        String realm = user.getRealm();
+        if (StringUtils.isBlank(realm) || StringUtils.isBlank(username)) {
+            return username;
+        }
+        if (username.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+            return username;
+        }
+        return realm + UserCoreConstants.DOMAIN_SEPARATOR + username;
     }
 }
