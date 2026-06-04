@@ -172,8 +172,6 @@ public class PasswordProvisioningExecutorTest {
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
         if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
             assertEquals(flowUser.getUserId(), USER_ID);
-            assertTrue(flowUser.getClaims().containsKey("http://wso2.org/claims/givenname"));
-            assertEquals(flowUser.getClaims().get("http://wso2.org/claims/givenname"), "John");
         }
         verify(storeManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
     }

@@ -63,9 +63,11 @@ import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static java.util.Locale.ENGLISH;
@@ -134,13 +136,17 @@ public class UserProvisioningExecutor implements Executor {
         try {
             // If the flow type is not registration, update the user profile.
             FlowUser user = updateUserProfile(context);
-            Map<String, String> userClaims = user.getClaims();
+            // Only persist claims the user actually changed during this flow. The preloaded CONSOLE-profile
+            // snapshot (which includes non-attribute claims like role/roles) must not be written back.
+            Map<String, String> userClaims = filterUpdatedClaims(user);
 
             String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
             String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
-            userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+            if (!userClaims.isEmpty()) {
+                userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+            }
 
             ExecutorConsentUtils.processUserConsent(COMPONENT_ID, context, user, userStoreDomainName);
 
@@ -574,5 +580,32 @@ public class UserProvisioningExecutor implements Executor {
         properties[1] = new Property("sp", applicationName);
         properties[2] = new Property("callback", callBackUrl);
         return properties;
+    }
+
+    /**
+     * Returns claims the user actually changed during this flow, based on
+     * {@link FlowUser#getUpdatedClaimUris()}.
+     *
+     * @param user flow user whose claims are being filtered.
+     * @return map of user-updated claims; empty when nothing was changed in this flow.
+     */
+    private Map<String, String> filterUpdatedClaims(FlowUser user) {
+
+        Set<String> updated = user.getUpdatedClaimUris();
+        if (updated == null || updated.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, String> result = new HashMap<>();
+        for (String uri : updated) {
+            // Skip updating username in non-registration flows.
+            if (USERNAME_CLAIM_URI.equals(uri)) {
+                continue;
+            }
+            String value = user.getClaims().get(uri);
+            if (value != null) {
+                result.put(uri, value);
+            }
+        }
+        return result;
     }
 }

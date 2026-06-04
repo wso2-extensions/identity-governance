@@ -35,7 +35,6 @@ import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineExcept
 import org.wso2.carbon.identity.flow.execution.engine.graph.AuthenticationExecutor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
-import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -75,7 +74,6 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIR
 public class PasswordProvisioningExecutor extends AuthenticationExecutor {
 
     private static final Log LOG = LogFactory.getLog(PasswordProvisioningExecutor.class);
-    private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
 
     @Override
     public String getName() {
@@ -154,10 +152,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
 
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
                     .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-            // If there are any claims to be updated, update them before updating the password.
-            updateUserClaims(userStoreManager, context);
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
-
             String userId = ((AbstractUserStoreManager) userStoreManager)
                     .getUserIDFromUserName(context.getFlowUser().getUsername());
             context.getFlowUser().setUserId(userId);
@@ -267,38 +262,6 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
         ExecutorResponse response = new ExecutorResponse(STATUS_USER_INPUT_REQUIRED);
         response.setRequiredData(Collections.singletonList(PASSWORD_KEY));
         return response;
-    }
-
-
-    /**
-     * Updates user claims in the user store.
-     *
-     * @param userStoreManager UserStoreManager instance to update user claims.
-     * @param context          FlowExecutionContext containing user information and claims.
-     * @throws UserStoreException if an error occurs while accessing the user store.
-     */
-    private void updateUserClaims(UserStoreManager userStoreManager, FlowExecutionContext context)
-            throws UserStoreException {
-
-        FlowUser user = enrichUserProfile(context);
-        userStoreManager.setUserClaimValues(user.getUsername(), user.getClaims(), null);
-    }
-
-    /**
-     * Enriches the user profile with claims from the context.
-     *
-     * @param context FlowExecutionContext containing user information and claims.
-     * @return Enriched FlowUser with claims and username.
-     */
-    private FlowUser enrichUserProfile(FlowExecutionContext context) {
-
-        FlowUser user = context.getFlowUser();
-        context.getUserInputData().forEach((key, value) -> {
-            if (key.startsWith(WSO2_CLAIM_DIALECT) && !user.getClaims().containsKey(key)) {
-                user.addClaim(key, value);
-            }
-        });
-        return user;
     }
 
     /**
