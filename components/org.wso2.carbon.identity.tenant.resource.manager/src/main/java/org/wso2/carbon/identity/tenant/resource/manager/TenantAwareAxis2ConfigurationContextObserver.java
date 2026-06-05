@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager;
 
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -52,6 +53,37 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         log.info("Loading configuration context for tenant domain: " + tenantDomain);
         loadEventStreamAndPublisherConfigurations(tenantId);
+    }
+
+    /**
+     * Remove the in-memory event publisher and stream configurations of the tenant when its
+     * configuration context is unloaded (tenant idle eviction or shutdown).
+     *
+     * <p>The publisher and stream runtimes are re-created by {@link #creatingConfigurationContext(int)}
+     * the next time the tenant is loaded, so removing them here keeps the in-memory publisher state
+     * proportional to the set of currently loaded tenants instead of every tenant ever loaded.</p>
+     *
+     * @param configContext Configuration context of the tenant being unloaded.
+     */
+    @Override
+    public void terminatingConfigurationContext(ConfigurationContext configContext) {
+
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        log.info("Unloading event publisher and stream configurations for tenant domain: " + tenantDomain);
+        try {
+            TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
+                    .removeEventPublisherConfigurations(tenantId);
+            TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
+                    .removeEventStreamConfigurations(tenantId);
+        } catch (Throwable e) {
+            /*
+             * Tenant unloading must never fail due to publisher cleanup; also tolerates running against
+             * an analytics-common version that does not expose the cleanup APIs yet (NoSuchMethodError).
+             */
+            log.warn("Error while removing event publisher and stream configurations for tenant domain: "
+                    + tenantDomain, e);
+        }
     }
 
     /**
