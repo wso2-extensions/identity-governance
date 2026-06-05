@@ -42,6 +42,8 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
     private static final Log log = LogFactory.getLog(UsernameRecoveryReCaptchaConnector.class);
     private static final String RECOVER_USERNAME_URL = "/api/identity/recovery/v0.9/recover-username/";
+    private static final String RECOVER_V1_USERNAME_URL = "/api/users/v1/recovery/username/init";
+    private static final String RECOVER_V2_USERNAME_URL = "/api/users/v2/recovery/username/init";
     private final String PROPERTY_USERNAME_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Username.Enable";
     private IdentityGovernanceService identityGovernanceService;
 
@@ -62,7 +64,9 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        if (StringUtils.isBlank(path) || !(CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL))) {
+        if (StringUtils.isBlank(path) || !(CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL) ||
+                CaptchaUtil.isPathAvailable(path, RECOVER_V1_USERNAME_URL) ||
+                CaptchaUtil.isPathAvailable(path, RECOVER_V2_USERNAME_URL))) {
             return false;
         }
 
@@ -82,7 +86,9 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
         HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
 
-        if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)) {
+        if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)
+                || CaptchaUtil.isPathAvailable(path, RECOVER_V1_USERNAME_URL)
+                || CaptchaUtil.isPathAvailable(path, RECOVER_V2_USERNAME_URL)) {
             httpServletResponse.setHeader("reCaptcha", "conditional");
             preValidationResponse.setCaptchaValidationRequired(true);
         }
