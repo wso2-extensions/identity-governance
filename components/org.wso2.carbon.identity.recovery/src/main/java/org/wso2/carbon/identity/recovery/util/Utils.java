@@ -103,6 +103,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -2098,5 +2099,20 @@ public class Utils {
     public static FlowConfigDTO getFlowConfig(String flowType, String tenantDomain) throws FlowMgtServerException {
 
         return FlowMgtConfigUtils.getFlowConfig(flowType, tenantDomain);
+    }
+
+    /**
+     * Resolve the service provider uuid from the properties.
+     *
+     * @param properties Map of properties.
+     * @return Service provider uuid if exists, empty otherwise.
+     */
+    public static Optional<String> resolveServiceProviderUUID(Map<String, ?> properties) {
+
+        if (MapUtils.isEmpty(properties) || !properties.containsKey(IdentityRecoveryConstants.SERVICE_PROVIDER_ID)) {
+            return Optional.empty();
+        }
+        Object value = properties.get(IdentityRecoveryConstants.SERVICE_PROVIDER_ID);
+        return Optional.ofNullable(value instanceof String ? (String) value : null);
     }
 }

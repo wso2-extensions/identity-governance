@@ -251,6 +251,9 @@ public class IdentityRecoveryConstants {
     public static final String TRUE = "true";
     public static final String FALSE = "false";
 
+    // Constants related to service provider.
+    public static final String SERVICE_PROVIDER_ID = "spId";
+
     private IdentityRecoveryConstants() {
 
     }

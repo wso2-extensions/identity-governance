@@ -114,6 +114,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -744,7 +745,7 @@ public class UserSelfRegistrationManager {
                         (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                                 user.getTenantDomain()));
                 if (isSelfRegistrationConfirmationNotify) {
-                    triggerNotification(user);
+                    triggerNotification(user, properties);
                 }
             }
 
@@ -2349,7 +2350,8 @@ public class UserSelfRegistrationManager {
                 dataObject, result);
     }
 
-    private void triggerNotification(User user) throws IdentityRecoveryServerException {
+    private void triggerNotification(User user, Map<String, String> metaProperties)
+            throws IdentityRecoveryServerException {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         HashMap<String, Object> properties = new HashMap<>();
@@ -2363,6 +2365,11 @@ public class UserSelfRegistrationManager {
         String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
         properties.put(IdentityEventConstants.EventProperty.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
 
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> serviceProviderUUID = Utils.resolveServiceProviderUUID(metaProperties);
+            serviceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

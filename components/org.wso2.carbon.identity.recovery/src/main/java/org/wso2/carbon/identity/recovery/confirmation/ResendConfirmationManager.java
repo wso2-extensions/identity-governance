@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
@@ -320,6 +321,12 @@ public class ResendConfirmationManager {
                     properties.get(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME));
         } else {
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
+        }
+
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> optionalServiceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+            optionalServiceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
         }
         Event identityMgtEvent = new Event(eventName, properties);
         try {

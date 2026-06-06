@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOGIN_IDENTIFIER;
@@ -1187,6 +1188,12 @@ public class NotificationPasswordRecoveryManager {
             }
         }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
+
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> serviceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+            serviceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

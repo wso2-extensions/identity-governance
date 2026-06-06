@@ -260,7 +260,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             if (Boolean.parseBoolean(Utils.getFlowCompletionConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION,
                     tenantDomain, Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED))) {
                 handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
-                        IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS);
+                        IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS, context.getApplicationId());
             }
             publishEvent(user, userClaims, confirmationCode, recoveryScenario,
                     IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
@@ -328,7 +328,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             if (isEnableNotificationOnPasswordReset && isNotificationClaimAvailableInFlowUser) {
                 handleNotifications(user, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
                         notificationChannel.getChannelType(), StringUtils.EMPTY, internallyManaged,
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS);
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS,
+                        context.getApplicationId());
             }
             publishEvent(user, null , StringUtils.EMPTY, IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
                     IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
@@ -468,7 +469,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     }
 
     private void handleNotifications(User user, String recoveryScenario, String channel, String code,
-                                     boolean internallyManaged, String template)
+                                     boolean internallyManaged, String template, String serviceProviderUUID)
             throws IdentityRecoveryServerException {
 
         // If the notification is not internally managed and the channel is external, skip sending notifications.
@@ -478,7 +479,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         try {
             String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
             triggerNotification(user, recoveryScenario, channel,
-                    template, code, eventName);
+                    template, code, eventName, serviceProviderUUID);
         } catch (IdentityRecoveryException e) {
             String errorMsg = String.format("Error while sending account activation notification to user: %s",
                     user.getUserName());
@@ -487,7 +488,7 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
     }
 
     private void triggerNotification(User user, String recoveryScenario, String channel, String template,
-                                     String code, String eventName)
+                                     String code, String eventName, String serviceProviderUUID)
             throws IdentityRecoveryException {
 
         HashMap<String, Object> props = new HashMap<>();
@@ -498,6 +499,9 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         props.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
         props.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         props.put(IdentityRecoveryConstants.TEMPLATE_TYPE, template);
+        if (StringUtils.isNotBlank(serviceProviderUUID)) {
+            props.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
 
         Event event = new Event(eventName, props);
         try {

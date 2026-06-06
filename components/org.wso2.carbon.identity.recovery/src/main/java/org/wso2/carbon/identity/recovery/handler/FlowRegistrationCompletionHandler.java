@@ -173,7 +173,7 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             if (isNotificationInternallyManaged && isNotificationClaimAvailable && isSelfRegistrationConfirmationNotify
                     && (notificationChannelVerified || !isEnableConfirmationOnCreation)) {
                 triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
-                        user.getUserStoreDomain());
+                        user.getUserStoreDomain(), Utils.getArbitraryProperties());
             }
 
             // Event is not published if account lock on creation is enabled as self registration is not complete yet.

@@ -91,6 +91,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.emptyMap;
 import static junit.framework.Assert.fail;
@@ -1542,6 +1543,67 @@ public class UtilsTest {
 
         String result = Utils.getUserClaim(userStoreManager, user, claimUri);
         assertNull(result);
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithValidStringValue() {
+
+        Map<String, String> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.SERVICE_PROVIDER_ID, "test-sp-uuid");
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(properties);
+
+        assertTrue(result.isPresent());
+        assertEquals(result.get(), "test-sp-uuid");
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithNullMap() {
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(null);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithEmptyMap() {
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(new HashMap<>());
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithMissingKey() {
+
+        Map<String, String> properties = new HashMap<>();
+        properties.put("someOtherKey", "someValue");
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(properties);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithNullValue() {
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.SERVICE_PROVIDER_ID, null);
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(properties);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testResolveServiceProviderUUIDWithNonStringValue() {
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.SERVICE_PROVIDER_ID, 12345);
+
+        Optional<String> result = Utils.resolveServiceProviderUUID(properties);
+
+        assertFalse(result.isPresent());
     }
 
     @Test(description = "Test getUserClaim() throws IdentityEventException when the user‑store lookup fails",

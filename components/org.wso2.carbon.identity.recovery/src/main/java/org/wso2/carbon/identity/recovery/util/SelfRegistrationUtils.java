@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.wso2.carbon.CarbonConstants.DOMAIN_SEPARATOR;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE;
@@ -167,6 +168,22 @@ public class SelfRegistrationUtils {
                                                           String userStoreDomain)
             throws IdentityRecoveryServerException {
 
+        triggerAccountCreationNotification(username, tenantDomain, userStoreDomain, null);
+    }
+
+    /**
+     * Trigger account creation notification.
+     *
+     * @param username        Username of the signed-up user.
+     * @param tenantDomain    Tenant domain of the signed-up user.
+     * @param userStoreDomain User store domain of the signed-up user.
+     * @param  props           Event properties to be included when triggering the notification.
+     * @throws IdentityRecoveryServerException Error while triggering the notification.
+     */
+    public static void triggerAccountCreationNotification(String username, String tenantDomain,
+                                                          String userStoreDomain, Property[] props)
+            throws IdentityRecoveryServerException {
+
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
         String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
@@ -187,6 +204,16 @@ public class SelfRegistrationUtils {
         String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
         properties.put(IdentityEventConstants.EventProperty.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
 
+        if (props != null) {
+            for (Property prop : props) {
+                properties.put(prop.getKey(), prop.getValue());
+            }
+        }
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> optionalServiceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+            optionalServiceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
@@ -315,6 +342,11 @@ public class SelfRegistrationUtils {
             }
         }
         properties.put(TEMPLATE_TYPE, emailTemplateName);
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> optionalServiceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+            optionalServiceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
