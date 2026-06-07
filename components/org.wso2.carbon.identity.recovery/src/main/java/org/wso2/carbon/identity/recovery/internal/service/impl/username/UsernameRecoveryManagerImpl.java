@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 
@@ -378,6 +379,11 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
             }
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
+            if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+                Optional<String> optionalServiceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+                optionalServiceProviderUUID.ifPresent(s ->
+                        properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+            }
             Event identityMgtEvent = new Event(eventName, properties);
             try {
                 IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

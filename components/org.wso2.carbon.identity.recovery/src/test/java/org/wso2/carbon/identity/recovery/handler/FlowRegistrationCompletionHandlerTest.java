@@ -302,7 +302,9 @@ public class FlowRegistrationCompletionHandlerTest {
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.triggerNotification(
                 any(User.class), anyString(), anyString(), any(), anyString())).thenAnswer(invocation -> null);
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
-                anyString(), anyString(), anyString())).thenAnswer(invocation -> null);
+                anyString(), anyString(), anyString(),
+                any(org.wso2.carbon.identity.recovery.model.Property[].class)))
+                .thenAnswer(invocation -> null);
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.lockUserAccount(
                 any(Boolean.class), any(Boolean.class), anyString(), any(UserStoreManager.class), anyString()))
                 .thenAnswer(invocation -> null);
@@ -463,7 +465,8 @@ public class FlowRegistrationCompletionHandlerTest {
 
         // Verify account creation notification is triggered
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
-                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+                eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME),
+                any(org.wso2.carbon.identity.recovery.model.Property[].class)), times(1));
     }
 
     @Test
@@ -688,7 +691,8 @@ public class FlowRegistrationCompletionHandlerTest {
 
         // Verify account creation notification is triggered.
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
-                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+                eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME),
+                any(org.wso2.carbon.identity.recovery.model.Property[].class)), times(1));
     }
 
     @Test
@@ -772,7 +776,8 @@ public class FlowRegistrationCompletionHandlerTest {
 
         // Verify account creation notification is sent
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
-                USER_NAME, TENANT_DOMAIN, DOMAIN_NAME), times(1));
+                eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME),
+                any(org.wso2.carbon.identity.recovery.model.Property[].class)), times(1));
     }
 }
 

@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.getNotificationChannel;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.handledNotificationChannelManagerException;
@@ -159,7 +160,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isNotificationInternallyManage
                         && isSelfRegistrationConfirmationNotify) {
                     triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
-                                                       user.getUserStoreDomain());
+                                                       user.getUserStoreDomain(), Utils.getArbitraryProperties());
                 }
                 // If notifications are externally managed, no send notifications.
                 if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage) {
@@ -305,6 +306,11 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+        if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
+            Optional<String> optionalServiceProviderUUID = Utils.resolveServiceProviderUUID(properties);
+            optionalServiceProviderUUID.ifPresent(s ->
+                    properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, s));
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
