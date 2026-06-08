@@ -59,10 +59,9 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
     /**
      * Remove the in-memory event publisher and stream configurations of the tenant when its
      * configuration context is unloaded (tenant idle eviction or shutdown).
-     *
-     * <p>The publisher and stream runtimes are re-created by {@link #creatingConfigurationContext(int)}
+     * The publisher and stream runtimes are re-created by {@link #creatingConfigurationContext(int)}
      * the next time the tenant is loaded, so removing them here keeps the in-memory publisher state
-     * proportional to the set of currently loaded tenants instead of every tenant ever loaded.</p>
+     * proportional to the set of currently loaded tenants instead of every tenant ever loaded.
      *
      * @param configContext Configuration context of the tenant being unloaded.
      */
@@ -91,12 +90,9 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                     .removeEventPublisherConfigurations(tenantId);
             TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
                     .removeEventStreamConfigurations(tenantId);
-        } catch (Throwable e) {
-            /*
-             * Tenant unloading must never fail due to publisher cleanup; also tolerates running against
-             * an analytics-common version that does not expose the cleanup APIs yet (NoSuchMethodError).
-             */
-            log.warn("Error while removing event publisher and stream configurations for tenant domain: "
+        } catch (Exception e) {
+            // Tenant unloading must never fail due to publisher cleanup.
+            log.error("Error while removing event publisher and stream configurations for tenant domain: "
                     + tenantDomain, e);
         }
     }
