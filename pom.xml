@@ -803,7 +803,7 @@
         <!-- Pax Logging Version -->
         <pax.logging.api.version>2.1.0-wso2v5</pax.logging.api.version>
 
-        <carbon.analytics.common.version>5.2.50</carbon.analytics.common.version>
+        <carbon.analytics.common.version>5.5.6</carbon.analytics.common.version>
         <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
 
         <spotbugs-maven-plugin.version>4.9.8.2</spotbugs-maven-plugin.version>
