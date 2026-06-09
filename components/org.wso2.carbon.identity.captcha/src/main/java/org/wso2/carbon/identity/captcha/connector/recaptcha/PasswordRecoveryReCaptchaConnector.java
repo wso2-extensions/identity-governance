@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2026, WSO2 LLC. (http://www.wso2.com).
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -76,6 +76,9 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
     private static final String RECOVER_PASSWORD_URL = "/api/identity/recovery/v0.9/recover-password";
 
+    private static final String RECOVER_V1_PASSWORD_URL = "/api/users/v1/recovery/password/init";
+    private static final String RECOVER_V2_PASSWORD_URL = "/api/users/v2/recovery/password/init";
+
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Question.Password" +
             ".ReCaptcha.Enable";
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
@@ -106,7 +109,9 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
                 (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL) ||
                         CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL) ||
                         CaptchaUtil.isPathAvailable(path, ACCOUNT_VALIDATE_ANSWER_URL) ||
-                        CaptchaUtil.isPathAvailable(path, RECOVER_PASSWORD_URL));
+                        CaptchaUtil.isPathAvailable(path, RECOVER_PASSWORD_URL) ||
+                        CaptchaUtil.isPathAvailable(path, RECOVER_V1_PASSWORD_URL) ||
+                        CaptchaUtil.isPathAvailable(path, RECOVER_V2_PASSWORD_URL));
     }
 
     @Override
@@ -121,12 +126,15 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
                 forgotPasswordRecaptchaEnabled) &&
                 (CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTION_URL) ||
                 CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL) ||
-                CaptchaUtil.isPathAvailable(pathUrl, RECOVER_PASSWORD_URL))) {
+                CaptchaUtil.isPathAvailable(pathUrl, RECOVER_PASSWORD_URL) ||
+                CaptchaUtil.isPathAvailable(pathUrl, RECOVER_V1_PASSWORD_URL) ||
+                CaptchaUtil.isPathAvailable(pathUrl, RECOVER_V2_PASSWORD_URL))) {
             preValidationResponse.setCaptchaValidationRequired(true);
         }
 
         // Handle recover with Email option.
-        if (pathUrl.equals(RECOVER_PASSWORD_URL)) {
+        if (pathUrl.equals(RECOVER_PASSWORD_URL) || pathUrl.equals(RECOVER_V1_PASSWORD_URL) ||
+                pathUrl.equals(RECOVER_V2_PASSWORD_URL)) {
             return preValidationResponse;
         }
 
