@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager;
 
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -28,6 +29,7 @@ import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResource
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils;
 import org.wso2.carbon.utils.AbstractAxis2ConfigurationContextObserver;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.List;
 
@@ -52,6 +54,47 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         log.info("Loading configuration context for tenant domain: " + tenantDomain);
         loadEventStreamAndPublisherConfigurations(tenantId);
+    }
+
+    /**
+     * Remove the in-memory event publisher and stream configurations of the tenant when its
+     * configuration context is unloaded (tenant idle eviction or shutdown).
+     * The publisher and stream runtimes are re-created by {@link #creatingConfigurationContext(int)}
+     * the next time the tenant is loaded, so removing them here keeps the in-memory publisher state
+     * proportional to the set of currently loaded tenants instead of every tenant ever loaded.
+     *
+     * @param configContext Configuration context of the tenant being unloaded.
+     */
+    @Override
+    public void terminatingConfigurationContext(ConfigurationContext configContext) {
+
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        /*
+         * Both tenant unload paths (idle eviction in TenantAxisUtils#cleanupTenants and tenant
+         * deactivation in TenantMgtUtil#unloadTenantConfigurations) invoke the terminating observers
+         * within the unloading tenant's carbon context flow. Guard regardless: with an unresolved
+         * tenant we cannot tell whose state to remove, and the super tenant's publishers are
+         * filesystem-deployed at startup and would not be re-created lazily.
+         */
+        if (tenantId == MultitenantConstants.INVALID_TENANT_ID
+                || tenantId == MultitenantConstants.SUPER_TENANT_ID) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping event publisher and stream cleanup for tenant id: " + tenantId);
+            }
+            return;
+        }
+        log.info("Unloading event publisher and stream configurations for tenant domain: " + tenantDomain);
+        try {
+            TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
+                    .removeEventPublisherConfigurations(tenantId);
+            TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
+                    .removeEventStreamConfigurations(tenantId);
+        } catch (Exception e) {
+            // Tenant unloading must never fail due to publisher cleanup.
+            log.error("Error while removing event publisher and stream configurations for tenant domain: "
+                    + tenantDomain, e);
+        }
     }
 
     /**
