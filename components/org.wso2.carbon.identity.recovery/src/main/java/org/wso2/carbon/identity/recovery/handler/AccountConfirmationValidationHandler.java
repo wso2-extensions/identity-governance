@@ -61,6 +61,13 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
 
+        if (isAccountConfirmationValidationHandlerDisabled()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Account Confirmation Validation Handler is disabled via configuration. Skipping.");
+            }
+            return;
+        }
+
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
@@ -205,6 +212,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
     private boolean isAuthPolicyAccountExistCheck() {
         String authPolicyAccountExistCheck = IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist");
         return authPolicyAccountExistCheck == null || Boolean.parseBoolean(authPolicyAccountExistCheck);
+    }
+
+    private boolean isAccountConfirmationValidationHandlerDisabled() {
+        String disableHandler = IdentityUtil.getProperty(
+                "AuthenticationPolicy.DisableAccountConfirmationValidationHandler");
+        return disableHandler != null && Boolean.parseBoolean(disableHandler);
     }
 
 }
