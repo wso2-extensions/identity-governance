@@ -889,14 +889,14 @@ public class ResendConfirmationManager {
 
     private boolean isSelfSignUpFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
 
-        boolean isPendingSelfSignUpState = false;
-        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
-        if (StringUtils.isNotBlank(accountState)) {
-            isPendingSelfSignUpState = IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)
-                    || IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
+        if (!RecoveryScenarios.SELF_SIGN_UP.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) {
+            return false;
         }
-
-        return RecoveryScenarios.SELF_SIGN_UP.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))
-                && isPendingSelfSignUpState;
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)
+                || IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
     }
 }
