@@ -887,15 +887,6 @@ public class ResendConfirmationManager {
                 .equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) && isPendingEmailVerificationState;
     }
 
-    /**
-     * Checks whether the given recovery scenario is a SELF_SIGN_UP flow for a user in a pending
-     * self-registration or email-verification state (i.e., no prior recovery data row exists).
-     *
-     * @param recoveryScenario Recovery scenario name
-     * @param user             User object
-     * @return true if the scenario is SELF_SIGN_UP and the account is in a pending sign-up state
-     * @throws IdentityRecoveryClientException If retrieving the account state fails
-     */
     private boolean isSelfSignUpFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
 
         boolean isPendingSelfSignUpState = false;

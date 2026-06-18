@@ -191,22 +191,11 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)
                     && (isUserInPendingSelfRegistrationState(resendCodeRequestDTO.getUser())
                             || isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser()))) {
-                String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
-                try {
-                    boolean isSelfRegistrationEmailOTPEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                            IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
-                            resendCodeRequestDTO.getUser().getTenantDomain()));
-                    if (isSelfRegistrationEmailOTPEnabled) {
-                        notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
-                    }
-                } catch (IdentityRecoveryException e) {
-                    LOG.error("Error while getting self registration send OTP in email configuration", e);
-                }
                 resendConfirmationManager = Utils.getResendConfirmationManager();
                 notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                         RecoveryScenarios.SELF_SIGN_UP.toString(),
                         RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                        notificationType,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM,
                         resendCodeRequestDTO);
             }
 
