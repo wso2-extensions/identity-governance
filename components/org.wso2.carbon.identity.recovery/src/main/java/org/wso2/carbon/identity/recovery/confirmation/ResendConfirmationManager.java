@@ -536,7 +536,8 @@ public class ResendConfirmationManager {
         List<Property> propertyList = new ArrayList<>(Arrays.asList(properties));
 
         if (userRecoveryData == null &&
-                (isAskPasswordFlow(recoveryScenario, user) || isEmailVerificationFlow(recoveryScenario, user))) {
+                (isAskPasswordFlow(recoveryScenario, user) || isEmailVerificationFlow(recoveryScenario, user)
+                        || isSelfSignUpFlow(recoveryScenario, user))) {
             storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         } else if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             // Validate the previous confirmation code with the data retrieved by the user recovery information.
@@ -884,5 +885,18 @@ public class ResendConfirmationManager {
         return (RecoveryScenarios.EMAIL_VERIFICATION.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))
                 || RecoveryScenarios.EMAIL_VERIFICATION_OTP
                 .equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) && isPendingEmailVerificationState;
+    }
+
+    private boolean isSelfSignUpFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
+
+        boolean isPendingSelfSignUpState = false;
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            isPendingSelfSignUpState = IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)
+                    || IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
+        }
+
+        return RecoveryScenarios.SELF_SIGN_UP.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))
+                && isPendingSelfSignUpState;
     }
 }

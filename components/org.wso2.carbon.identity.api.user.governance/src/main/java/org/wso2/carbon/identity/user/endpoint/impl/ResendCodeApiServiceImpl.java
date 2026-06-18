@@ -188,6 +188,15 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                         RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP,
                         resendCodeRequestDTO);
+            } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)
+                    && (isUserInPendingSelfRegistrationState(resendCodeRequestDTO.getUser())
+                            || isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser()))) {
+                resendConfirmationManager = Utils.getResendConfirmationManager();
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                        RecoveryScenarios.SELF_SIGN_UP.toString(),
+                        RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM,
+                        resendCodeRequestDTO);
             }
 
             return notificationResponseBean;
@@ -436,6 +445,22 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             return false;
         }
         return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
+    }
+
+    /**
+     * Determines if a user's account is in a state where they need to complete self-registration.
+     *
+     * @param user User object containing user information.
+     * @return true if the user is in pending self-registration state, false otherwise.
+     */
+    private boolean isUserInPendingSelfRegistrationState(UserDTO user) {
+
+        String domainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+        String accountState = Utils.getAccountState(domainQualifiedUsername, user.getTenantDomain());
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState);
     }
 
     /**
