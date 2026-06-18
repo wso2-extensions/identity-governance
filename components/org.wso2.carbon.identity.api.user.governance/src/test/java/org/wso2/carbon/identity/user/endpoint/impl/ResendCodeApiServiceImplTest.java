@@ -243,6 +243,81 @@ public class ResendCodeApiServiceImplTest {
                 any());
     }
 
+    @Test (description = "Test resendCodePost when recovery scenario is SELF_SIGN_UP, user is in " +
+            "PENDING_SELF_REGISTRATION state, and no userRecoveryData exists.")
+    public void testResendCodePostForSelfSignUpWithoutRecoveryDataAndPendingSelfRegistration() throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.SELF_SIGN_UP.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+        mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+        when(resendConfirmationManager.resendConfirmationCode(
+                any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(new NotificationResponseBean(createUser()));
+
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 201);
+
+        verify(resendConfirmationManager).resendConfirmationCode(
+                any(),
+                eq(RecoveryScenarios.SELF_SIGN_UP.toString()),
+                eq(RecoverySteps.CONFIRM_SIGN_UP.toString()),
+                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM),
+                any());
+    }
+
+    @Test (description = "Test resendCodePost when recovery scenario is SELF_SIGN_UP, user is in " +
+            "PENDING_EMAIL_VERIFICATION state, and no userRecoveryData exists.")
+    public void testResendCodePostForSelfSignUpWithoutRecoveryDataAndPendingEmailVerification() throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.SELF_SIGN_UP.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION);
+        mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+        when(resendConfirmationManager.resendConfirmationCode(
+                any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(new NotificationResponseBean(createUser()));
+
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 201);
+
+        verify(resendConfirmationManager).resendConfirmationCode(
+                any(),
+                eq(RecoveryScenarios.SELF_SIGN_UP.toString()),
+                eq(RecoverySteps.CONFIRM_SIGN_UP.toString()),
+                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM),
+                any());
+    }
+
+    @Test (description = "Test resendCodePost when recovery scenario is SELF_SIGN_UP, no userRecoveryData " +
+            "exists, and user is NOT in a pending self-registration state — should return 400.")
+    public void testResendCodePostForSelfSignUpWithoutRecoveryDataAndNoMatchingPendingState() throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.SELF_SIGN_UP.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 400);
+
+        verify(resendConfirmationManager, Mockito.never()).resendConfirmationCode(
+                any(), anyString(), anyString(), anyString(), any());
+    }
+
     private ResendCodeRequestDTO resendCodeRequestDTO() {
 
         ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();

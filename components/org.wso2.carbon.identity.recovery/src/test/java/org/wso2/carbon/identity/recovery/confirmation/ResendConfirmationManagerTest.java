@@ -1001,6 +1001,136 @@ public class ResendConfirmationManagerTest {
         assertEquals(eventProperties.get(IdentityRecoveryConstants.SEND_TO), mobileNumber);
     }
 
+    @Test (description = "Test resend confirmation code for SELF_SIGN_UP scenario when recovery data is missing " +
+            "and the user is in pending self-registration state.")
+    public void testResendConfirmationCodeSelfSignUpWhenNoRecoveryDataAndPendingSelfRegistration() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String newCode = "new-code";
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.SELF_SIGN_UP)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.SELF_SIGN_UP.toString(),
+                RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.SELF_SIGN_UP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.CONFIRM_SIGN_UP);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify notification was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM);
+    }
+
+    @Test (description = "Test resend confirmation code for SELF_SIGN_UP scenario when recovery data is missing " +
+            "and the user is in pending email verification state.")
+    public void testResendConfirmationCodeSelfSignUpWhenNoRecoveryDataAndPendingEmailVerification() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String newCode = "new-code";
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.SELF_SIGN_UP)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.SELF_SIGN_UP.toString(),
+                RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.SELF_SIGN_UP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.CONFIRM_SIGN_UP);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify notification was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM);
+    }
+
+    @Test (description = "Test that isSelfSignUpFlow checks the scenario before fetching account state — " +
+            "non-SELF_SIGN_UP scenario with PENDING_SELF_REGISTRATION state must throw OLD_CODE_NOT_FOUND.")
+    public void testResendConfirmationCodeNonSelfSignUpScenarioWithPendingStateThrows() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{};
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY)).thenReturn(null);
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+        mockUtilsErrors();
+
+        try {
+            resendConfirmationManager.resendConfirmationCode(
+                    user,
+                    RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_PASSWORD_RESET,
+                    properties);
+            fail("Expected IdentityRecoveryClientException for null recovery data on non-SELF_SIGN_UP scenario.");
+        } catch (IdentityRecoveryClientException e) {
+            assertNotNull(e);
+        } catch (IdentityRecoveryException e) {
+            fail("Expected a client exception but got: " + e.getMessage());
+        }
+    }
+
     private static User getUser() {
 
         User user = new User();
