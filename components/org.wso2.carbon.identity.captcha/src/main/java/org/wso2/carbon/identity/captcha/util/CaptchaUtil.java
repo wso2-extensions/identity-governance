@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2026, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -35,6 +35,9 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
+import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -979,5 +982,49 @@ public class CaptchaUtil {
         failedRedirectUrls.add(ON_FAILED_LOGIN_REDIRECT_URL);
 
         return failedRedirectUrls;
+    }
+
+    /**
+     * Check whether captcha is disabled for the application.
+     * Currently, this method checks whether the captcha is disabled for the console application only.
+     *
+     * @param appId         Application ID of the application.
+     * @param tenantDomain  Tenant Domain of the application.
+     * @return True if captcha is disabled for the application, false otherwise.
+     */
+    public static boolean isCaptchaDisabledForApplication(String appId, String tenantDomain) {
+
+        if (appId == null || tenantDomain == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Application ID or tenant domain is null. Hence returning false.");
+            }
+            return false;
+        }
+
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(CaptchaConstants.DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN))) {
+            return false;
+        }
+
+        ApplicationManagementService appMgtService = CaptchaDataHolder.getInstance().getApplicationManagementService();
+        if (appMgtService == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("ApplicationManagementService is not available. Hence returning false.");
+            }
+            return false;
+        }
+
+        try {
+            ApplicationBasicInfo appInfo = appMgtService.getApplicationBasicInfoByResourceId(appId, tenantDomain);
+            if (appInfo == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Application basic info is null for app ID: " + appId + ". Hence returning false.");
+                }
+                return false;
+            }
+            return CaptchaConstants.CONSOLE_APPLICATION_NAME.equals(appInfo.getApplicationName());
+        } catch (IdentityApplicationManagementException e) {
+            log.error("Error occurred while retrieving application basic info for app ID: " + appId, e);
+            return false;
+        }
     }
 }

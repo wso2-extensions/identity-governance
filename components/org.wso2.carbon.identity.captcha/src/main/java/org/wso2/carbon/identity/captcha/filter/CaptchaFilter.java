@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2026, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -30,9 +30,11 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,6 +54,7 @@ import javax.servlet.http.HttpServletResponse;
 public class CaptchaFilter implements Filter {
 
     private static final Log log = LogFactory.getLog(CaptchaFilter.class);
+    private static final String COMMON_AUTH_REQUEST_URI = "/commonauth";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -68,7 +71,8 @@ public class CaptchaFilter implements Filter {
 
         try {
 
-            if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+            if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled() ||
+                    isCaptchaDisabledForConsoleLogin(servletRequest)) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
@@ -197,10 +201,54 @@ public class CaptchaFilter implements Filter {
     private void doFilter(CaptchaPreValidationResponse preValidationResponse, ServletRequest servletRequest,
                           ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        if(preValidationResponse.getWrappedHttpServletRequest() != null) {
+        if (preValidationResponse.getWrappedHttpServletRequest() != null) {
             filterChain.doFilter(preValidationResponse.getWrappedHttpServletRequest(), servletResponse);
         } else {
             filterChain.doFilter(servletRequest, servletResponse);
         }
+    }
+
+    private boolean isCaptchaDisabledForConsoleLogin(ServletRequest servletRequest) {
+
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(CaptchaConstants.DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN))) {
+            if (log.isDebugEnabled()) {
+                log.debug(CaptchaConstants.DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN + " property is not enabled.");
+            }
+            return false;
+        }
+
+        if (!(servletRequest instanceof HttpServletRequest)) {
+            return false;
+        }
+
+        HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+        if (!COMMON_AUTH_REQUEST_URI.equals(httpRequest.getRequestURI())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Request URI: " + httpRequest.getRequestURI() + " is not a login request");
+            }
+            return false;
+        }
+
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        if (sessionDataKey == null) {
+            return false;
+        }
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (context == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Authentication context is not found in the cache for session data key: " + sessionDataKey);
+            }
+            return false;
+        }
+
+        if (context.getServiceProviderName() != null &&
+                context.getServiceProviderName().equals(CaptchaConstants.CONSOLE_APPLICATION_NAME)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping captcha validation for Console application login.");
+            }
+            return true;
+        }
+
+        return false;
     }
 }
