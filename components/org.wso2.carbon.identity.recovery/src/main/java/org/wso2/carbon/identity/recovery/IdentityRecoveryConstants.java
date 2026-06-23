@@ -254,6 +254,8 @@ public class IdentityRecoveryConstants {
     // Constants related to service provider.
     public static final String SERVICE_PROVIDER_ID = "spId";
 
+    public static final String CDS_PROFILE_ATTRIBUTE = "cdsProfile";
+
     private IdentityRecoveryConstants() {
 
     }
