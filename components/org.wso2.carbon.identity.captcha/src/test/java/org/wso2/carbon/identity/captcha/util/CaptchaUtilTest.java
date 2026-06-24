@@ -22,9 +22,13 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
+import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
@@ -34,6 +38,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertThrows;
 
 /**
@@ -48,6 +55,12 @@ public class CaptchaUtilTest {
     public void setUp() {
 
         MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        CaptchaDataHolder.getInstance().setApplicationManagementService(null);
     }
 
     private MockedStatic<IdentityUtil> stubLocalOtpCaptchaProp(String value) {
@@ -244,9 +257,65 @@ public class CaptchaUtilTest {
                                                       boolean expectedResult) {
         try (MockedStatic<IdentityUtil> mockedIdentityUtil = stubLocalOtpCaptchaProp(propertyValue)) {
             boolean actualResult = CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators();
-            Assert.assertEquals(actualResult, expectedResult, 
+            Assert.assertEquals(actualResult, expectedResult,
                     String.format("Local OTP captcha validation should return %s for scenario: %s (property value: '%s')",
                             expectedResult, description, propertyValue));
+        }
+    }
+
+    /**
+     * Provides test data for isCaptchaDisabledForApplication scenarios.
+     * Each array contains: appId, tenantDomain, disableFlagValue, appName (null = app not found), expectedResult
+     */
+    @DataProvider(name = "captchaDisabledForApplicationScenarios")
+    public Object[][] captchaDisabledForApplicationScenarios() {
+
+        return new Object[][]{
+            {null,    "carbon.super", "true",  "Console", false},  // null appId
+            {"appId", null,           "true",  "Console", false},  // null tenantDomain
+            {"appId", "carbon.super", "false", "Console", false},  // disable flag not set
+            {"appId", "carbon.super", "true",  "Console", true},   // Console app → skip captcha
+            {"appId", "carbon.super", "true",  "MyApp",   false},  // non-Console app → enforce captcha
+            {"appId", "carbon.super", "true",  null,      false},  // app not found
+        };
+    }
+
+    @Test(description = "Verify isCaptchaDisabledForApplication for various app ID, tenant and configuration scenarios",
+          dataProvider = "captchaDisabledForApplicationScenarios")
+    public void testIsCaptchaDisabledForApplication(String appId, String tenantDomain, String disableFlagValue,
+                                                    String appName, boolean expectedResult)
+            throws IdentityApplicationManagementException {
+
+        ApplicationManagementService mockAppMgtService = mock(ApplicationManagementService.class);
+        ApplicationBasicInfo mockAppInfo = null;
+        if (appName != null) {
+            mockAppInfo = mock(ApplicationBasicInfo.class);
+            when(mockAppInfo.getApplicationName()).thenReturn(appName);
+        }
+        when(mockAppMgtService.getApplicationBasicInfoByResourceId(any(), any())).thenReturn(mockAppInfo);
+        CaptchaDataHolder.getInstance().setApplicationManagementService(mockAppMgtService);
+
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class)) {
+            mockedIdentityUtil.when(
+                    () -> IdentityUtil.getProperty(CaptchaConstants.DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN))
+                    .thenReturn(disableFlagValue);
+
+            boolean actualResult = CaptchaUtil.isCaptchaDisabledForApplication(appId, tenantDomain);
+            Assert.assertEquals(actualResult, expectedResult);
+        }
+    }
+
+    @Test(description = "Captcha must not be disabled when ApplicationManagementService is unavailable")
+    public void testIsCaptchaDisabledForApplication_ServiceUnavailable() {
+
+        CaptchaDataHolder.getInstance().setApplicationManagementService(null);
+
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class)) {
+            mockedIdentityUtil.when(
+                    () -> IdentityUtil.getProperty(CaptchaConstants.DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN))
+                    .thenReturn("true");
+
+            Assert.assertFalse(CaptchaUtil.isCaptchaDisabledForApplication("appId", "carbon.super"));
         }
     }
 }

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2026, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -69,6 +69,8 @@ public class CaptchaConstants {
 
     public static final String CAPTCHA_SUCCESS = "success";
     public static final String ENABLE_GENERIC_CAPTCHA_VALIDATION = "enable_captcha_validation";
+    public static final String DISABLE_CAPTCHA_FOR_CONSOLE_LOGIN = "Captcha.DisableForConsole.Login";
+    public static final String CONSOLE_APPLICATION_NAME = "Console";
     public static final String ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS
             = "Captcha.EnableCaptchaForLocalOTPAuthenticators";
     public static final String RE_CAPTCHA = "reCaptcha";
