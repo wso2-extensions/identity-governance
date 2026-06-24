@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineServerException;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
@@ -177,6 +179,18 @@ public class ExecutorConsentUtils {
                                           List<PurposePIICategoryBinding> purposeBindings, boolean isRejected)
             throws FlowEngineServerException {
 
+        Flow.InitiatingPersona initiatingPersona;
+        Flow existingFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        if (existingFlow != null) {
+            initiatingPersona = existingFlow.getInitiatingPersona();
+        } else {
+            initiatingPersona = Flow.InitiatingPersona.ADMIN;
+        }
+        Flow consentFlow = new Flow.Builder()
+                .name(Flow.Name.CONSENT_ADD)
+                .initiatingPersona(initiatingPersona)
+                .build();
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(consentFlow);
         try {
             org.wso2.carbon.consent.mgt.core.ConsentManager consentManager =
                     IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
@@ -203,6 +217,8 @@ public class ExecutorConsentUtils {
             }
             throw FlowExecutionEngineUtils.handleServerException(ERROR_CODE_POLICY_CONSENT_FAILURE, e, purposeType,
                     Utils.maskIfRequired(subjectId));
+        } finally {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
     }
 
