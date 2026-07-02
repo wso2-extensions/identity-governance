@@ -780,7 +780,7 @@
         <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
         <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
         <jackson-jaxrs-json-provider.version>2.13.2</jackson-jaxrs-json-provider.version>
-        <jackson-databind.version>2.13.2.1</jackson-databind.version>
+        <jackson-databind.version>2.22.0</jackson-databind.version>
         <cxf-bundle.version>3.5.9</cxf-bundle.version>
         <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
