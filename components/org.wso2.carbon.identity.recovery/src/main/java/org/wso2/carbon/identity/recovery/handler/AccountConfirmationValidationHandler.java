@@ -61,6 +61,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
 
+        // Added this check to skip account confirmation validation when the API Manager gateway runs without the
+        // APIM database that holds the tenant's Resident Identity Provider. In such scenarios the
+        // connector-config lookups below (Utils.getConnectorConfig -> IdentityGovernanceService.getConfiguration ->
+        // IdentityProviderManager.getResidentIdP) fail with "Could not find Resident Identity Provider for tenant",
+        // aborting POST_AUTHENTICATION. When there is no resident IdP to resolve these configs, this validation
+        // can be skipped.
         if (isAccountConfirmationValidationHandlerDisabled()) {
             if (log.isDebugEnabled()) {
                 log.debug("Account Confirmation Validation Handler is disabled via configuration. Skipping.");
