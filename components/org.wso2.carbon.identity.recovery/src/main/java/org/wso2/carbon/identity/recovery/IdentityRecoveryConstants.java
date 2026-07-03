@@ -500,6 +500,8 @@ public class IdentityRecoveryConstants {
 
     public static class ConnectorConfig {
 
+        public static final String DISABLE_ACCOUNT_CONFIRMATION_VALIDATION_HANDLER =
+                "AuthenticationPolicy.DisableAccountConfirmationValidationHandler";
         public static final String PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME =
                 "Recovery.Notification.Password.ExpiryTime.smsOtp";
         public static final String PASSWORD_RECOVERY_SMS_OTP_REGEX = "Recovery.Notification.Password.smsOtp.Regex";
