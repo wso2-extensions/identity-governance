@@ -222,7 +222,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
     private boolean isAccountConfirmationValidationHandlerDisabled() {
         String disableHandler = IdentityUtil.getProperty(
-                "AuthenticationPolicy.DisableAccountConfirmationValidationHandler");
+                IdentityRecoveryConstants.AUTH_POLICY_DISABLE_ACCOUNT_CONFIRMATION_VALIDATION_HANDLER);
         return disableHandler != null && Boolean.parseBoolean(disableHandler);
     }
 
