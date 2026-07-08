@@ -610,6 +610,7 @@ public class UserProvisioningExecutorTest {
         mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(PRIMARY_DOMAIN);
         mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
                 .thenReturn("Internal/testuser");
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(anyString())).thenReturn("testuser");
 
         ExecutorResponse response = executor.execute(context);
 
@@ -1346,6 +1347,7 @@ public class UserProvisioningExecutorTest {
         mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(PRIMARY_DOMAIN);
         mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
                 .thenReturn(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME);
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(anyString())).thenReturn(USERNAME);
 
         return userStoreManager;
     }
