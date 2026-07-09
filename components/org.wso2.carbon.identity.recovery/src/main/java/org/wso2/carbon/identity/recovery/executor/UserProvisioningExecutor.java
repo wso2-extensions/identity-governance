@@ -185,6 +185,8 @@ public class UserProvisioningExecutor implements Executor {
                     credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
 
             String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            String usernameWithoutDomain = UserCoreUtil.removeDomainFromName(user.getUsername());
+            userClaims.put(USERNAME_CLAIM_URI, usernameWithoutDomain);
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
@@ -198,7 +200,7 @@ public class UserProvisioningExecutor implements Executor {
             Utils.setArbitraryProperties(notificationProperties);
 
             String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
-            userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName),
+            userStoreManager.addUser(IdentityUtil.addDomainToName(usernameWithoutDomain, userStoreDomainName),
                     String.valueOf(password), userRoles, userClaims, null);
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
