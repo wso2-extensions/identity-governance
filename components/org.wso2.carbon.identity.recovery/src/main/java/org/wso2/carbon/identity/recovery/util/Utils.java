@@ -2050,7 +2050,7 @@ public class Utils {
                 return mapper.readValue((String) raw, User.class);
             }
             return mapper.convertValue(raw, User.class);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             log.warn("Failed to resolve User from context.", e);
             return null;
         }

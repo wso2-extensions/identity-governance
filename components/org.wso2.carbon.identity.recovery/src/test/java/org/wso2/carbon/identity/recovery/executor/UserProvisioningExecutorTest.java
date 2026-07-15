@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
@@ -46,28 +47,31 @@ import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUt
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
-import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -82,7 +86,11 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE;
@@ -104,6 +112,8 @@ public class UserProvisioningExecutorTest {
     private static final String SECONDARY_DOMAIN = "SECONDARY";
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final int TENANT_ID = 1234;
+    private static final String EXTENSION_PASSWORD = "ExtensionPwd456!";
+    private static final String INPUT_PASSWORD = "UserInputPwd789!";
 
     private UserProvisioningExecutor executor;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolder;
@@ -220,14 +230,312 @@ public class UserProvisioningExecutorTest {
         when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
         when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
 
+        // The ask-password (invited user registration) flow provisions the password before persisting claims.
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+        User invitedUser = new User();
+        invitedUser.setUserName(USERNAME);
+        invitedUser.setTenantDomain(TENANT_DOMAIN);
+        invitedUser.setUserStoreDomain(PRIMARY_DOMAIN);
+        when(context.getProperty(USER)).thenReturn(invitedUser);
+
         // Setup mocks
         AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        IdentityEventService eventService = mock(IdentityEventService.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(eventService);
 
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), STATUS_COMPLETE);
         verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
                 eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryUpdatesCredential() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryCredentialUpdateFailure() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("Error while updating credential"))
+                .when(userStoreManager).updateCredentialByAdmin(anyString(), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+    }
+
+    @Test
+    public void testExecuteAskPasswordUpdatesCredential() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn("INVITED_USER_REGISTRATION");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+        User invitedUser = new User();
+        invitedUser.setUserName(USERNAME);
+        invitedUser.setTenantDomain(TENANT_DOMAIN);
+        invitedUser.setUserStoreDomain(PRIMARY_DOMAIN);
+        when(context.getProperty(USER)).thenReturn(invitedUser);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        IdentityEventService eventService = mock(IdentityEventService.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(eventService);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+    }
+
+    @Test
+    public void testExecuteAskPasswordCredentialUpdateFailure() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn("INVITED_USER_REGISTRATION");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+        User invitedUser = new User();
+        invitedUser.setUserName(USERNAME);
+        invitedUser.setTenantDomain(TENANT_DOMAIN);
+        invitedUser.setUserStoreDomain(PRIMARY_DOMAIN);
+        when(context.getProperty(USER)).thenReturn(invitedUser);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        IdentityEventService eventService = mock(IdentityEventService.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(eventService);
+        doThrow(new UserStoreException("Error while updating credential"))
+                .when(userStoreManager).updateCredentialByAdmin(anyString(), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryPrefersFlowUserCredentialOverUserInput() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(EXTENSION_PASSWORD);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(PASSWORD_KEY, INPUT_PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                userInputData);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        AtomicReference<String> provisionedPassword = capturePasswordOnUpdate(userStoreManager);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        // The credential set on the flow user (e.g. by a flow extension) wins over the raw user input.
+        assertEquals(provisionedPassword.get(), EXTENSION_PASSWORD);
+    }
+
+    @Test
+    public void testExecuteAskPasswordPrefersFlowUserCredentialOverUserInput() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(EXTENSION_PASSWORD);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(PASSWORD_KEY, INPUT_PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, "INVITED_USER_REGISTRATION",
+                userInputData);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        stubAskPasswordProperties(context, PRIMARY_DOMAIN);
+        AtomicReference<String> provisionedPassword = capturePasswordOnUpdate(userStoreManager);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        assertEquals(provisionedPassword.get(), EXTENSION_PASSWORD);
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryFallsBackToUserInput() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(null);
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put("otherCredential", "value".toCharArray());
+        flowUser.setUserCredentials(credentials);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(PASSWORD_KEY, INPUT_PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                userInputData);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        AtomicReference<String> provisionedPassword = capturePasswordOnUpdate(userStoreManager);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        assertEquals(provisionedPassword.get(), INPUT_PASSWORD);
+        // Capturing the fallback password must not clear other credential entries already on the flow user.
+        assertEquals(new String(flowUser.getUserCredentials().get("otherCredential")), "value");
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryFailsWhenNoPasswordAvailable() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(null);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+        verify(userStoreManager, never()).updateCredentialByAdmin(anyString(), any(char[].class));
+    }
+
+    @Test
+    public void testExecuteAskPasswordPopulatesFlowUserIdentity() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, "INVITED_USER_REGISTRATION",
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        stubAskPasswordProperties(context, SECONDARY_DOMAIN);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        // Post-flow handling (e.g. building the auto-login assertion) relies on the flow user's id and domain.
+        assertEquals(flowUser.getUserId(), USER_ID);
+        assertEquals(flowUser.getUserStoreDomain(), SECONDARY_DOMAIN);
+        // Resolved once for the credential update and once for the claim/consent persistence.
+        verify(userStoreManager, times(2)).getSecondaryUserStoreManager(SECONDARY_DOMAIN);
+    }
+
+    @Test
+    public void testExecuteAskPasswordPersistsClaimsInCredentialDomain() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(PASSWORD);
+        String givenNameClaim = WSO2_CLAIM_DIALECT + "givenname";
+        flowUser.addUpdatedClaim(givenNameClaim, "John");
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, "INVITED_USER_REGISTRATION",
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        stubAskPasswordProperties(context, SECONDARY_DOMAIN);
+        AbstractUserStoreManager secondaryStoreManager = mock(AbstractUserStoreManager.class);
+        when(userStoreManager.getSecondaryUserStoreManager(SECONDARY_DOMAIN)).thenReturn(secondaryStoreManager);
+        mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(USERNAME, SECONDARY_DOMAIN))
+                .thenReturn(SECONDARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        // The credential update and the claim persistence must both target the credential's user store,
+        // not a domain recomputed from the unqualified username.
+        verify(secondaryStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+        verify(secondaryStoreManager).setUserClaimValues(
+                eq(SECONDARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryIgnoresSelfRegistrationDefaultUserStore() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        // The self-registration default user store config must not steer the recovery credential update.
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG))
+                .thenReturn("DECOY");
+        AbstractUserStoreManager decoyStoreManager = mock(AbstractUserStoreManager.class);
+        when(userStoreManager.getSecondaryUserStoreManager("DECOY")).thenReturn(decoyStoreManager);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+        verify(decoyStoreManager, never()).updateCredentialByAdmin(anyString(), any(char[].class));
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryNeverGeneratesRandomPassword() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(null);
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put("otherCredential", "value".toCharArray());
+        flowUser.setUserCredentials(credentials);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+
+        ExecutorResponse response = executor.execute(context);
+
+        // A credentials map without a password entry must return error, not provision a generated password.
+        assertEquals(response.getResult(), STATUS_ERROR);
+        verify(userStoreManager, never()).updateCredentialByAdmin(anyString(), any(char[].class));
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryKeepsCredentialOnFailure() throws Exception {
+
+        FlowUser flowUser = createRealFlowUser(PASSWORD);
+        FlowExecutionContext context = createPasswordFlowContext(flowUser, PASSWORD_RECOVERY.getType(),
+                new HashMap<>());
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("Error while updating credential"))
+                .when(userStoreManager).updateCredentialByAdmin(anyString(), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+        // The stored credential stays intact (not consumed) so that a retry can provision it.
+        assertEquals(new String(flowUser.getUserCredentials().get(PASSWORD_KEY)), PASSWORD);
     }
 
     @Test
@@ -690,8 +998,11 @@ public class UserProvisioningExecutorTest {
         AbstractUserStoreManager primaryStoreManager = mock(AbstractUserStoreManager.class);
         AbstractUserStoreManager secondaryStoreManager = mock(AbstractUserStoreManager.class);
 
+        TenantManager tenantManager = mock(TenantManager.class);
         mockedDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
         when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantManager()).thenReturn(tenantManager);
+        when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(primaryStoreManager);
         when(primaryStoreManager.getSecondaryUserStoreManager(SECONDARY_DOMAIN)).thenReturn(secondaryStoreManager);
@@ -1342,6 +1653,12 @@ public class UserProvisioningExecutorTest {
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userStoreManager.getUserIDFromUserName(anyString())).thenReturn(USER_ID);
+        // Password recovery provisioning resolves the realm via the tenant manager and updates the credential
+        // through the secondary user store manager.
+        TenantManager tenantManager = mock(TenantManager.class);
+        when(realmService.getTenantManager()).thenReturn(tenantManager);
+        when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+        when(userStoreManager.getSecondaryUserStoreManager(any())).thenReturn(userStoreManager);
 
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
         mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(PRIMARY_DOMAIN);
@@ -1350,5 +1667,72 @@ public class UserProvisioningExecutorTest {
         mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(anyString())).thenReturn(USERNAME);
 
         return userStoreManager;
+    }
+
+    /**
+     * Creates a real (non-mock) flow user so that credential capture, consumption and identity population
+     * can be asserted on actual state.
+     *
+     * @param password Password credential to preset on the flow user; {@code null} for no credentials.
+     * @return Flow user instance.
+     */
+    private FlowUser createRealFlowUser(String password) {
+
+        FlowUser flowUser = new FlowUser();
+        flowUser.setUsername(USERNAME);
+        flowUser.addClaim(USERNAME_CLAIM_URI, USERNAME);
+        if (password != null) {
+            Map<String, char[]> credentials = new HashMap<>();
+            credentials.put(PASSWORD_KEY, password.toCharArray());
+            flowUser.setUserCredentials(credentials);
+        }
+        return flowUser;
+    }
+
+    private FlowExecutionContext createPasswordFlowContext(FlowUser flowUser, String flowType,
+                                                           Map<String, String> userInputData) {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(flowType);
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(userInputData);
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+        return context;
+    }
+
+    /**
+     * Stubs the context properties required by the ask-password (invited user registration) flow. Must be
+     * called after {@link #setupUserStoreManagerMocks()} since it stubs the identity event service on the
+     * mocked data holder.
+     */
+    private void stubAskPasswordProperties(FlowExecutionContext context, String userStoreDomain) {
+
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+        User invitedUser = new User();
+        invitedUser.setUserName(USERNAME);
+        invitedUser.setTenantDomain(TENANT_DOMAIN);
+        invitedUser.setUserStoreDomain(userStoreDomain);
+        when(context.getProperty(USER)).thenReturn(invitedUser);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService())
+                .thenReturn(mock(IdentityEventService.class));
+    }
+
+    /**
+     * Snapshots the password handed to {@code updateCredentialByAdmin} at invocation time. The executor
+     * zeroes its password copy after use, so a plain {@code ArgumentCaptor} would only observe the wiped
+     * array.
+     */
+    private AtomicReference<String> capturePasswordOnUpdate(AbstractUserStoreManager userStoreManager)
+            throws Exception {
+
+        AtomicReference<String> provisionedPassword = new AtomicReference<>();
+        doAnswer(invocation -> {
+            provisionedPassword.set(new String((char[]) invocation.getArguments()[1]));
+            return null;
+        }).when(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+        return provisionedPassword;
     }
 }

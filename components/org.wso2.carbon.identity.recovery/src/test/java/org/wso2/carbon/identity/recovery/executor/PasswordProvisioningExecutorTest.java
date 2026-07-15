@@ -19,75 +19,72 @@
 package org.wso2.carbon.identity.recovery.executor;
 
 import org.mockito.MockedStatic;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
-import org.wso2.carbon.identity.core.context.model.Flow;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
-import org.wso2.carbon.user.core.UserRealm;
-import org.wso2.carbon.user.core.UserStoreException;
-import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.tenant.TenantManager;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 
 /**
  * Unit tests for {@link PasswordProvisioningExecutor}.
+ * <p>
+ * The executor no longer updates the credential. It only captures the supplied password into the flow user so
+ * that the downstream {@link UserProvisioningExecutor} can provision it. These tests cover that capture
+ * behaviour and the metadata methods.
  */
 @WithCarbonHome
 public class PasswordProvisioningExecutorTest {
 
     private static final String PASSWORD_KEY = "password";
-    private static final String USERNAME = "test@wso2.com";
-    private static final String TENANT_DOMAIN = "carbon.super";
-    private static final String USER_ID = "abc123";
-    private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
-    private static final int TENANT_ID = 1234;
+    private static final String PASSWORD_VALUE = "Password123";
 
     private PasswordProvisioningExecutor executor;
-    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolderStatic;
-    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
 
     @BeforeMethod
     public void setUp() {
 
         executor = new PasswordProvisioningExecutor();
-        mockedDataHolderStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
-        mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
     }
 
-    @AfterMethod
-    public void tearDown() {
+    @Test
+    public void testGetName() {
 
-        mockedDataHolderStatic.close();
-        mockedIdentityTenantUtil.close();
+        assertEquals(executor.getName(), "PasswordProvisioningExecutor");
+    }
+
+    @Test
+    public void testGetAMRValue() {
+
+        assertEquals(executor.getAMRValue(), "BasicAuthenticator");
+    }
+
+    @Test
+    public void testGetInitiationData() {
+
+        List<String> initiationData = executor.getInitiationData();
+        assertTrue(initiationData.contains(PASSWORD_KEY));
+    }
+
+    @Test
+    public void testRollback() {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        assertNull(executor.rollback(context));
     }
 
     @Test
@@ -105,174 +102,102 @@ public class PasswordProvisioningExecutorTest {
         assertTrue(response.getRequiredData().contains(PASSWORD_KEY));
     }
 
-    @Test(dataProvider = "flowTypes")
-    public void testExecuteWithValidData(String flowType) throws Exception {
+    @Test
+    public void testExecuteCapturesPasswordFromUserInput() {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        FlowUser flowUser = new FlowUser();
-        flowUser.setUsername(USERNAME);
-        flowUser.addClaims(new HashMap<>());
-        flowUser.setUserStoreDomain("PRIMARY");
-
-
         Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(PASSWORD_KEY, "Password123");
-        userInputData.put("http://wso2.org/claims/givenname", "John");
-        userInputData.put(CONFIRMATION_CODE_INPUT, "valid-code");
-
+        userInputData.put(PASSWORD_KEY, PASSWORD_VALUE);
         when(context.getUserInputData()).thenReturn(userInputData);
-        when(context.getFlowType()).thenReturn(flowType);
-        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+
+        FlowUser flowUser = new FlowUser();
         when(context.getFlowUser()).thenReturn(flowUser);
 
-        if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
-            when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        ExecutorResponse response = executor.execute(context);
 
-            User user = new User();
-            user.setUserName(USERNAME);
-            user.setTenantDomain(TENANT_DOMAIN);
-            user.setUserStoreDomain("PRIMARY");
-            when(context.getProperty(USER)).thenReturn(user);
-            when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
+        // The password is captured into the flow user so the downstream executor can provision it.
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
+        Map<String, char[]> credentials = flowUser.getUserCredentials();
+        assertEquals(new String(credentials.get(PASSWORD_KEY)), PASSWORD_VALUE);
+    }
 
-            // Mock IdentityTenantUtil for INVITED_USER_REGISTRATION flow
-            mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
-                    .thenReturn(TENANT_ID);
-        }
+    @Test
+    public void testExecuteWithExistingCredentialsAndNoUserInput() {
 
-        // Mocks for data holder and user store
-        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
-        RealmService realmService = mock(RealmService.class);
-        UserRealm userRealm = mock(UserRealm.class);
-        AbstractUserStoreManager storeManager = mock(AbstractUserStoreManager.class);
-        TenantManager tenantManager = mock(TenantManager.class);
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getUserInputData()).thenReturn(Collections.emptyMap());
 
-        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
+        FlowUser flowUser = new FlowUser();
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put(PASSWORD_KEY, PASSWORD_VALUE.toCharArray());
+        flowUser.setUserCredentials(credentials);
+        when(context.getFlowUser()).thenReturn(flowUser);
 
-        if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
-            when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
-            when(userRealm.getUserStoreManager()).thenReturn(storeManager);
-        } else {
-            // For PASSWORD_RECOVERY flow
-            when(realmService.getTenantManager()).thenReturn(tenantManager);
-            when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
-            when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
-            when(userRealm.getUserStoreManager()).thenReturn(storeManager);
-            when(storeManager.getSecondaryUserStoreManager(anyString())).thenReturn(storeManager);
-        }
+        ExecutorResponse response = executor.execute(context);
 
-        when(storeManager.getUserIDFromUserName(anyString())).thenReturn(USER_ID);
+        // Credentials already captured (e.g. by a previous step); no further input is required.
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
+    }
 
-        IdentityEventService eventServiceMock = mock(IdentityEventService.class);
-        when(dataHolder.getIdentityEventService()).thenReturn(eventServiceMock);
+    @Test
+    public void testExecuteWithCredentialsLackingPasswordRequiresInput() {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getUserInputData()).thenReturn(Collections.emptyMap());
+
+        FlowUser flowUser = new FlowUser();
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put("otherCredential", "value".toCharArray());
+        flowUser.setUserCredentials(credentials);
+        when(context.getFlowUser()).thenReturn(flowUser);
+
+        ExecutorResponse response = executor.execute(context);
+
+        // Password availability is decided by the password entry itself, not by map occupancy.
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertTrue(response.getRequiredData().contains(PASSWORD_KEY));
+    }
+
+    @Test
+    public void testExecuteCapturePreservesOtherCredentialEntries() {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(PASSWORD_KEY, PASSWORD_VALUE);
+        when(context.getUserInputData()).thenReturn(userInputData);
+
+        FlowUser flowUser = new FlowUser();
+        Map<String, char[]> credentials = new HashMap<>();
+        credentials.put("otherCredential", "value".toCharArray());
+        flowUser.setUserCredentials(credentials);
+        when(context.getFlowUser()).thenReturn(flowUser);
 
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
-        if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
-            assertEquals(flowUser.getUserId(), USER_ID);
+        // Capturing the password must not clear other credential entries already on the flow user.
+        assertEquals(new String(flowUser.getUserCredentials().get(PASSWORD_KEY)), PASSWORD_VALUE);
+        assertEquals(new String(flowUser.getUserCredentials().get("otherCredential")), "value");
+    }
+
+    @Test
+    public void testExecuteDoesNotTouchUserStore() {
+
+        try (MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolder =
+                     mockStatic(IdentityRecoveryServiceDataHolder.class)) {
+            FlowExecutionContext context = mock(FlowExecutionContext.class);
+            Map<String, String> userInputData = new HashMap<>();
+            userInputData.put(PASSWORD_KEY, PASSWORD_VALUE);
+            when(context.getUserInputData()).thenReturn(userInputData);
+            when(context.getFlowType()).thenReturn("PASSWORD_RECOVERY");
+            when(context.getFlowUser()).thenReturn(new FlowUser());
+
+            ExecutorResponse response = executor.execute(context);
+
+            // Capture-only contract: even for recovery flows this executor never reaches the user store;
+            // the downstream UserProvisioningExecutor performs the credential update.
+            assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
+            mockedDataHolder.verifyNoInteractions();
         }
-        verify(storeManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
-    }
-
-    @Test
-    public void testExecuteWithExceptionInUpdate() throws Exception {
-
-        FlowExecutionContext context = mock(FlowExecutionContext.class);
-        FlowUser flowUser = new FlowUser();
-        flowUser.setUsername(USERNAME);
-        flowUser.setUserStoreDomain("PRIMARY");
-
-        Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(PASSWORD_KEY, "Password123");
-
-        when(context.getUserInputData()).thenReturn(userInputData);
-        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY);
-        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
-        when(context.getFlowUser()).thenReturn(flowUser);
-
-        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
-        RealmService realmService = mock(RealmService.class);
-        UserRealm userRealm = mock(UserRealm.class);
-        AbstractUserStoreManager storeManager = mock(AbstractUserStoreManager.class);
-        TenantManager tenantManager = mock(TenantManager.class);
-
-        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
-        when(realmService.getTenantManager()).thenReturn(tenantManager);
-        when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
-        when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
-        when(userRealm.getUserStoreManager()).thenReturn(storeManager);
-        when(storeManager.getSecondaryUserStoreManager(anyString())).thenReturn(storeManager);
-
-        doThrow(new UserStoreException("Error while updating credential"))
-                .when(storeManager).updateCredentialByAdmin(anyString(), any(char[].class));
-
-        ExecutorResponse response = executor.execute(context);
-
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
-    }
-
-    @Test
-    public void testHandleAskPasswordFlowWithException() throws Exception {
-
-        FlowExecutionContext context = mock(FlowExecutionContext.class);
-        FlowUser flowUser = new FlowUser();
-        flowUser.setUsername(USERNAME);
-        flowUser.addClaims(new HashMap<>());
-        flowUser.setUserStoreDomain("PRIMARY");
-
-        Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(PASSWORD_KEY, "Password123");
-        userInputData.put(CONFIRMATION_CODE_INPUT, "valid-code");
-
-        when(context.getUserInputData()).thenReturn(userInputData);
-        when(context.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
-        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
-        when(context.getFlowUser()).thenReturn(flowUser);
-        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
-
-        User user = new User();
-        user.setUserName(USERNAME);
-        user.setTenantDomain(TENANT_DOMAIN);
-        user.setUserStoreDomain("PRIMARY");
-        when(context.getProperty(USER)).thenReturn(user);
-        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("SCENARIO");
-
-        // Mock IdentityTenantUtil
-        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
-                .thenReturn(TENANT_ID);
-
-        // Mocks for data holder and user store
-        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
-        RealmService realmService = mock(RealmService.class);
-        UserRealm userRealm = mock(UserRealm.class);
-        AbstractUserStoreManager storeManager = mock(AbstractUserStoreManager.class);
-
-        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
-        when(dataHolder.getRealmService()).thenReturn(realmService);
-        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
-        when(userRealm.getUserStoreManager()).thenReturn(storeManager);
-
-        IdentityEventService eventServiceMock = mock(IdentityEventService.class);
-        when(dataHolder.getIdentityEventService()).thenReturn(eventServiceMock);
-
-        // Throw UserStoreException to trigger the catch block
-        doThrow(new UserStoreException("Error while updating credential"))
-                .when(storeManager).updateCredentialByAdmin(anyString(), any(char[].class));
-
-        ExecutorResponse response = executor.execute(context);
-
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
-    }
-
-    @DataProvider(name = "flowTypes")
-    public Object[][] provideFlowTypes() {
-
-        return new Object[][]{
-                {Flow.Name.INVITED_USER_REGISTRATION.name()},
-                { PASSWORD_RECOVERY }
-        };
     }
 }
