@@ -36,18 +36,24 @@ import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -64,6 +70,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -82,6 +89,8 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
@@ -213,7 +222,7 @@ public class UserProvisioningExecutorTest {
         flowUser.getClaims().put(givenNameClaim, "John");
         when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(givenNameClaim));
 
-        when(context.getFlowType()).thenReturn("INVITED_USER_REGISTRATION");
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
         when(context.getFlowUser()).thenReturn(flowUser);
         when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
@@ -226,6 +235,8 @@ public class UserProvisioningExecutorTest {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), STATUS_COMPLETE);
+        // The password write now happens in this executor for non-registration flows.
+        verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
         verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
                 eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
     }
@@ -1132,6 +1143,109 @@ public class UserProvisioningExecutorTest {
         verify(consentManager, never()).getPIICategoryByUuid(anyString());
     }
 
+    @Test
+    public void testExecutePasswordRecoveryUsesFlowUserCredential() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+        // A flow extension configured after the password step may override the credential on the flow user.
+        Map<String, char[]> overridden = new HashMap<>();
+        overridden.put(PASSWORD_KEY, "OverriddenByExtension1!".toCharArray());
+        when(flowUser.getUserCredentials()).thenReturn(overridden);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+
+        // Capture the credential value at call time, since the executor zeroes the array afterwards.
+        StringBuilder capturedPassword = new StringBuilder();
+        doAnswer(invocation -> {
+            capturedPassword.append(new String((char[]) invocation.getArgument(1)));
+            return null;
+        }).when(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        assertEquals(capturedPassword.toString(), "OverriddenByExtension1!");
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryPreUpdatePasswordActionFailureReturnsFlowEngineErrorCode()
+            throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        UserActionExecutionClientException actionException = new UserActionExecutionClientException(
+                "action-error-code", "Password policy violated", "The password does not meet the policy.");
+        UserStoreClientException storeException = new UserStoreClientException(
+                "Pre update password action failed",
+                UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED, actionException);
+        doThrow(storeException).when(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_USER_ERROR);
+        // Recovery and ask-password flows retain the flow-engine error code, not the recovery executor code.
+        assertEquals(response.getErrorCode(),
+                Constants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode());
+        assertNotNull(response.getErrorMessage());
+    }
+
+    @Test
+    public void testExecuteAskPasswordUpdatesCredentialAndSetsUserId() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+
+        when(context.getFlowType()).thenReturn("INVITED_USER_REGISTRATION");
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("ASK_PASSWORD");
+
+        User resolvedUser = new User();
+        resolvedUser.setUserName(USERNAME);
+        resolvedUser.setTenantDomain(TENANT_DOMAIN);
+        resolvedUser.setUserStoreDomain(PRIMARY_DOMAIN);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+
+        IdentityContext identityContext = mock(IdentityContext.class);
+        when(identityContext.getCurrentFlow()).thenReturn(null);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class);
+             MockedStatic<IdentityContext> mockedIdentityContext = mockStatic(IdentityContext.class)) {
+
+            mockedUtils.when(() -> Utils.resolveUserFromContext(context)).thenReturn(resolvedUser);
+            mockedIdentityContext.when(IdentityContext::getThreadLocalIdentityContext).thenReturn(identityContext);
+
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
+            verify(flowUser).setUserId(USER_ID);
+            verify(flowUser).setUserStoreDomain(PRIMARY_DOMAIN);
+        }
+    }
+
     private FlowUser createTestFlowUser(String username) {
 
         FlowUser flowUser = mock(FlowUser.class);
@@ -1348,6 +1462,7 @@ public class UserProvisioningExecutorTest {
         mockedIdentityUtil.when(() -> IdentityUtil.addDomainToName(anyString(), anyString()))
                 .thenReturn(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME);
         mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(anyString())).thenReturn(USERNAME);
+        when(dataHolder.getIdentityEventService()).thenReturn(mock(IdentityEventService.class));
 
         return userStoreManager;
     }
