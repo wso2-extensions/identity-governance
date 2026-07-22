@@ -188,7 +188,9 @@ public class UserProvisioningExecutor implements Executor {
         }
     }
 
-    private void handleUserPasswordUpdate(Map<String, char[]> userCredentials, FlowUser flowUser, UserStoreManager userStoreManager, FlowExecutionContext context) throws FlowEngineException, UserStoreException {
+    private void handleUserPasswordUpdate(Map<String, char[]> userCredentials, FlowUser flowUser,
+                                          UserStoreManager userStoreManager, FlowExecutionContext context)
+            throws FlowEngineException, UserStoreException {
 
         if (INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
             String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE_INPUT);
@@ -199,7 +201,7 @@ public class UserProvisioningExecutor implements Executor {
             String recoveryScenario = getRecoveryScenario(context);
             try {
                 enterFlow();
-                handlePrePasswordUpdate(context, user, recoveryScenario, confirmationCode);
+                handlePrePasswordUpdate(user, recoveryScenario, confirmationCode);
                 updateUserPassword(userCredentials, flowUser, userStoreManager);
                 String userId = ((AbstractUserStoreManager) userStoreManager)
                         .getUserIDFromUserName(flowUser.getUsername());
@@ -225,18 +227,14 @@ public class UserProvisioningExecutor implements Executor {
                     .equals(((UserStoreClientException) e).getErrorCode())) {
                 throw e;
             }
-            String maskedUsername = LoggerUtils.isLogMaskingEnable
-                    ? LoggerUtils.getMaskedContent(user.getUsername())
-                    : user.getUsername();
-            LOG.error("Error while updating password for user: " + maskedUsername, e);
             throw new FlowEngineException(null, e.getMessage(), null, e);
         } finally {
             Arrays.fill(password, '\0');
         }
     }
 
-    private void handleUserClaimUpdate(Map<String, String> userClaims,
-                                       FlowUser user, UserStoreManager userStoreManager, String userStoreDomainName) throws FlowEngineException, UserStoreException {
+    private void handleUserClaimUpdate(Map<String, String> userClaims, FlowUser user, UserStoreManager userStoreManager,
+                                       String userStoreDomainName) throws FlowEngineException, UserStoreException {
 
         String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
         if (!userClaims.isEmpty()) {
@@ -716,7 +714,8 @@ public class UserProvisioningExecutor implements Executor {
         IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
     }
 
-    private void handlePrePasswordUpdate(FlowExecutionContext context, User user, String recoveryScenario, String confirmationCode) throws FlowEngineException {
+    private void handlePrePasswordUpdate(User user, String recoveryScenario, String confirmationCode)
+            throws FlowEngineException {
 
         try {
             HashMap<String, Object> properties = new HashMap<>();
@@ -732,10 +731,6 @@ public class UserProvisioningExecutor implements Executor {
 
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
-            String maskedUsername = LoggerUtils.isLogMaskingEnable
-                    ? LoggerUtils.getMaskedContent(context.getFlowUser().getUsername())
-                    : context.getFlowUser().getUsername();
-            LOG.error("Error while updating password for user: " + maskedUsername, e);
             throw new FlowEngineException(null, e.getMessage(), null, e);
         }
     }
