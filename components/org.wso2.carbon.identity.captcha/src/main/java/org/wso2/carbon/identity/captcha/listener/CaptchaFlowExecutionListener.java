@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineServer
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
+import org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes;
 import org.wso2.carbon.identity.flow.mgt.model.ComponentDTO;
 
 import java.util.Map;
@@ -43,6 +44,8 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     public static final String CAPTCHA_URL = "captchaURL";
     public static final String RECAPTCHA_TYPE = "recaptchaType";
     private static final String CAPTCHA_GOVERNANCE_CONFIG_KEY = "sso.login.recaptcha.enable";
+    private static final String SELF_REGISTRATION_CAPTCHA_GOVERNANCE_CONFIG_KEY = "SelfRegistration.ReCaptcha";
+    private static final String PASSWORD_RECOVERY_CAPTCHA_GOVERNANCE_CONFIG_KEY = "Recovery.ReCaptcha.Password.Enable";
 
     @Override
     public int getDefaultOrderId() {
@@ -65,7 +68,7 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     @Override
     public boolean doPreExecute(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
 
-        if (isReCaptchaDisabled(flowExecutionContext.getTenantDomain())) {
+        if (isReCaptchaDisabled(flowExecutionContext)) {
             return true;
         }
 
@@ -77,16 +80,17 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
             throws FlowEngineException {
 
-        if (isReCaptchaDisabled(flowExecutionContext.getTenantDomain())) {
+        if (isReCaptchaDisabled(flowExecutionContext)) {
             return true;
         }
         addCaptchaKeys(step, flowExecutionContext);
         return true;
     }
 
-    private boolean isReCaptchaDisabled(String tenantDomain) {
+    private boolean isReCaptchaDisabled(FlowExecutionContext context) {
 
-        return !CaptchaUtil.isReCaptchaEnabledForFlow(CAPTCHA_GOVERNANCE_CONFIG_KEY, tenantDomain);
+        return !CaptchaUtil.isReCaptchaEnabledForFlow(getCaptchaGovernanceConfigKey(context.getFlowType()),
+                context.getTenantDomain());
     }
 
     private void addCaptchaKeys(FlowExecutionStep step, FlowExecutionContext context) {
@@ -159,5 +163,16 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
         return new FlowEngineClientException(Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getCode(),
                 Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getMessage(),
                 String.format(Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getDescription(), flowType, flowId));
+    }
+
+    private String getCaptchaGovernanceConfigKey(String flowType) {
+
+        if (FlowTypes.PASSWORD_RECOVERY.getType().equals(flowType)) {
+            return PASSWORD_RECOVERY_CAPTCHA_GOVERNANCE_CONFIG_KEY;
+        }
+        if (FlowTypes.REGISTRATION.getType().equals(flowType)) {
+            return SELF_REGISTRATION_CAPTCHA_GOVERNANCE_CONFIG_KEY;
+        }
+        return CAPTCHA_GOVERNANCE_CONFIG_KEY;
     }
 }
