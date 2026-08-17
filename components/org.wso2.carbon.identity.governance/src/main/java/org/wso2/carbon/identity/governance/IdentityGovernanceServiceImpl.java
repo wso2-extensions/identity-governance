@@ -134,7 +134,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             log.debug("Client error while updating identityManagement properties of Resident IdP.", e);
             throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
-            log.error("Error while updating identityManagement Properties of Resident Idp.", e);
+            throw new IdentityGovernanceException(
+                    "Error while updating identityManagement Properties of Resident IdP.", e);
         } catch (OrganizationManagementException e) {
             throw new IdentityGovernanceException(String.format("Error while checking if tenant %s is an organization.",
                     tenantDomain), e);
