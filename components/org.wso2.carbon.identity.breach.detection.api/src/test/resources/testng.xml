@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="breach-source-spi">
+    <test name="breach-source-spi-tests">
+        <packages>
+            <package name="org.wso2.carbon.identity.breach.source"/>
+        </packages>
+    </test>
+</suite>

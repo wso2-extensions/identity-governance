@@ -1,0 +1,10 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="breach-detection">
+    <test name="breach-detection-tests">
+        <packages>
+            <package name="org.wso2.carbon.identity.breach.detection.engine"/>
+            <package name="org.wso2.carbon.identity.breach.detection.source"/>
+            <package name="org.wso2.carbon.identity.breach.detection.config"/>
+        </packages>
+    </test>
+</suite>
