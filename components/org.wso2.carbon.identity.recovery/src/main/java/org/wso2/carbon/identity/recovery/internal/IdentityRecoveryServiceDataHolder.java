@@ -395,7 +395,7 @@ public class IdentityRecoveryServiceDataHolder {
     public void removeFlowExecutor(Executor executor) {
 
         if (executor != null && StringUtils.isNotBlank(executor.getName())) {
-            flowExecutors.remove(executor.getName());
+            flowExecutors.remove(executor.getName(),executor);
         }
     }
 
