@@ -18,12 +18,14 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 
 import java.util.Collections;
@@ -64,40 +66,50 @@ public class ProvisioningDispatchExecutor implements Executor {
     @Override
     public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
 
-        ExecutorResponse userResponse = dispatch(USER_PROVISIONING_EXECUTOR, context);
-        if (userResponse == null) {
+        // Both executors are resolved before either one runs. Discovering that the organization
+        // executor is missing only after the user has been provisioned would leave that user behind
+        // with no organization and no way to finish the flow.
+        Executor userProvisioningExecutor =
+                IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(USER_PROVISIONING_EXECUTOR);
+        if (userProvisioningExecutor == null) {
             return unavailableExecutorResponse(USER_PROVISIONING_EXECUTOR);
         }
-        // Anything other than completion is the user provisioning step's own outcome to report: it may
-        // need more input, or it may have failed. The organization must not be created either way.
-        if (!STATUS_COMPLETE.equals(userResponse.getResult())) {
-            return userResponse;
-        }
-
-        ExecutorResponse organizationResponse = dispatch(ORGANIZATION_PROVISIONING_EXECUTOR, context);
-        if (organizationResponse == null) {
+        Executor organizationProvisioningExecutor =
+                IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(ORGANIZATION_PROVISIONING_EXECUTOR);
+        if (organizationProvisioningExecutor == null) {
             return unavailableExecutorResponse(ORGANIZATION_PROVISIONING_EXECUTOR);
         }
-        return organizationResponse;
+
+        // Organization provisioning returns RETRY on a recoverable failure, such as a name already in
+        // use, which brings the flow back to this same node once the user corrects their input. User
+        // provisioning is not idempotent: running it a second time fails with a duplicate username and
+        // leaves the flow unrecoverable. The user ID recorded on the first pass marks that step done.
+        FlowUser flowUser = context.getFlowUser();
+        if (flowUser == null || StringUtils.isBlank(flowUser.getUserId())) {
+            ExecutorResponse userResponse = dispatch(userProvisioningExecutor, context);
+            // Anything other than completion is the user provisioning step's own outcome to report: it
+            // may need more input, or it may have failed. The organization must not be created either way.
+            if (userResponse == null || !STATUS_COMPLETE.equals(userResponse.getResult())) {
+                return userResponse;
+            }
+        }
+
+        return dispatch(organizationProvisioningExecutor, context);
     }
 
     /**
-     * Resolves an executor by name and runs it against the same flow context.
+     * Runs an executor against the same flow context.
      *
-     * @param executorName Name the executor is registered under.
-     * @param context      Flow execution context, shared by both executors.
-     * @return The executor's response, or {@code null} if no executor is registered under that name.
+     * @param executor Executor to run.
+     * @param context  Flow execution context, shared by both executors.
+     * @return The executor's response.
      * @throws FlowEngineException If the executor fails.
      */
-    private ExecutorResponse dispatch(String executorName, FlowExecutionContext context)
+    private ExecutorResponse dispatch(Executor executor, FlowExecutionContext context)
             throws FlowEngineException {
 
-        Executor executor = IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(executorName);
-        if (executor == null) {
-            return null;
-        }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Dispatching to executor: " + executorName + " for flow: "
+            LOG.debug("Dispatching to executor: " + executor.getName() + " for flow: "
                     + context.getContextIdentifier());
         }
         return executor.execute(context);

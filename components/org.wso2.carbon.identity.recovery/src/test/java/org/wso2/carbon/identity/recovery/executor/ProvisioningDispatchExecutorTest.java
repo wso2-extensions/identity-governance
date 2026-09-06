@@ -113,16 +113,32 @@ public class ProvisioningDispatchExecutorTest {
         };
     }
 
-    @Test(description = "A missing organization executor is a deployment problem, not a user error.")
-    public void testMissingOrganizationExecutorReturnsError() throws Exception {
+    @Test(description = "A missing organization executor is a deployment problem, not a user error, and it "
+            + "must be detected before a user is provisioned and left without an organization.")
+    public void testMissingOrganizationExecutorReturnsErrorWithoutProvisioningUser() throws Exception {
 
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(organizationProvisioningExecutor);
         FlowExecutionContext context = new FlowExecutionContext();
-        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
 
         ExecutorResponse response = executor.execute(context);
 
         Assert.assertEquals(response.getResult(), STATUS_ERROR);
+        verify(userProvisioningExecutor, never()).execute(any());
+    }
+
+    @Test(description = "Organization provisioning returns RETRY on a recoverable failure, bringing the flow "
+            + "back to this node. The already provisioned user must not be provisioned a second time.")
+    public void testUserIsNotProvisionedAgainOnRetry() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.getFlowUser().setUserId("dcaf39b8-4c8c-4a8d-9a3a-2f8c1b7f6e21");
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+
+        ExecutorResponse response = executor.execute(context);
+
+        Assert.assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userProvisioningExecutor, never()).execute(any());
+        verify(organizationProvisioningExecutor).execute(context);
     }
 
     @Test(description = "A missing user executor fails before anything is provisioned.")
