@@ -66,9 +66,8 @@ public class ProvisioningDispatchExecutor implements Executor {
     @Override
     public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
 
-        // Both executors are resolved before either one runs. Discovering that the organization
-        // executor is missing only after the user has been provisioned would leave that user behind
-        // with no organization and no way to finish the flow.
+        // Resolved before either one runs, so a missing organization executor cannot be discovered
+        // only after a user has been provisioned and left without an organization.
         Executor userProvisioningExecutor =
                 IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(USER_PROVISIONING_EXECUTOR);
         if (userProvisioningExecutor == null) {
@@ -80,16 +79,12 @@ public class ProvisioningDispatchExecutor implements Executor {
             return unavailableExecutorResponse(ORGANIZATION_PROVISIONING_EXECUTOR);
         }
 
-        // Organization provisioning returns RETRY on a recoverable failure, such as a name already in
-        // use, which brings the flow back to this same node once the user corrects their input. User
-        // provisioning is not idempotent: running it a second time fails with a duplicate username and
-        // leaves the flow unrecoverable. The user ID recorded on the first pass marks that step done.
+        // A RETRY from organization provisioning returns the flow to this node. User provisioning is
+        // not idempotent, so the user ID recorded on the first pass marks that step as already done.
         FlowUser flowUser = context.getFlowUser();
         if (flowUser == null || StringUtils.isBlank(flowUser.getUserId())) {
             ExecutorResponse userResponse = dispatch(userProvisioningExecutor, context);
-            // Anything other than completion is the user provisioning step's own outcome to report: it
-            // may need more input, or it may have failed. The organization must not be created either way.
-            if (userResponse == null || !STATUS_COMPLETE.equals(userResponse.getResult())) {
+            if (!STATUS_COMPLETE.equals(userResponse.getResult())) {
                 return userResponse;
             }
         }
@@ -102,7 +97,7 @@ public class ProvisioningDispatchExecutor implements Executor {
      *
      * @param executor Executor to run.
      * @param context  Flow execution context, shared by both executors.
-     * @return The executor's response.
+     * @return The executor's response, never {@code null}.
      * @throws FlowEngineException If the executor fails.
      */
     private ExecutorResponse dispatch(Executor executor, FlowExecutionContext context)
@@ -112,7 +107,17 @@ public class ProvisioningDispatchExecutor implements Executor {
             LOG.debug("Dispatching to executor: " + executor.getName() + " for flow: "
                     + context.getContextIdentifier());
         }
-        return executor.execute(context);
+        ExecutorResponse response = executor.execute(context);
+        // The implementation behind a name is whatever bundle registered it, and Executor does not
+        // promise a response.
+        if (response == null) {
+            LOG.error("Executor returned no response: " + executor.getName());
+            ExecutorResponse failure = new ExecutorResponse();
+            failure.setResult(STATUS_ERROR);
+            failure.setErrorMessage("Provisioning is not available.");
+            return failure;
+        }
+        return response;
     }
 
     /**

@@ -141,6 +141,19 @@ public class ProvisioningDispatchExecutorTest {
         verify(organizationProvisioningExecutor).execute(context);
     }
 
+    @Test(description = "The Executor contract does not promise a response, and the implementation behind "
+            + "a name is not known here, so a null response is reported rather than propagated.")
+    public void testNullResponseFromDispatchedExecutorReturnsError() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        stub(userProvisioningExecutor, null);
+
+        ExecutorResponse response = executor.execute(context);
+
+        Assert.assertEquals(response.getResult(), STATUS_ERROR);
+        verify(organizationProvisioningExecutor, never()).execute(any());
+    }
+
     @Test(description = "A missing user executor fails before anything is provisioned.")
     public void testMissingUserExecutorReturnsError() throws Exception {
 
