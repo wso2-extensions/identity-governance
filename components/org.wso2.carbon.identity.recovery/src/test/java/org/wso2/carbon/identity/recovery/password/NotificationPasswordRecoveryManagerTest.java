@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.password;
 
+import org.apache.commons.lang.StringUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
@@ -59,6 +60,7 @@ import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -200,6 +202,58 @@ public class NotificationPasswordRecoveryManagerTest {
                 {true, PASSWORD_RESET_EMAIL_OTP_TEMPLATE_NAME},
                 {false, PASSWORD_RESET_EMAIL_TEMPLATE_NAME}
         };
+    }
+
+    @DataProvider(name = "optionalRecoveryNotificationProperties")
+    public Object[][] optionalRecoveryNotificationProperties() {
+
+        return new Object[][]{
+                {"test-sp", "https://example.com/callback", "test-sp", "https://example.com/callback"},
+                {null, null, StringUtils.EMPTY, StringUtils.EMPTY},
+                {"test-sp", null, "test-sp", StringUtils.EMPTY},
+                {null, "https://example.com/callback", StringUtils.EMPTY, "https://example.com/callback"}
+        };
+    }
+
+    @Test(dataProvider = "optionalRecoveryNotificationProperties")
+    public void testOptionalRecoveryNotificationProperties(String serviceProvider, String callback,
+                                                           String expectedServiceProvider, String expectedCallback)
+            throws Exception {
+
+        User user = new User();
+        user.setUserName("test-user");
+        user.setTenantDomain(TENANT_DOMAIN);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+
+        List<org.wso2.carbon.identity.recovery.model.Property> metaProperties = new java.util.ArrayList<>();
+        if (serviceProvider != null) {
+            metaProperties.add(new org.wso2.carbon.identity.recovery.model.Property(
+                    IdentityRecoveryConstants.SERVICE_PROVIDER, serviceProvider));
+        }
+        if (callback != null) {
+            metaProperties.add(new org.wso2.carbon.identity.recovery.model.Property(
+                    IdentityRecoveryConstants.CALLBACK, callback));
+        }
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(() -> Utils.resolveServiceProviderUUID(ArgumentMatchers.anyMap()))
+                    .thenReturn(Optional.empty());
+
+            Method triggerNotificationMethod = NotificationPasswordRecoveryManager.class.getDeclaredMethod(
+                    "triggerNotification", User.class, String.class, String.class, String.class, String.class,
+                    org.wso2.carbon.identity.recovery.model.Property[].class, UserRecoveryData.class);
+            triggerNotificationMethod.setAccessible(true);
+            triggerNotificationMethod.invoke(NotificationPasswordRecoveryManager.getInstance(), user,
+                    NOTIFICATION_CHANNEL_EMAIL, PASSWORD_RESET_EMAIL_TEMPLATE_NAME, OTP, "TRIGGER_NOTIFICATION",
+                    metaProperties.toArray(new org.wso2.carbon.identity.recovery.model.Property[0]), null);
+        }
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Map<String, Object> eventProperties = eventCaptor.getValue().getEventProperties();
+
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.SERVICE_PROVIDER), expectedServiceProvider);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CALLBACK), expectedCallback);
     }
 
     @Test(dataProvider = "generateRecoveryNotificationEmailTemplateConfigs")
