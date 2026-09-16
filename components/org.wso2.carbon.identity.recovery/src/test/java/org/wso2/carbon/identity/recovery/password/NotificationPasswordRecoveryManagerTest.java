@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -70,6 +71,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY;
@@ -396,6 +398,84 @@ public class NotificationPasswordRecoveryManagerTest {
             } catch (IdentityRecoveryClientException e) {
                 assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getCode());
             }
+        }
+    }
+
+    @Test
+    public void testSendRecoveryNotification_EmailLessUser_ExternallyManaged_ReturnsRecoveryKey() throws Exception {
+
+        User user = createTestUser();
+        UserRecoveryData existingRecoveryData = new UserRecoveryData(user, "test-secret-key",
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+
+        try (MockedStatic<IdentityTenantUtil> tenantUtilMock = mockStatic(IdentityTenantUtil.class);
+             MockedStatic<IdentityUtil> identityUtilMock = mockStatic(IdentityUtil.class);
+             MockedStatic<Utils> utilsMock = mockStatic(Utils.class);
+             MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMock = mockStatic(JDBCRecoveryDataStore.class);
+             MockedStatic<OrganizationManagementUtil> organizationManagementUtilMock = mockStatic(OrganizationManagementUtil.class)) {
+
+            jdbcRecoveryDataStoreMock.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+            organizationManagementUtilMock.when(() -> OrganizationManagementUtil.isOrganization(anyString()))
+                    .thenReturn(false);
+
+            setupCommonMocks(user, tenantUtilMock, identityUtilMock, utilsMock);
+
+            // Override: the user has no email claim. This is the reported bug scenario.
+            utilsMock.when(() -> Utils.getUserClaim(any(User.class),
+                    ArgumentMatchers.eq(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))).thenReturn("");
+            utilsMock.when(() -> Utils.reIssueExistingConfirmationCode(any(), anyString())).thenReturn(true);
+            when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(ArgumentMatchers.eq(user),
+                    ArgumentMatchers.eq(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY),
+                    ArgumentMatchers.eq(RecoverySteps.UPDATE_PASSWORD))).thenReturn(existingRecoveryData);
+
+            NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                    NotificationPasswordRecoveryManager.getInstance();
+
+            // notify=false: notifications are managed externally by the caller, not delivered by
+            // the server over email, so the missing email claim must not block the recovery code.
+            NotificationResponseBean result = notificationPasswordRecoveryManager.sendRecoveryNotification(
+                    user, null, false, new org.wso2.carbon.identity.recovery.model.Property[0]);
+
+            assertEquals(result.getKey(), "test-secret-key",
+                    "An email-less user with externally managed notifications should still receive the " +
+                            "recovery key.");
+        }
+    }
+
+    @Test
+    public void testSendRecoveryNotification_EmailLessUser_InternallyManagedEmailChannel_ReturnsEmptyResponse()
+            throws Exception {
+
+        User user = createTestUser();
+
+        try (MockedStatic<IdentityTenantUtil> tenantUtilMock = mockStatic(IdentityTenantUtil.class);
+             MockedStatic<IdentityUtil> identityUtilMock = mockStatic(IdentityUtil.class);
+             MockedStatic<Utils> utilsMock = mockStatic(Utils.class);
+             MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMock = mockStatic(JDBCRecoveryDataStore.class);
+             MockedStatic<OrganizationManagementUtil> organizationManagementUtilMock = mockStatic(OrganizationManagementUtil.class)) {
+
+            jdbcRecoveryDataStoreMock.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+            organizationManagementUtilMock.when(() -> OrganizationManagementUtil.isOrganization(anyString()))
+                    .thenReturn(false);
+
+            setupCommonMocks(user, tenantUtilMock, identityUtilMock, utilsMock);
+
+            // Override: the user has no email claim.
+            utilsMock.when(() -> Utils.getUserClaim(any(User.class),
+                    ArgumentMatchers.eq(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))).thenReturn("");
+
+            NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                    NotificationPasswordRecoveryManager.getInstance();
+
+            // notify=true with the default (EMAIL) channel: notifications are managed internally
+            // over email, so the missing email claim must still block recovery, exactly as before
+            // this fix. Regression guard for the fix in sendRecoveryNotification.
+            NotificationResponseBean result = notificationPasswordRecoveryManager.sendRecoveryNotification(
+                    user, NOTIFICATION_CHANNEL_EMAIL, true, new org.wso2.carbon.identity.recovery.model.Property[0]);
+
+            assertNull(result.getKey(), "An email-less user with internally managed email recovery must " +
+                    "not receive a recovery key.");
+            Mockito.verifyNoInteractions(userRecoveryDataStore);
         }
     }
 

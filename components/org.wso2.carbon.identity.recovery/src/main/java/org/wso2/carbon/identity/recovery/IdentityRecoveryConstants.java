@@ -254,6 +254,8 @@ public class IdentityRecoveryConstants {
     // Constants related to service provider.
     public static final String SERVICE_PROVIDER_ID = "spId";
 
+    public static final String CDS_PROFILE_ATTRIBUTE = "cdsProfile";
+
     private IdentityRecoveryConstants() {
 
     }
@@ -280,8 +282,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
-        ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT("17005", "User account not yet verified - '%s.'"),
-        ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT("17006", "Password reset is not yet completed '%s.'"),
+        ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT("17005", "User account not yet verified - '%s'."),
+        ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT("17006", "Password reset is not yet completed '%s'."),
         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLE_PRIVILEGED_USERS("17007", "Mobile number verification by privileged users is not enabled."),
         ERROR_CODE_USER_STORE_READONLY("17008", "User store is readonly - '%s'."),
         ERROR_CODE_USER_STORE_INVALID("17009", "User store is invalid - '%s'."),

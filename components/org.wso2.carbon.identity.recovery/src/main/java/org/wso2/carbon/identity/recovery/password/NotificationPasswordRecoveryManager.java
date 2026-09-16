@@ -147,7 +147,9 @@ public class NotificationPasswordRecoveryManager {
                             user.getUserName());
                 }
                 return new NotificationResponseBean(user);
-            } else if (isExistingUser(user) && StringUtils.isEmpty(Utils.getUserClaim(user,
+            } else if (isNotificationInternallyManage &&
+                    NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel) &&
+                    StringUtils.isEmpty(Utils.getUserClaim(user,
                     IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
 
             /* If the email is not found for the user, Check for NOTIFY_RECOVERY_EMAIL_EXISTENCE property.
