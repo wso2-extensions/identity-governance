@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.ResolvedUser;
+import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -35,6 +36,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
@@ -49,6 +51,7 @@ import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +101,8 @@ public class MeApiServiceImpl extends MeApiService {
             Utils.handleBadRequest("Invalid data for self-registration.",
                     ERROR_CODE_BAD_SELF_REGISTER_REQUEST.getCode());
         }
+
+        validateIdentityClaimsNotPresent(selfUserRegistrationRequestDTO);
 
         if (StringUtils.isNotBlank(tenantFromContext)) {
             selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);
@@ -176,6 +181,48 @@ public class MeApiServiceImpl extends MeApiService {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
         return Response.accepted().build();
+    }
+
+    private void validateIdentityClaimsNotPresent(SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO) {
+
+        if (selfUserRegistrationRequestDTO == null || selfUserRegistrationRequestDTO.getUser() == null ||
+                selfUserRegistrationRequestDTO.getUser().getClaims() == null) {
+            return;
+        }
+
+        List<String> blockedClaims = getBlockedClaims();
+        if (blockedClaims.isEmpty()) {
+            return;
+        }
+
+        for (ClaimDTO claim : selfUserRegistrationRequestDTO.getUser().getClaims()) {
+            if (claim != null && StringUtils.isNotBlank(claim.getUri()) &&
+                    blockedClaims.contains(claim.getUri())) {
+                Utils.handleBadRequest(String.format("Claim '%s' is not allowed to be updated in " +
+                                "self-registration.", claim.getUri()),
+                        ERROR_CODE_BAD_SELF_REGISTER_REQUEST.getCode());
+            }
+        }
+    }
+
+    private List<String> getBlockedClaims() {
+
+        List<String> blockedClaims = new ArrayList<>();
+        Map<String, Object> config = IdentityConfigParser.getInstance().getConfiguration();
+        addClaimsFromConfig(config, Constants.SCIM2_ME_BLOCKED_CLAIMS, blockedClaims);
+        addClaimsFromConfig(config, Constants.SCIM2_ME_EXTENDED_BLOCKED_CLAIMS, blockedClaims);
+        return blockedClaims;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addClaimsFromConfig(Map<String, Object> config, String key, List<String> claimsList) {
+
+        Object value = config.get(key);
+        if (value instanceof List) {
+            claimsList.addAll((List<String>) value);
+        } else if (value instanceof String) {
+            claimsList.add((String) value);
+        }
     }
 
     /**
@@ -466,4 +513,3 @@ public class MeApiServiceImpl extends MeApiService {
         return false;
     }
 }
-
