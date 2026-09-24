@@ -768,6 +768,8 @@ public class IdentityRecoveryConstants {
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION = "EmailVerification.AskPassword" +
                 ".AccountActivation";
+        public static final String EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE =
+                "EmailVerification.DisableNotifyUnlockState";
 
         public static final String TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME = "TenantRegistrationVerification." +
                 "AskPassword.ExpiryTime";
