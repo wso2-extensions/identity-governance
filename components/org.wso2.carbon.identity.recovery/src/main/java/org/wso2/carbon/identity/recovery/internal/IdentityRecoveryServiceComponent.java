@@ -56,6 +56,7 @@ import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutor;
 import org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutor;
+import org.wso2.carbon.identity.recovery.executor.ProvisioningDispatchExecutor;
 import org.wso2.carbon.identity.recovery.executor.UserProvisioningExecutor;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
@@ -156,6 +157,8 @@ public class IdentityRecoveryServiceComponent {
                     new PasswordProvisioningExecutor(), null);
             bundleContext.registerService(Executor.class.getName(),
                     new UserProvisioningExecutor(), null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new ProvisioningDispatchExecutor(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -184,6 +187,28 @@ public class IdentityRecoveryServiceComponent {
             log.debug("Setting the Realm Service");
         }
         dataHolder.setRealmService(realmService);
+    }
+
+    @Reference(
+            name = "flow.executor",
+            service = org.wso2.carbon.identity.flow.execution.engine.graph.Executor.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetFlowExecutor")
+    protected void setFlowExecutor(Executor executor) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Adding flow executor: " + executor.getName());
+        }
+        dataHolder.addFlowExecutor(executor);
+    }
+
+    protected void unsetFlowExecutor(Executor executor) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Removing flow executor: " + executor.getName());
+        }
+        dataHolder.removeFlowExecutor(executor);
     }
 
     @Reference(
