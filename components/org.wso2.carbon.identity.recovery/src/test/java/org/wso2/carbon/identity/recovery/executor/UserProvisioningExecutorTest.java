@@ -187,6 +187,45 @@ public class UserProvisioningExecutorTest {
     }
 
     @Test
+    public void testRollbackDeletesTheProvisionedUser() throws Exception {
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        FlowExecutionContext context = buildContextWithProvisionedUser();
+
+        ExecutorResponse response = executor.rollback(context);
+
+        assertNull(response);
+        verify(userStoreManager).deleteUserWithID(USER_ID);
+        assertNull(context.getProperty("provisionedUserId"));
+    }
+
+    @Test
+    public void testRollbackDeletesNothingWithoutAProvisionedUser() throws Exception {
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        FlowExecutionContext context = buildContextWithProvisionedUser();
+        context.getProperties().remove("provisionedUserId");
+
+        executor.rollback(context);
+
+        verify(userStoreManager, never()).deleteUserWithID(anyString());
+    }
+
+    @Test
+    public void testRollbackFailureIsLoggedNotThrown() throws Exception {
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("Delete failed")).when(userStoreManager).deleteUserWithID(USER_ID);
+        FlowExecutionContext context = buildContextWithProvisionedUser();
+
+        ExecutorResponse response = executor.rollback(context);
+
+        assertNull(response);
+        verify(userStoreManager).deleteUserWithID(USER_ID);
+        assertEquals(context.getProperty("provisionedUserId"), USER_ID);
+    }
+
+    @Test
     public void testExecuteWithRegistrationFlow() throws Exception {
 
         // Setup context and user
@@ -212,6 +251,7 @@ public class UserProvisioningExecutorTest {
         assertEquals(response.getResult(), STATUS_COMPLETE);
         verify(flowUser).setUserStoreDomain(PRIMARY_DOMAIN);
         verify(flowUser).setUserId(USER_ID);
+        verify(context).setProperty("provisionedUserId", USER_ID);
     }
 
     @Test
@@ -244,6 +284,8 @@ public class UserProvisioningExecutorTest {
         verify(userStoreManager).updateCredentialByAdmin(eq(USERNAME), any(char[].class));
         verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
                 eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
+        // Only a registration creates a user, so no other flow records one for a rollback to delete.
+        verify(context, never()).setProperty(eq("provisionedUserId"), any());
     }
 
     @Test
@@ -1552,6 +1594,17 @@ public class UserProvisioningExecutorTest {
                 .thenReturn(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME);
 
         return dataHolder;
+    }
+
+    private FlowExecutionContext buildContextWithProvisionedUser() {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setTenantDomain(TENANT_DOMAIN);
+        context.setContextIdentifier(CONTEXT_ID);
+        context.setFlowType(REGISTRATION.getType());
+        context.getFlowUser().setUserStoreDomain(PRIMARY_DOMAIN);
+        context.setProperty("provisionedUserId", USER_ID);
+        return context;
     }
 
     private AbstractUserStoreManager setupUserStoreManagerMocks() throws Exception {
