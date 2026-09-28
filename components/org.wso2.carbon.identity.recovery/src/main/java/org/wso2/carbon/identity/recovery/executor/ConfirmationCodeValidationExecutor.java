@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -179,7 +181,40 @@ public class ConfirmationCodeValidationExecutor implements Executor {
         if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
             throw new IdentityRecoveryClientException("Invalid tenant domain: " + userTenantDomain);
         }
+        validateRecoveryScenario(userRecoveryData, code);
         return userRecoveryData;
+    }
+
+    /**
+     * Validates that the confirmation code was issued for a recovery scenario and step this executor serves.
+     *
+     * @param userRecoveryData Recovery data resolved from the confirmation code.
+     * @param code             Confirmation code, included in the error for consistency with other code failures.
+     * @throws IdentityRecoveryClientException If the scenario or the step is not one this executor serves.
+     */
+    private void validateRecoveryScenario(UserRecoveryData userRecoveryData, String code)
+            throws IdentityRecoveryClientException {
+
+        Enum<?> recoveryScenario = userRecoveryData.getRecoveryScenario();
+        Enum<?> recoveryStep = userRecoveryData.getRecoveryStep();
+
+        // Recovery scenarios of the invitations this executor serves.
+        boolean isInvitationScenario = RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_INVITE_SET_PASSWORD_OFFLINE.equals(recoveryScenario);
+        // Recovery steps that authorise a password change, as validated in NotificationPasswordRecoveryManager.
+        boolean isPasswordUpdateStep = RecoverySteps.UPDATE_PASSWORD.equals(recoveryStep)
+                || RecoverySteps.SET_PASSWORD.equals(recoveryStep);
+
+        if (!isInvitationScenario || !isPasswordUpdateStep) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Confirmation code issued for recovery scenario: " + recoveryScenario + " and step: "
+                        + recoveryStep + " cannot be redeemed by the invited user registration flow.");
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+        }
     }
 
     @Override
