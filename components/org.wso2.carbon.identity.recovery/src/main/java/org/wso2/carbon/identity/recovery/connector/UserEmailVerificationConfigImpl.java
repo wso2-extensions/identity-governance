@@ -108,6 +108,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Manage notifications sending internally");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 "Send account activation email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                "Disable account unlock email on email verification");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Email verification code expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
@@ -148,6 +150,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Disable if the client application handles notification sending.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 "Disable if account activation confirmation email is not required.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                "Disable the account unlock email that is sent when the user confirms the email verification.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Set the time span that the verification e-mail would be valid, in minutes. (For infinite validity " +
                         "period, set -1)");
@@ -177,6 +181,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR);
@@ -198,6 +203,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         String useNumbersInOTP = "true";
         String otpLength = "6";
         String enableEmailAccountLockOnCreation = "true";
+        String disableNotifyUnlockState = "false";
         String enableNotificationInternallyManage = "true";
         String sentNotificationOnAccountActivation = "true";
         String emailVerificationCodeExpiry = "1440";
@@ -234,6 +240,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         String notificationOnAccountActivationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION);
+        String disableNotifyUnlockStateProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE);
 
         if (StringUtils.isNotEmpty(emailVerificationProperty)) {
             enableEmailVerification = emailVerificationProperty;
@@ -270,6 +278,9 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         }
         if (StringUtils.isNotEmpty(notificationOnAccountActivationProperty)) {
             sentNotificationOnAccountActivation = notificationOnAccountActivationProperty;
+        }
+        if (StringUtils.isNotEmpty(disableNotifyUnlockStateProperty)) {
+            disableNotifyUnlockState = disableNotifyUnlockStateProperty;
         }
         if (StringUtils.isNotEmpty(emailVerificationCodeExpiryProperty)) {
             emailVerificationCodeExpiry = emailVerificationCodeExpiryProperty;
@@ -310,6 +321,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 sentNotificationOnAccountActivation);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                disableNotifyUnlockState);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 askPasswordTempPassExtension);
         try {
@@ -373,6 +386,9 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,

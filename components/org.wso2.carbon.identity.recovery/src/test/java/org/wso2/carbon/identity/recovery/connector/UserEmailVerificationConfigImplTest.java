@@ -114,6 +114,8 @@ public class UserEmailVerificationConfigImplTest {
                 "Manage notifications sending internally");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 "Send account activation email");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                "Disable account unlock email on email verification");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Email verification code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
@@ -158,6 +160,8 @@ public class UserEmailVerificationConfigImplTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                         EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 "Disable if account activation confirmation email is not required.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                "Disable the account unlock email that is sent when the user confirms the email verification.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Set the time span that the verification e-mail would be valid, in minutes. (For infinite validity " +
                         "period, set -1)");
@@ -190,6 +194,7 @@ public class UserEmailVerificationConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
@@ -217,6 +222,7 @@ public class UserEmailVerificationConfigImplTest {
         String testEnableEmailAccountLockOnCreation = "true";
         String testEnableNotificationInternallyManage = "true";
         String testSentNotificationOnAccountActivation = "true";
+        String testDisableNotifyUnlockState = "false";
         String testEmailVerificationCodeExpiry = "1440";
         String testAskPasswordCodeExpiry = "1440";
         String testAskPasswordTempPassExtension = "org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator";
@@ -250,6 +256,8 @@ public class UserEmailVerificationConfigImplTest {
                 testEnableNotificationInternallyManage);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
                 testSentNotificationOnAccountActivation);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_DISABLE_NOTIFY_UNLOCK_STATE,
+                testDisableNotifyUnlockState);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 testAskPasswordTempPassExtension);
         try {
