@@ -31,6 +31,7 @@ import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -43,6 +44,7 @@ import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
@@ -50,6 +52,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
@@ -58,7 +61,9 @@ import org.wso2.carbon.user.api.Claim;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -66,6 +71,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SELF_REGISTER_USER_EVENT;
 
 /**
@@ -76,6 +82,8 @@ public class MeApiServiceImplTest {
     private static final String USERNAME = "dummyUser";
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
     private MockedStatic<Utils> mockedUtils;
+    private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
+    private IdentityConfigParser identityConfigParserMock;
     private ResendConfirmationManager resendConfirmationManager;
 
     @Mock
@@ -101,6 +109,10 @@ public class MeApiServiceImplTest {
         resendConfirmationManager = Mockito.mock(ResendConfirmationManager.class);
         mockedUtils = Mockito.mockStatic(Utils.class);
         mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+        identityConfigParserMock = Mockito.mock(IdentityConfigParser.class);
+        Mockito.when(identityConfigParserMock.getConfiguration()).thenReturn(new HashMap<>());
+        mockedIdentityConfigParser = Mockito.mockStatic(IdentityConfigParser.class);
+        mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(identityConfigParserMock);
     }
 
     @AfterMethod
@@ -108,6 +120,7 @@ public class MeApiServiceImplTest {
 
         mockedIdentityUtil.close();
         mockedUtils.close();
+        mockedIdentityConfigParser.close();
     }
 
     @Test
@@ -117,6 +130,26 @@ public class MeApiServiceImplTest {
                 any(Property[].class))).thenReturn(notificationResponseBean);
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
         assertEquals(meApiService.mePost(null).getStatus(), 201);
+    }
+
+    @Test
+    public void testMePostRejectsIdentityClaims() throws IdentityRecoveryException {
+
+        mockedUtils.when(() -> Utils.handleBadRequest(anyString(), anyString())).thenCallRealMethod();
+        mockedUtils.when(() -> Utils.buildBadRequestException(anyString(), anyString())).thenCallRealMethod();
+        mockedUtils.when(() -> Utils.getErrorDTO(anyString(), anyString(), anyString())).thenCallRealMethod();
+
+        String blockedClaimUri = "http://wso2.org/claims/identity/emailVerified";
+        Map<String, Object> config = new HashMap<>();
+        config.put(Constants.SCIM2_ME_BLOCKED_CLAIMS, blockedClaimUri);
+        Mockito.when(identityConfigParserMock.getConfiguration()).thenReturn(config);
+
+        BadRequestException exception = expectThrows(BadRequestException.class,
+                () -> meApiService.mePost(selfUserRegistrationRequestDTOWithClaimUri(blockedClaimUri)));
+        assertEquals(exception.getMessage(), String.format("Claim '%s' is not allowed to be updated in " +
+                "self-registration.", blockedClaimUri));
+        Mockito.verify(userSelfRegistrationManager, Mockito.never()).registerUser(any(User.class), anyString(),
+                any(Claim[].class), any(Property[].class));
     }
 
     @Test
@@ -327,8 +360,13 @@ public class MeApiServiceImplTest {
 
     private ClaimDTO buildClaimDTO() {
 
+        return buildClaimDTO("http://wso2.org.email");
+    }
+
+    private ClaimDTO buildClaimDTO(String claimUri) {
+
         ClaimDTO claimDTO = new ClaimDTO();
-        claimDTO.setUri("http://wso2.org.email");
+        claimDTO.setUri(claimUri);
         claimDTO.setValue("test@gmail.com");
         return claimDTO;
     }
@@ -343,6 +381,15 @@ public class MeApiServiceImplTest {
         listPropertyDTOs.add(buildSelfUserRegistrationRequestDTO());
         selfUserRegistrationRequestDTO.setProperties(listPropertyDTOs);
         selfUserRegistrationRequestDTO.setUser(buildSelfRegistration());
+        return selfUserRegistrationRequestDTO;
+    }
+
+    private SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTOWithClaimUri(String claimUri) {
+
+        SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO = selfUserRegistrationRequestDTO();
+        List<ClaimDTO> listClaimDTO = new ArrayList<>();
+        listClaimDTO.add(buildClaimDTO(claimUri));
+        selfUserRegistrationRequestDTO.getUser().setClaims(listClaimDTO);
         return selfUserRegistrationRequestDTO;
     }
 

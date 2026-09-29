@@ -53,4 +53,8 @@ public final class Constants {
     public static final String ENABLE_DETAILED_API_RESPONSE =
             "SelfRegistration.API.EnableDetailedResponseBody";
 
+    // SCIM2 Me endpoint blocked claims configuration keys.
+    public static final String SCIM2_ME_BLOCKED_CLAIMS = "SCIM2.Me.BlockedClaims.BlockedClaim";
+    public static final String SCIM2_ME_EXTENDED_BLOCKED_CLAIMS = "SCIM2.Me.ExtendedBlockedClaims.ExtendedBlockedClaim";
+
 }

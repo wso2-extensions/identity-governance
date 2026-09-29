@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.executor;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -31,6 +32,8 @@ import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -124,6 +127,8 @@ public class ConfirmationCodeValidationExecutorTest {
 
         UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
         when(mockRecoveryData.getUser()).thenReturn(mockUser);
+        when(mockRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.ASK_PASSWORD);
+        when(mockRecoveryData.getRecoveryStep()).thenReturn(RecoverySteps.UPDATE_PASSWORD);
 
         // Mock UserRecoveryDataStore.
         UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
@@ -200,6 +205,49 @@ public class ConfirmationCodeValidationExecutorTest {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
+        assertNotNull(response.getErrorMessage());
+    }
+
+    @DataProvider(name = "rejectedRecoveryData")
+    public Object[][] rejectedRecoveryData() {
+
+        return new Object[][]{
+                // The code the password recovery page hands out, which this executor must not redeem.
+                {RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.SEND_RECOVERY_INFORMATION},
+                // An invitation scenario at a step that does not authorise setting a password.
+                {RecoveryScenarios.ASK_PASSWORD, RecoverySteps.RESEND_CONFIRMATION_CODE}
+        };
+    }
+
+    @Test(dataProvider = "rejectedRecoveryData")
+    public void testExecuteWithConfirmationCodeOfAnotherScenario(Enum<?> scenario, Enum<?> step) throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(CONFIRMATION_CODE, "code-of-another-scenario");
+        when(context.getUserInputData()).thenReturn(userInputData);
+
+        User mockUser = new User();
+        mockUser.setUserName(USERNAME);
+        mockUser.setTenantDomain(TENANT_DOMAIN);
+        mockUser.setUserStoreDomain(DOMAIN_NAME);
+
+        UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
+        when(mockRecoveryData.getUser()).thenReturn(mockUser);
+        when(mockRecoveryData.getRecoveryScenario()).thenReturn(scenario);
+        when(mockRecoveryData.getRecoveryStep()).thenReturn(step);
+
+        UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
+        mockedJdbcStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
+        when(mockStore.load(anyString())).thenReturn(mockRecoveryData);
+
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(carbonContext);
+        when(carbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_ERROR);
         assertNotNull(response.getErrorMessage());
     }
 }
