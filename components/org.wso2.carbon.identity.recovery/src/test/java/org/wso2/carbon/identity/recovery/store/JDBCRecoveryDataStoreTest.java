@@ -255,12 +255,13 @@ public class JDBCRecoveryDataStoreTest {
     @DataProvider(name = "emailVerificationCodeExpiry")
     private Object[][] emailVerificationCodeExpiry() {
 
-        // Scenario, legacy compatibility setting, whether the code is expected to still be valid.
+        // Scenario, legacy compatibility setting. The expiry is a property of the scenario alone, so the
+        // compatibility setting -- which only decides which scenario gets issued -- must not affect it.
         return new Object[][] {
-                { RecoveryScenarios.EMAIL_VERIFICATION, false, true },
-                { RecoveryScenarios.EMAIL_VERIFICATION, true, true },
-                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, false, true },
-                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, true, false }
+                { RecoveryScenarios.EMAIL_VERIFICATION, false },
+                { RecoveryScenarios.EMAIL_VERIFICATION, true },
+                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, false },
+                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, true }
         };
     }
 
@@ -268,12 +269,10 @@ public class JDBCRecoveryDataStoreTest {
      * Codes issued for an administratively created user pending email verification must expire on
      * EmailVerification.ExpiryTime (stubbed at 20 minutes), not on the generic Recovery.ExpiryTime
      * (stubbed at 10 minutes). The code under test is 11 minutes old, so the two dials disagree.
-     * EMAIL_VERIFICATION_OTP only moves to the dedicated dial once the organization has left the
-     * legacy scenario behind.
      */
     @Test(dataProvider = "emailVerificationCodeExpiry")
-    public void testEmailVerificationCodeExpiry(RecoveryScenarios recoveryScenario, boolean isLegacyScenario,
-                                                boolean isExpectedValid) throws Exception {
+    public void testEmailVerificationCodeExpiry(RecoveryScenarios recoveryScenario, boolean isLegacyScenario)
+            throws Exception {
 
         User user = createSampleUser();
 
@@ -288,20 +287,10 @@ public class JDBCRecoveryDataStoreTest {
         mockedUtils.when(() -> Utils.isLegacyEmailVerificationScenarioEnabled(TEST_TENANT_DOMAIN))
                 .thenReturn(isLegacyScenario);
 
-        if (isExpectedValid) {
-            UserRecoveryData result = userRecoveryDataStore.load(user, recoveryScenario,
-                    RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION, TEST_SECRET_CODE);
-            assertNotNull(result);
-            assertEquals(result.getRecoveryScenario(), recoveryScenario);
-        } else {
-            try {
-                userRecoveryDataStore.load(user, recoveryScenario,
-                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION, TEST_SECRET_CODE);
-                fail();
-            } catch (Exception e) {
-                assertTrue(e instanceof IdentityRecoveryClientException);
-            }
-        }
+        UserRecoveryData result = userRecoveryDataStore.load(user, recoveryScenario,
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION, TEST_SECRET_CODE);
+        assertNotNull(result);
+        assertEquals(result.getRecoveryScenario(), recoveryScenario);
     }
 
     @DataProvider(name = "askPasswordUserOnboardScenarios")
