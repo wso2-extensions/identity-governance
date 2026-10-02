@@ -986,6 +986,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 notificationExpiryTimeInMinutes = Integer.parseInt(
                         Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, tenantDomain));
             }
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION.equals(recoveryScenario) ||
+                (RecoveryScenarios.EMAIL_VERIFICATION_OTP.equals(recoveryScenario)
+                        && !Utils.isLegacyEmailVerificationScenarioEnabled(tenantDomain))) {
+            /*
+            Codes issued for an administratively created user pending email verification. EMAIL_VERIFICATION_OTP
+            predates this branch and fell through to the generic recovery expiry, so it only moves to the dedicated
+            dial for organizations that have left the legacy scenario behind.
+             */
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME, tenantDomain));
         } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants

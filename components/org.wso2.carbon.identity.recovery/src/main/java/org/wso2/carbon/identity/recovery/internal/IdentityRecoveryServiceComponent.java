@@ -80,6 +80,7 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
+import org.wso2.carbon.identity.compatibility.settings.core.service.CompatibilitySettingsService;
 import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -538,5 +539,21 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetWorkflowService(WorkflowManagementService workflowManagementService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setWorkflowManagementService(null);
+    }
+
+    @Reference(
+            name = "compatibility.settings.service",
+            service = CompatibilitySettingsService.class,
+            cardinality = ReferenceCardinality.OPTIONAL,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetCompatibilitySettingsService")
+    protected void setCompatibilitySettingsService(CompatibilitySettingsService compatibilitySettingsService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setCompatibilitySettingsService(compatibilitySettingsService);
+    }
+
+    protected void unsetCompatibilitySettingsService(CompatibilitySettingsService compatibilitySettingsService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setCompatibilitySettingsService(null);
     }
 }
