@@ -61,6 +61,10 @@
             <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.compatibility.settings.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.json.wso2</groupId>
             <artifactId>json</artifactId>
         </dependency>
@@ -196,6 +200,8 @@
                             org.wso2.carbon.identity.application.common.model;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.compatibility.settings.core.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.base; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.central.log.mgt.utils;

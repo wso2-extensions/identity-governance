@@ -57,6 +57,10 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
+import org.wso2.carbon.identity.compatibility.settings.core.exception.CompatibilitySettingException;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySetting;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySettingGroup;
+import org.wso2.carbon.identity.compatibility.settings.core.service.CompatibilitySettingsService;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -1743,6 +1747,91 @@ public class UtilsTest {
 
         when(identityGovernanceService.getConfiguration(eq(new String[]{key}), eq(TENANT_DOMAIN)))
                 .thenReturn(properties);
+    }
+
+    @DataProvider(name = "legacyEmailVerificationScenarioData")
+    public Object[][] legacyEmailVerificationScenarioData() {
+
+        // Stored setting value, expected result.
+        return new Object[][]{
+                {"false", false},
+                {"true", true},
+                {"", true},
+                {null, true}
+        };
+    }
+
+    /**
+     * The stored value decides the outcome, but anything unreadable must fall back to the legacy
+     * scenario so that an organization is never silently moved off the behaviour it has today.
+     */
+    @Test(dataProvider = "legacyEmailVerificationScenarioData")
+    public void testIsLegacyEmailVerificationScenarioEnabled(String settingValue, boolean expected)
+            throws Exception {
+
+        CompatibilitySettingsService compatibilitySettingsService = mock(CompatibilitySettingsService.class);
+        when(identityRecoveryServiceDataHolder.getCompatibilitySettingsService())
+                .thenReturn(compatibilitySettingsService);
+
+        CompatibilitySettingGroup group = new CompatibilitySettingGroup();
+        group.setSettingGroup(IdentityRecoveryConstants.USER_ONBOARDING_COMPATIBILITY_SETTING_GROUP);
+        if (settingValue != null) {
+            group.addSetting(IdentityRecoveryConstants.ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO, settingValue);
+        }
+        CompatibilitySetting setting = new CompatibilitySetting();
+        setting.addCompatibilitySetting(group);
+
+        when(compatibilitySettingsService.getCompatibilitySettingsByGroupAndSetting(TENANT_DOMAIN,
+                IdentityRecoveryConstants.USER_ONBOARDING_COMPATIBILITY_SETTING_GROUP,
+                IdentityRecoveryConstants.ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO)).thenReturn(setting);
+
+        assertEquals(Utils.isLegacyEmailVerificationScenarioEnabled(TENANT_DOMAIN), expected);
+    }
+
+    @Test
+    public void testIsLegacyEmailVerificationScenarioEnabledWhenServiceUnavailable() {
+
+        when(identityRecoveryServiceDataHolder.getCompatibilitySettingsService()).thenReturn(null);
+
+        assertTrue(Utils.isLegacyEmailVerificationScenarioEnabled(TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testIsLegacyEmailVerificationScenarioEnabledWhenGroupMissing() throws Exception {
+
+        CompatibilitySettingsService compatibilitySettingsService = mock(CompatibilitySettingsService.class);
+        when(identityRecoveryServiceDataHolder.getCompatibilitySettingsService())
+                .thenReturn(compatibilitySettingsService);
+
+        // An empty result stands for a setting group that is absent from the deployed metadata.
+        when(compatibilitySettingsService.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(),
+                anyString())).thenReturn(new CompatibilitySetting());
+
+        assertTrue(Utils.isLegacyEmailVerificationScenarioEnabled(TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testIsLegacyEmailVerificationScenarioEnabledWhenNullSettingReturned() throws Exception {
+
+        CompatibilitySettingsService compatibilitySettingsService = mock(CompatibilitySettingsService.class);
+        when(identityRecoveryServiceDataHolder.getCompatibilitySettingsService())
+                .thenReturn(compatibilitySettingsService);
+        when(compatibilitySettingsService.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(),
+                anyString())).thenReturn(null);
+
+        assertTrue(Utils.isLegacyEmailVerificationScenarioEnabled(TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testIsLegacyEmailVerificationScenarioEnabledOnException() throws Exception {
+
+        CompatibilitySettingsService compatibilitySettingsService = mock(CompatibilitySettingsService.class);
+        when(identityRecoveryServiceDataHolder.getCompatibilitySettingsService())
+                .thenReturn(compatibilitySettingsService);
+        when(compatibilitySettingsService.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(),
+                anyString())).thenThrow(new CompatibilitySettingException("error", "error"));
+
+        assertTrue(Utils.isLegacyEmailVerificationScenarioEnabled(TENANT_DOMAIN));
     }
 
     private static String getUserStoreQualifiedUsername(String username, String userStoreDomainName) {

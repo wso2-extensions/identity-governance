@@ -42,6 +42,10 @@ import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
+import org.wso2.carbon.identity.compatibility.settings.core.exception.CompatibilitySettingException;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySetting;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySettingGroup;
+import org.wso2.carbon.identity.compatibility.settings.core.service.CompatibilitySettingsService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -1756,6 +1760,48 @@ public class Utils {
                     IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE);
             log.error(message);
             return IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE;
+        }
+    }
+
+    /**
+     * Check whether admin-initiated email verification codes should keep using the legacy
+     * {@link org.wso2.carbon.identity.recovery.RecoveryScenarios#SELF_SIGN_UP} recovery scenario.
+     * <p>
+     * Historically a user created with the {@code verifyEmail} claim was recorded as a self sign-up, so its
+     * confirmation code expired on the self registration dial. The behaviour is retained for organizations that
+     * have not moved off it, and is governed by the {@code userOnboarding.enableLegacyEmailVerificationScenario}
+     * compatibility setting. Any failure to resolve the setting keeps the legacy behaviour, so a missing or
+     * unreachable service never changes how existing codes are issued or validated.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return {@code true} if the legacy scenario should be used.
+     */
+    public static boolean isLegacyEmailVerificationScenarioEnabled(String tenantDomain) {
+
+        CompatibilitySettingsService compatibilitySettingsService =
+                IdentityRecoveryServiceDataHolder.getInstance().getCompatibilitySettingsService();
+        if (compatibilitySettingsService == null) {
+            log.debug("Compatibility settings service is not available. Using the legacy email verification " +
+                    "recovery scenario.");
+            return true;
+        }
+        try {
+            CompatibilitySetting setting = compatibilitySettingsService.getCompatibilitySettingsByGroupAndSetting(
+                    tenantDomain, IdentityRecoveryConstants.USER_ONBOARDING_COMPATIBILITY_SETTING_GROUP,
+                    IdentityRecoveryConstants.ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO);
+            CompatibilitySettingGroup group = setting == null ? null : setting.getCompatibilitySetting(
+                    IdentityRecoveryConstants.USER_ONBOARDING_COMPATIBILITY_SETTING_GROUP);
+            String value = group == null ? null : group.getSettingValue(
+                    IdentityRecoveryConstants.ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO);
+            if (StringUtils.isBlank(value)) {
+                return true;
+            }
+            return Boolean.parseBoolean(value);
+        } catch (CompatibilitySettingException e) {
+            log.error("Error while reading the compatibility setting: " +
+                    IdentityRecoveryConstants.ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO + " for tenant: " +
+                    tenantDomain + ". Using the legacy email verification recovery scenario.", e);
+            return true;
         }
     }
 
