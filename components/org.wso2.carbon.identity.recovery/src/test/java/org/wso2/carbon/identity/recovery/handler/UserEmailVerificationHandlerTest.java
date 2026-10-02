@@ -675,6 +675,61 @@ public class UserEmailVerificationHandlerTest {
                 any()));
     }
 
+    @DataProvider(name = "emailVerificationScenarioData")
+    public Object[][] emailVerificationScenarioData() {
+
+        // Legacy compatibility setting, send-OTP enabled, expected scenario, expected step.
+        return new Object[][]{
+                {true, false, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP},
+                {false, false, RecoveryScenarios.EMAIL_VERIFICATION,
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION},
+                {true, true, RecoveryScenarios.EMAIL_VERIFICATION_OTP,
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION},
+                {false, true, RecoveryScenarios.EMAIL_VERIFICATION_OTP,
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION}
+        };
+    }
+
+    /**
+     * An administratively created user pending email verification is not a self sign-up. The compatibility
+     * setting decides whether the code is still recorded as one. The OTP mode overrides both regardless,
+     * which is why the setting is varied across both of its values here.
+     */
+    @Test(dataProvider = "emailVerificationScenarioData")
+    public void testHandleEventPostAddUserVerifyEmailClaimRecoveryScenario(boolean isLegacyScenario,
+                                                                          boolean isSendOTPEnabled,
+                                                                          RecoveryScenarios expectedScenario,
+                                                                          RecoverySteps expectedStep)
+            throws IdentityEventException, IdentityRecoveryException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE, true);
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP, TEST_TENANT_DOMAIN))
+                .thenReturn(String.valueOf(isSendOTPEnabled));
+        mockedUtils.when(() -> Utils.isLegacyEmailVerificationScenarioEnabled(TEST_TENANT_DOMAIN))
+                .thenReturn(isLegacyScenario);
+        mockedUtils.when(() -> Utils.isAccountStateClaimExisting(anyString())).thenReturn(true);
+
+        Claim claim = new Claim();
+        claim.setClaimUri(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+        claim.setValue(Boolean.TRUE.toString());
+        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(claim);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.TRUE,
+                null, null, null);
+        userEmailVerificationHandler.handleEvent(event);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+
+        Assert.assertEquals(capturedRecoveryData.getRecoveryScenario(), expectedScenario);
+        Assert.assertEquals(capturedRecoveryData.getRecoveryStep(), expectedStep);
+    }
+
     @Test
     public void testGetPriority() {
 
