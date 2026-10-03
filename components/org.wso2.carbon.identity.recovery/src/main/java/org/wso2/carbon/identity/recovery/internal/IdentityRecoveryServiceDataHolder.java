@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.internal;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
@@ -26,6 +27,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
@@ -41,10 +43,12 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
+    private final Map<String, Executor> flowExecutors = new ConcurrentHashMap<>();
     private RealmService realmService;
     private IdentityEventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
@@ -366,5 +370,43 @@ public class IdentityRecoveryServiceDataHolder {
     public WorkflowManagementService getWorkflowManagementService() {
 
         return this.workflowService;
+    }
+
+    /**
+     * Add a flow executor, keyed by the name it is bound to in a flow definition.
+     * <p>
+     * Executors are collected from every bundle that contributes them, so an executor owned by another
+     * component can be resolved here without depending on that component directly.
+     *
+     * @param executor Flow executor contributed as an OSGi service.
+     */
+    public void addFlowExecutor(Executor executor) {
+
+        if (executor != null && StringUtils.isNotBlank(executor.getName())) {
+            flowExecutors.put(executor.getName(), executor);
+        }
+    }
+
+    /**
+     * Remove a flow executor that is no longer available.
+     *
+     * @param executor Flow executor being withdrawn.
+     */
+    public void removeFlowExecutor(Executor executor) {
+
+        if (executor != null && StringUtils.isNotBlank(executor.getName())) {
+            flowExecutors.remove(executor.getName(), executor);
+        }
+    }
+
+    /**
+     * Get a flow executor by the name it is bound to in a flow definition.
+     *
+     * @param executorName Name of the executor.
+     * @return The executor, or {@code null} if no executor is registered under that name.
+     */
+    public Executor getFlowExecutor(String executorName) {
+
+        return flowExecutors.get(executorName);
     }
 }
