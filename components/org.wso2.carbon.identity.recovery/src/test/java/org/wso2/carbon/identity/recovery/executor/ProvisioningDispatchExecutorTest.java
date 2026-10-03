@@ -57,6 +57,7 @@ public class ProvisioningDispatchExecutorTest {
 
     private static final String USER_PROVISIONING_EXECUTOR = "UserProvisioningExecutor";
     private static final String ORGANIZATION_PROVISIONING_EXECUTOR = "OrganizationProvisioningExecutor";
+    private static final String ORGANIZATION_ROLE_ASSIGNMENT_EXECUTOR = "OrganizationRoleAssignmentExecutor";
     private static final String PROVISION_TARGET = "provisionTarget";
     private static final String NEW_ORGANIZATION = "NEW_ORGANIZATION";
     private static final String NEW_ORG_HANDLE = "acmecorporation";
@@ -65,6 +66,7 @@ public class ProvisioningDispatchExecutorTest {
     private ProvisioningDispatchExecutor executor;
     private Executor userProvisioningExecutor;
     private Executor organizationProvisioningExecutor;
+    private Executor roleAssignmentExecutor;
 
     @BeforeMethod
     public void setUp() {
@@ -72,9 +74,11 @@ public class ProvisioningDispatchExecutorTest {
         executor = new ProvisioningDispatchExecutor();
         userProvisioningExecutor = namedExecutor(USER_PROVISIONING_EXECUTOR);
         organizationProvisioningExecutor = namedExecutor(ORGANIZATION_PROVISIONING_EXECUTOR);
+        roleAssignmentExecutor = namedExecutor(ORGANIZATION_ROLE_ASSIGNMENT_EXECUTOR);
 
         IdentityRecoveryServiceDataHolder.getInstance().addFlowExecutor(userProvisioningExecutor);
         IdentityRecoveryServiceDataHolder.getInstance().addFlowExecutor(organizationProvisioningExecutor);
+        IdentityRecoveryServiceDataHolder.getInstance().addFlowExecutor(roleAssignmentExecutor);
     }
 
     @AfterMethod
@@ -82,6 +86,7 @@ public class ProvisioningDispatchExecutorTest {
 
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(userProvisioningExecutor);
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(organizationProvisioningExecutor);
+        IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(roleAssignmentExecutor);
     }
 
     @Test(description = "The executor name is referenced by string from persisted flows and must not change.")
@@ -383,6 +388,135 @@ public class ProvisioningDispatchExecutorTest {
         }
 
         verify(organizationProvisioningExecutor).rollback(context);
+    }
+
+    @Test
+    public void testRolesAreAssignedAfterProvisioningInCurrentOrganization() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setCurrentNode(nodeWithProvisionTarget(null));
+        context.getCurrentNode().getExecutorConfig().addMetadata("roleIds", "[\"role-1\",\"role-2\"]");
+        ExecutorResponse organizationResponse = response(STATUS_COMPLETE);
+        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(organizationProvisioningExecutor, organizationResponse);
+        stub(roleAssignmentExecutor, response(STATUS_COMPLETE));
+
+        Assert.assertSame(executor.execute(context), organizationResponse);
+        InOrder order = org.mockito.Mockito.inOrder(userProvisioningExecutor, organizationProvisioningExecutor,
+                roleAssignmentExecutor);
+        order.verify(userProvisioningExecutor).execute(context);
+        order.verify(organizationProvisioningExecutor).execute(context);
+        order.verify(roleAssignmentExecutor).execute(context);
+    }
+
+    @Test
+    public void testRolesAreAssignedAfterNewOrganizationTenantIsRestored() throws Exception {
+
+        FlowExecutionContext context = newOrganizationContext();
+        context.getCurrentNode().getExecutorConfig().addMetadata("roleIds", "[\"role-1\"]");
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+        ExecutorResponse userResponse = response(STATUS_COMPLETE);
+        stub(userProvisioningExecutor, userResponse);
+
+        try (MockedStatic<PrivilegedCarbonContext> carbonContext = mockedCarbonContext()) {
+            when(roleAssignmentExecutor.execute(context)).thenAnswer(invocation -> {
+                carbonContext.verify(PrivilegedCarbonContext::endTenantFlow);
+                Assert.assertEquals(context.getTenantDomain(), CURRENT_TENANT_DOMAIN);
+                return response(STATUS_COMPLETE);
+            });
+
+            Assert.assertSame(executor.execute(context), userResponse);
+            InOrder order = org.mockito.Mockito.inOrder(organizationProvisioningExecutor, userProvisioningExecutor,
+                    roleAssignmentExecutor);
+            order.verify(organizationProvisioningExecutor).execute(context);
+            order.verify(userProvisioningExecutor).execute(context);
+            order.verify(roleAssignmentExecutor).execute(context);
+        }
+    }
+
+    @Test
+    public void testNoRoleMetadataKeepsExistingBehavior() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+
+        executor.execute(context);
+
+        verify(roleAssignmentExecutor, never()).execute(any());
+    }
+
+    @Test(dataProvider = "returnToNodeStatusProvider")
+    public void testRoleAssignmentIsSkippedUntilProvisioningCompletes(String status) throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setCurrentNode(nodeWithProvisionTarget(null));
+        context.getCurrentNode().getExecutorConfig().addMetadata("roleIds", "[\"role-1\"]");
+        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(organizationProvisioningExecutor, response(status));
+
+        Assert.assertEquals(executor.execute(context).getResult(), status);
+        verify(roleAssignmentExecutor, never()).execute(any());
+    }
+
+    @Test(dataProvider = "flowEndingStatusProvider")
+    public void testRoleAssignmentErrorDoesNotFailProvisioning(String status) throws Exception {
+
+        FlowExecutionContext context = roleAssignmentContext();
+        stub(roleAssignmentExecutor, response(status));
+
+        Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+        verify(userProvisioningExecutor, never()).rollback(any());
+        verify(organizationProvisioningExecutor, never()).rollback(any());
+    }
+
+    @Test
+    public void testUnavailableRoleAssignmentExecutorDoesNotFailProvisioning() throws Exception {
+
+        FlowExecutionContext context = roleAssignmentContext();
+        IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(roleAssignmentExecutor);
+
+        Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+    }
+
+    @Test
+    public void testRoleAssignmentExceptionDoesNotFailProvisioning() throws Exception {
+
+        FlowExecutionContext context = roleAssignmentContext();
+        when(roleAssignmentExecutor.execute(context)).thenThrow(new FlowEngineServerException(
+                "60000", "Role assignment failed.", "Role assignment failed."));
+
+        Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+        verify(userProvisioningExecutor, never()).rollback(any());
+        verify(organizationProvisioningExecutor, never()).rollback(any());
+    }
+
+    @Test
+    public void testRoleAssignmentRuntimeExceptionDoesNotFailProvisioning() throws Exception {
+
+        FlowExecutionContext context = roleAssignmentContext();
+        when(roleAssignmentExecutor.execute(context)).thenThrow(new IllegalStateException("Service unavailable"));
+
+        Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+    }
+
+    @Test
+    public void testNullRoleAssignmentResponseDoesNotFailProvisioning() throws Exception {
+
+        FlowExecutionContext context = roleAssignmentContext();
+        stub(roleAssignmentExecutor, null);
+
+        Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+    }
+
+    private FlowExecutionContext roleAssignmentContext() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setCurrentNode(nodeWithProvisionTarget(null));
+        context.getCurrentNode().getExecutorConfig().addMetadata("roleIds", "[\"role-1\"]");
+        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+        return context;
     }
 
     @DataProvider(name = "flowEndingStatusProvider")

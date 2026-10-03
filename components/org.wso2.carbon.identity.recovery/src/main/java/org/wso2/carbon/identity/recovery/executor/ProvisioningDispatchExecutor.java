@@ -60,6 +60,8 @@ public class ProvisioningDispatchExecutor implements Executor {
     private static final String EXECUTOR_NAME = "ProvisioningDispatchExecutor";
     private static final String USER_PROVISIONING_EXECUTOR = "UserProvisioningExecutor";
     private static final String ORGANIZATION_PROVISIONING_EXECUTOR = "OrganizationProvisioningExecutor";
+    private static final String ORGANIZATION_ROLE_ASSIGNMENT_EXECUTOR = "OrganizationRoleAssignmentExecutor";
+    private static final String ROLE_IDS = "roleIds";
 
     /**
      * Set by the flow builder on this executor's step. Absent means the user is provisioned in the
@@ -90,10 +92,38 @@ public class ProvisioningDispatchExecutor implements Executor {
             return unavailableExecutorResponse(ORGANIZATION_PROVISIONING_EXECUTOR);
         }
 
+        ExecutorResponse response;
         if (NEW_ORGANIZATION.equals(getMetadataValue(context, PROVISION_TARGET))) {
-            return provisionInNewOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
+            response = provisionInNewOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
+        } else {
+            response = provisionInCurrentOrganization(userProvisioningExecutor, organizationProvisioningExecutor,
+                    context);
         }
-        return provisionInCurrentOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
+        if (STATUS_COMPLETE.equals(response.getResult()) && StringUtils.isNotBlank(getMetadataValue(context, ROLE_IDS))) {
+            assignOrganizationRoles(context);
+        }
+        return response;
+    }
+
+    private void assignOrganizationRoles(FlowExecutionContext context) {
+
+        Executor roleAssignmentExecutor = IdentityRecoveryServiceDataHolder.getInstance()
+                .getFlowExecutor(ORGANIZATION_ROLE_ASSIGNMENT_EXECUTOR);
+        if (roleAssignmentExecutor == null) {
+            LOG.warn("Skipping configured organization roles because the role assignment executor is unavailable. "
+                    + "Flow: " + context.getContextIdentifier());
+            return;
+        }
+        try {
+            ExecutorResponse response = dispatch(roleAssignmentExecutor, context);
+            if (!STATUS_COMPLETE.equals(response.getResult())) {
+                LOG.warn("Organization role assignment did not complete. Provisioning remains successful. Flow: "
+                        + context.getContextIdentifier());
+            }
+        } catch (FlowEngineException | RuntimeException e) {
+            LOG.warn("Unable to assign configured organization roles. Provisioning remains successful. Flow: "
+                    + context.getContextIdentifier(), e);
+        }
     }
 
     /**
