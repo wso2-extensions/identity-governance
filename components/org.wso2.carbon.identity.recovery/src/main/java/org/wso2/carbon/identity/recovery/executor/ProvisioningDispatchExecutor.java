@@ -38,20 +38,8 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorS
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
 
 /**
- * Flow executor that provisions both a user and the organization the flow collected.
- * <p>
- * The flow builder decides whether this executor is needed: it names this executor on the END step when
- * the flow collects organization details, and {@code UserProvisioningExecutor} when it does not. So by
- * the time this runs the decision is already made, and it dispatches to both unconditionally rather than
- * classifying the flow itself.
- * <p>
- * By default the user is provisioned in the organization the flow is executing in, and then creates the
- * organization. When the step targets the new organization, the organization is created first and the
- * user is provisioned inside it. If the second step ends the flow, the executor that ran the first step
- * is asked to roll it back.
- * <p>
- * The executors are resolved by name from executors contributed across all bundles, so this component
- * does not depend on the one that owns the organization executor.
+ * Provisions a user and an organization in the order configured by the flow, then assigns configured roles.
+ * Resolves executors by name from registered services.
  */
 public class ProvisioningDispatchExecutor implements Executor {
 
@@ -64,8 +52,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     private static final String ROLE_IDS = "roleIds";
 
     /**
-     * Set by the flow builder on this executor's step. Absent means the user is provisioned in the
-     * organization the flow is executing in, which is what every existing flow does.
+     * Selects where to provision the user. Defaults to the organization running the flow.
      */
     private static final String PROVISION_TARGET = "provisionTarget";
     private static final String NEW_ORGANIZATION = "NEW_ORGANIZATION";
@@ -79,8 +66,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     @Override
     public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
 
-        // Resolved before either one runs, so a missing organization executor cannot be discovered
-        // only after a user has been provisioned and left without an organization.
+        // Resolve both executors before provisioning to avoid partial creation when one is unavailable.
         Executor userProvisioningExecutor =
                 IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(USER_PROVISIONING_EXECUTOR);
         if (userProvisioningExecutor == null) {
@@ -127,14 +113,13 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Provisions the user in the organization the flow is executing in, then creates the organization
-     * under that user, who becomes its owner. If organization creation ends the flow, the user is rolled
-     * back.
+     * Provisions the user in the current organization, then creates the child organization.
+     * Rolls back the user if organization provisioning fails.
      *
      * @param userProvisioningExecutor         Executor that provisions the user.
      * @param organizationProvisioningExecutor Executor that creates the organization.
-     * @param context                          Flow execution context, shared by both executors.
-     * @return The outcome of whichever step did not complete, otherwise the organization step's outcome.
+     * @param context                          Flow execution context.
+     * @return The user response if incomplete, otherwise the organization response.
      * @throws FlowEngineException If an executor fails.
      */
     private ExecutorResponse provisionInCurrentOrganization(Executor userProvisioningExecutor,
@@ -142,8 +127,7 @@ public class ProvisioningDispatchExecutor implements Executor {
                                                             FlowExecutionContext context)
             throws FlowEngineException {
 
-        // The flow can return to this node after the user was provisioned. User provisioning is not
-        // idempotent, so the user ID recorded on the first pass marks that step as already done.
+        // Skip user provisioning on retries when the user ID is already recorded.
         FlowUser flowUser = context.getFlowUser();
         if (flowUser == null || StringUtils.isBlank(flowUser.getUserId())) {
             ExecutorResponse userResponse = dispatch(userProvisioningExecutor, context);
@@ -166,14 +150,13 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Creates the organization first, then provisions the user inside it, so the user never gets a record
-     * in the organization the flow is executing in. If user provisioning ends the flow, the organization
-     * is rolled back.
+     * Creates the organization, then provisions the user inside it.
+     * Rolls back the organization if user provisioning fails.
      *
      * @param userProvisioningExecutor         Executor that provisions the user.
      * @param organizationProvisioningExecutor Executor that creates the organization.
-     * @param context                          Flow execution context, shared by both executors.
-     * @return The organization step's outcome if it did not complete, otherwise the user step's outcome.
+     * @param context                          Flow execution context.
+     * @return The organization response if incomplete, otherwise the user response.
      * @throws FlowEngineException If an executor fails.
      */
     private ExecutorResponse provisionInNewOrganization(Executor userProvisioningExecutor,
@@ -186,7 +169,7 @@ public class ProvisioningDispatchExecutor implements Executor {
             return organizationResponse;
         }
 
-        // The handle is the new organization's tenant domain, recorded by the organization executor.
+        // The organization handle is the new tenant domain.
         String organizationTenantDomain = context.getFlowOrganization().getOrganizationHandle();
         if (StringUtils.isBlank(organizationTenantDomain)) {
             LOG.error("The organization was created but its handle is unknown, so the user cannot be "
@@ -197,8 +180,7 @@ public class ProvisioningDispatchExecutor implements Executor {
             return failure;
         }
 
-        // The rollback runs only once the tenant is switched back, because an organization cannot delete
-        // itself.
+        // Restore the parent tenant before rollback; an organization cannot delete itself.
         ExecutorResponse userResponse;
         try {
             userResponse = provisionUserInOrganization(userProvisioningExecutor, context, organizationTenantDomain);
@@ -226,8 +208,7 @@ public class ProvisioningDispatchExecutor implements Executor {
                                                          String organizationTenantDomain)
             throws FlowEngineException {
 
-        // User provisioning takes the tenant from the flow context, while the listeners it triggers read
-        // the carbon context, so both move to the new organization for the duration of the call.
+        // Switch both contexts: user provisioning reads the flow context, while listeners read the Carbon context.
         String currentTenantDomain = context.getTenantDomain();
         PrivilegedCarbonContext.startTenantFlow();
         try {
@@ -242,8 +223,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Whether the flow ends on this response. The engine ends the flow when an executor returns ERROR or
-     * USER_ERROR.
+     * Checks whether the response ends the flow with ERROR or USER_ERROR.
      *
      * @param response Response of a dispatched executor.
      * @return {@code true} if the flow ends on this response.
@@ -254,11 +234,10 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Asks an executor to roll back its step. A failed rollback is logged rather than thrown, so the flow
-     * reports the failure that caused it.
+     * Rolls back a step and logs any rollback failure without replacing the original error.
      *
      * @param executor Executor whose step is rolled back.
-     * @param context  Flow execution context, shared by both executors.
+     * @param context  Flow execution context.
      */
     private void rollbackStep(Executor executor, FlowExecutionContext context) {
 
@@ -270,11 +249,11 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Reads a value the flow author configured on the step this executor is running on.
+     * Reads executor metadata from the current node.
      *
      * @param context Flow execution context.
      * @param key     Metadata key.
-     * @return The configured value, or {@code null} when the step carries none.
+     * @return The configured value, or {@code null} if absent.
      */
     private String getMetadataValue(FlowExecutionContext context, String key) {
 
@@ -290,7 +269,7 @@ public class ProvisioningDispatchExecutor implements Executor {
      * Runs an executor against the same flow context.
      *
      * @param executor Executor to run.
-     * @param context  Flow execution context, shared by both executors.
+     * @param context  Flow execution context.
      * @return The executor's response, never {@code null}.
      * @throws FlowEngineException If the executor fails.
      */
@@ -302,8 +281,7 @@ public class ProvisioningDispatchExecutor implements Executor {
                     + context.getContextIdentifier());
         }
         ExecutorResponse response = executor.execute(context);
-        // The implementation behind a name is whatever bundle registered it, and Executor does not
-        // promise a response.
+        // Treat a missing response as an error.
         if (response == null) {
             LOG.error("Executor returned no response: " + executor.getName());
             ExecutorResponse failure = new ExecutorResponse();
@@ -315,8 +293,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     }
 
     /**
-     * Builds the response for a flow that names this executor while one of the executors it dispatches
-     * to is not deployed. The end user cannot resolve this by retrying.
+     * Returns an error when a required provisioning executor is unavailable.
      *
      * @param executorName Name of the executor that could not be resolved.
      * @return An error response.
