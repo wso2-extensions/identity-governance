@@ -137,11 +137,10 @@ public class UserProvisioningExecutor implements Executor {
     public ExecutorResponse rollback(FlowExecutionContext context) {
 
         Object provisionedUserId = context.getProperty(PROVISIONED_USER_ID);
-        if (!(provisionedUserId instanceof String) || StringUtils.isBlank((String) provisionedUserId)) {
+        if (!(provisionedUserId instanceof String userId) || StringUtils.isBlank(userId)) {
             return null;
         }
 
-        String userId = (String) provisionedUserId;
         try {
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(),
                     context.getFlowUser().getUserStoreDomain(), context.getContextIdentifier(),
