@@ -22,6 +22,7 @@ import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.compatibility.settings.core.service.CompatibilitySettingsService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
@@ -65,6 +66,7 @@ public class IdentityRecoveryServiceDataHolder {
     private ApplicationManagementService applicationManagementService;
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     private WorkflowManagementService workflowService;
+    private CompatibilitySettingsService compatibilitySettingsService;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -366,5 +368,25 @@ public class IdentityRecoveryServiceDataHolder {
     public WorkflowManagementService getWorkflowManagementService() {
 
         return this.workflowService;
+    }
+
+    /**
+     * Set CompatibilitySettingsService OSGi service.
+     *
+     * @param compatibilitySettingsService Compatibility Settings Service.
+     */
+    public void setCompatibilitySettingsService(CompatibilitySettingsService compatibilitySettingsService) {
+
+        this.compatibilitySettingsService = compatibilitySettingsService;
+    }
+
+    /**
+     * Get CompatibilitySettingsService OSGi service.
+     *
+     * @return Compatibility Settings Service.
+     */
+    public CompatibilitySettingsService getCompatibilitySettingsService() {
+
+        return this.compatibilitySettingsService;
     }
 }

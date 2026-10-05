@@ -224,6 +224,12 @@ public class IdentityRecoveryConstants {
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
     public static final int ASK_PASSWORD_CODE_DEFAULT_TOLERANCE = 0;
     public static final int SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE = 0;
+
+    // Compatibility setting that keeps admin-initiated email verification codes on the legacy
+    // SELF_SIGN_UP recovery scenario. See UserEmailVerificationHandler.
+    public static final String USER_ONBOARDING_COMPATIBILITY_SETTING_GROUP = "userOnboarding";
+    public static final String ENABLE_LEGACY_EMAIL_VERIFICATION_SCENARIO =
+            "enableLegacyEmailVerificationScenario";
     public static final String EMAIL_TEMPLATE_PATH = "/identity/email";
 
     // Workflow constants.
