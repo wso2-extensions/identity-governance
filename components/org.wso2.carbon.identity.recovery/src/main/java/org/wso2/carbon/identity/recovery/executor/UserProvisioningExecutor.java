@@ -142,12 +142,16 @@ public class UserProvisioningExecutor implements Executor {
         }
 
         try {
+            FlowUser flowUser = context.getFlowUser();
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(),
-                    context.getFlowUser().getUserStoreDomain(), context.getContextIdentifier(),
+                    flowUser.getUserStoreDomain(), context.getContextIdentifier(),
                     context.getFlowType());
             ((AbstractUserStoreManager) userStoreManager).deleteUserWithID(userId);
             // Clearing the record keeps a second rollback from attempting the delete again.
             context.getProperties().remove(PROVISIONED_USER_ID);
+            if (StringUtils.equals(flowUser.getUserId(), userId)) {
+                flowUser.setUserId(null);
+            }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Rolled back the user: " + userId + " provisioned in the flow: "
                         + context.getContextIdentifier());

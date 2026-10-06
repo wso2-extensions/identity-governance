@@ -81,6 +81,7 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
@@ -191,12 +192,36 @@ public class UserProvisioningExecutorTest {
 
         AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
         FlowExecutionContext context = buildContextWithProvisionedUser();
+        FlowUser flowUser = context.getFlowUser();
+        flowUser.setUsername(USERNAME);
+        flowUser.getClaims().put(EMAIL_ADDRESS_CLAIM, EMAIL);
 
         ExecutorResponse response = executor.rollback(context);
+        executor.rollback(context);
 
         assertNull(response);
         verify(userStoreManager).deleteUserWithID(USER_ID);
         assertNull(context.getProperty("provisionedUserId"));
+        assertNull(flowUser.getUserId());
+        assertSame(context.getFlowUser(), flowUser);
+        assertEquals(flowUser.getUsername(), USERNAME);
+        assertEquals(flowUser.getClaims().get(EMAIL_ADDRESS_CLAIM), EMAIL);
+        assertEquals(flowUser.getUserStoreDomain(), PRIMARY_DOMAIN);
+    }
+
+    @Test
+    public void testRollbackPreservesADifferentFlowUserId() throws Exception {
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        FlowExecutionContext context = buildContextWithProvisionedUser();
+        String existingUserId = "existing-user-id";
+        context.getFlowUser().setUserId(existingUserId);
+
+        executor.rollback(context);
+
+        verify(userStoreManager).deleteUserWithID(USER_ID);
+        assertNull(context.getProperty("provisionedUserId"));
+        assertEquals(context.getFlowUser().getUserId(), existingUserId);
     }
 
     @Test
@@ -209,6 +234,7 @@ public class UserProvisioningExecutorTest {
         executor.rollback(context);
 
         verify(userStoreManager, never()).deleteUserWithID(anyString());
+        assertEquals(context.getFlowUser().getUserId(), USER_ID);
     }
 
     @Test
@@ -223,6 +249,7 @@ public class UserProvisioningExecutorTest {
         assertNull(response);
         verify(userStoreManager).deleteUserWithID(USER_ID);
         assertEquals(context.getProperty("provisionedUserId"), USER_ID);
+        assertEquals(context.getFlowUser().getUserId(), USER_ID);
     }
 
     @Test
@@ -1603,6 +1630,7 @@ public class UserProvisioningExecutorTest {
         context.setContextIdentifier(CONTEXT_ID);
         context.setFlowType(REGISTRATION.getType());
         context.getFlowUser().setUserStoreDomain(PRIMARY_DOMAIN);
+        context.getFlowUser().setUserId(USER_ID);
         context.setProperty("provisionedUserId", USER_ID);
         return context;
     }
