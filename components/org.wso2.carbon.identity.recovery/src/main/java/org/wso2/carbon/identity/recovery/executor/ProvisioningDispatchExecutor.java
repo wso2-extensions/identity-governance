@@ -80,7 +80,7 @@ public class ProvisioningDispatchExecutor implements Executor {
 
         ExecutorResponse response;
         if (NEW_ORGANIZATION.equals(getMetadataValue(context, PROVISION_TARGET))) {
-            response = provisionInNewOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
+            response = provisionInChildOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
         } else {
             response = provisionInCurrentOrganization(userProvisioningExecutor, organizationProvisioningExecutor,
                     context);
@@ -159,9 +159,9 @@ public class ProvisioningDispatchExecutor implements Executor {
      * @return The organization response if incomplete, otherwise the user response.
      * @throws FlowEngineException If an executor fails.
      */
-    private ExecutorResponse provisionInNewOrganization(Executor userProvisioningExecutor,
-                                                        Executor organizationProvisioningExecutor,
-                                                        FlowExecutionContext context)
+    private ExecutorResponse provisionInChildOrganization(Executor userProvisioningExecutor,
+                                                          Executor organizationProvisioningExecutor,
+                                                          FlowExecutionContext context)
             throws FlowEngineException {
 
         ExecutorResponse organizationResponse = dispatch(organizationProvisioningExecutor, context);
@@ -304,7 +304,7 @@ public class ProvisioningDispatchExecutor implements Executor {
                 + "both the user and organization provisioning executors to be deployed.");
         ExecutorResponse response = new ExecutorResponse();
         response.setResult(STATUS_ERROR);
-        response.setErrorMessage("Provisioning is not available.");
+        response.setErrorMessage("Executor not available: " + executorName);
         return response;
     }
 

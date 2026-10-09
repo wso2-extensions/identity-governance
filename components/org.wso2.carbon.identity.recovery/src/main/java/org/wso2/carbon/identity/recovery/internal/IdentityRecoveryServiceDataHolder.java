@@ -410,6 +410,9 @@ public class IdentityRecoveryServiceDataHolder {
     public Executor getFlowExecutor(String executorName) {
 
         return flowExecutors.get(executorName);
+    }
+
+    /**
      * Set CompatibilitySettingsService OSGi service.
      *
      * @param compatibilitySettingsService Compatibility Settings Service.
