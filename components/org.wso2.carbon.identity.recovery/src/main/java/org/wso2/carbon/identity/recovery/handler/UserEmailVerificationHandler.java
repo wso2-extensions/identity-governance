@@ -215,8 +215,17 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                                 IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
                     }
                     String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM;
-                    RecoveryScenarios recoveryScenario = RecoveryScenarios.SELF_SIGN_UP;
-                    RecoverySteps recoveryStep = RecoverySteps.CONFIRM_SIGN_UP;
+                    /*
+                    An administratively created user pending email verification is not a self sign-up, but the code
+                    used to be stored as one, which made it expire on the self registration dial. Organizations that
+                    have not moved off that behaviour keep it via the compatibility setting.
+                     */
+                    boolean isLegacyScenario =
+                            Utils.isLegacyEmailVerificationScenarioEnabled(user.getTenantDomain());
+                    RecoveryScenarios recoveryScenario = isLegacyScenario ? RecoveryScenarios.SELF_SIGN_UP
+                            : RecoveryScenarios.EMAIL_VERIFICATION;
+                    RecoverySteps recoveryStep = isLegacyScenario ? RecoverySteps.CONFIRM_SIGN_UP
+                            : RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION;
                     try {
                         boolean isSendEmailOTPEnabled =
                                 Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,

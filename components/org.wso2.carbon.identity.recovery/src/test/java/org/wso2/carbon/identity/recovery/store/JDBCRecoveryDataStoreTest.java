@@ -252,6 +252,47 @@ public class JDBCRecoveryDataStoreTest {
         }
     }
 
+    @DataProvider(name = "emailVerificationCodeExpiry")
+    private Object[][] emailVerificationCodeExpiry() {
+
+        // Scenario, legacy compatibility setting. The expiry is a property of the scenario alone, so the
+        // compatibility setting -- which only decides which scenario gets issued -- must not affect it.
+        return new Object[][] {
+                { RecoveryScenarios.EMAIL_VERIFICATION, false },
+                { RecoveryScenarios.EMAIL_VERIFICATION, true },
+                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, false },
+                { RecoveryScenarios.EMAIL_VERIFICATION_OTP, true }
+        };
+    }
+
+    /**
+     * Codes issued for an administratively created user pending email verification must expire on
+     * EmailVerification.ExpiryTime (stubbed at 20 minutes), not on the generic Recovery.ExpiryTime
+     * (stubbed at 10 minutes). The code under test is 11 minutes old, so the two dials disagree.
+     */
+    @Test(dataProvider = "emailVerificationCodeExpiry")
+    public void testEmailVerificationCodeExpiry(RecoveryScenarios recoveryScenario, boolean isLegacyScenario)
+            throws Exception {
+
+        User user = createSampleUser();
+
+        when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getString("REMAINING_SETS")).thenReturn(null);
+        when(mockResultSet.getTimestamp(eq("TIME_CREATED"), any(Calendar.class)))
+                .thenReturn(new Timestamp(System.currentTimeMillis() - 660000));
+
+        mockExpiryTimes();
+        mockUtilsErrors();
+        mockedUtils.when(() -> Utils.isLegacyEmailVerificationScenarioEnabled(TEST_TENANT_DOMAIN))
+                .thenReturn(isLegacyScenario);
+
+        UserRecoveryData result = userRecoveryDataStore.load(user, recoveryScenario,
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION, TEST_SECRET_CODE);
+        assertNotNull(result);
+        assertEquals(result.getRecoveryScenario(), recoveryScenario);
+    }
+
     @DataProvider(name = "askPasswordUserOnboardScenarios")
     private Object[][] askPasswordUserOnboardScenarios() {
 
@@ -300,6 +341,9 @@ public class JDBCRecoveryDataStoreTest {
         mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
                         .ConnectorConfig.EXPIRY_TIME, TEST_TENANT_DOMAIN))
                 .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("20");
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants
                         .ConnectorConfig.TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME))
                 .thenReturn("10");
