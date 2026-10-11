@@ -1189,6 +1189,8 @@ public class NotificationPasswordRecoveryManager {
                 }
             }
         }
+        properties.putIfAbsent(IdentityRecoveryConstants.SERVICE_PROVIDER, StringUtils.EMPTY);
+        properties.putIfAbsent(IdentityRecoveryConstants.CALLBACK, StringUtils.EMPTY);
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
 
         if (!properties.containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID)) {
