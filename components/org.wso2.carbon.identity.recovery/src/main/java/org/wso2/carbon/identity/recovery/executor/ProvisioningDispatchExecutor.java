@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.mgt.model.NodeConfig;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 
 import java.util.Collections;
 import java.util.List;
@@ -70,23 +71,36 @@ public class ProvisioningDispatchExecutor implements Executor {
         Executor userProvisioningExecutor =
                 IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(USER_PROVISIONING_EXECUTOR);
         if (userProvisioningExecutor == null) {
+            RegistrationCompletionDeferral.discard(context);
             return unavailableExecutorResponse(USER_PROVISIONING_EXECUTOR);
         }
         Executor organizationProvisioningExecutor =
                 IdentityRecoveryServiceDataHolder.getInstance().getFlowExecutor(ORGANIZATION_PROVISIONING_EXECUTOR);
         if (organizationProvisioningExecutor == null) {
+            RegistrationCompletionDeferral.discard(context);
             return unavailableExecutorResponse(ORGANIZATION_PROVISIONING_EXECUTOR);
         }
 
         ExecutorResponse response;
-        if (NEW_ORGANIZATION.equals(getMetadataValue(context, PROVISION_TARGET))) {
-            response = provisionInChildOrganization(userProvisioningExecutor, organizationProvisioningExecutor, context);
-        } else {
-            response = provisionInCurrentOrganization(userProvisioningExecutor, organizationProvisioningExecutor,
-                    context);
+        try {
+            if (NEW_ORGANIZATION.equals(getMetadataValue(context, PROVISION_TARGET))) {
+                response = provisionInChildOrganization(userProvisioningExecutor, organizationProvisioningExecutor,
+                        context);
+            } else {
+                response = provisionInCurrentOrganization(userProvisioningExecutor, organizationProvisioningExecutor,
+                        context);
+            }
+        } catch (FlowEngineException | RuntimeException e) {
+            RegistrationCompletionDeferral.discard(context);
+            throw e;
         }
-        if (STATUS_COMPLETE.equals(response.getResult()) && StringUtils.isNotBlank(getMetadataValue(context, ROLE_IDS))) {
-            assignOrganizationRoles(context);
+        if (STATUS_COMPLETE.equals(response.getResult())) {
+            if (StringUtils.isNotBlank(getMetadataValue(context, ROLE_IDS))) {
+                assignOrganizationRoles(context);
+            }
+            RegistrationCompletionDeferral.complete(context);
+        } else if (endsFlow(response)) {
+            RegistrationCompletionDeferral.discard(context);
         }
         return response;
     }
@@ -130,7 +144,7 @@ public class ProvisioningDispatchExecutor implements Executor {
         // Skip user provisioning on retries when the user ID is already recorded.
         FlowUser flowUser = context.getFlowUser();
         if (flowUser == null || StringUtils.isBlank(flowUser.getUserId())) {
-            ExecutorResponse userResponse = dispatch(userProvisioningExecutor, context);
+            ExecutorResponse userResponse = provisionUser(userProvisioningExecutor, context);
             if (!STATUS_COMPLETE.equals(userResponse.getResult())) {
                 return userResponse;
             }
@@ -215,10 +229,17 @@ public class ProvisioningDispatchExecutor implements Executor {
             PrivilegedCarbonContext.getThreadLocalCarbonContext()
                     .setTenantDomain(organizationTenantDomain, true);
             context.setTenantDomain(organizationTenantDomain);
-            return dispatch(userProvisioningExecutor, context);
+            return provisionUser(userProvisioningExecutor, context);
         } finally {
             context.setTenantDomain(currentTenantDomain);
             PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    private ExecutorResponse provisionUser(Executor executor, FlowExecutionContext context) throws FlowEngineException {
+
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            return dispatch(executor, context);
         }
     }
 
@@ -317,6 +338,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     @Override
     public ExecutorResponse rollback(FlowExecutionContext context) throws FlowEngineException {
 
+        RegistrationCompletionDeferral.discard(context);
         return null;
     }
 }
