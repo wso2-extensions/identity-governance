@@ -49,6 +49,8 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
@@ -195,6 +197,10 @@ public class UserProvisioningExecutorTest {
         FlowUser flowUser = context.getFlowUser();
         flowUser.setUsername(USERNAME);
         flowUser.getClaims().put(EMAIL_ADDRESS_CLAIM, EMAIL);
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            RegistrationCompletionDeferral.defer(new RegistrationCompletionData(USERNAME, TENANT_DOMAIN,
+                    PRIMARY_DOMAIN, "EMAIL", false, true, true, true, true, true, true, Map.of(), Map.of()));
+        }
 
         ExecutorResponse response = executor.rollback(context);
         executor.rollback(context);
@@ -202,6 +208,7 @@ public class UserProvisioningExecutorTest {
         assertNull(response);
         verify(userStoreManager).deleteUserWithID(USER_ID);
         assertNull(context.getProperty("provisionedUserId"));
+        assertTrue(context.getProperties().isEmpty());
         assertNull(flowUser.getUserId());
         assertSame(context.getFlowUser(), flowUser);
         assertEquals(flowUser.getUsername(), USERNAME);

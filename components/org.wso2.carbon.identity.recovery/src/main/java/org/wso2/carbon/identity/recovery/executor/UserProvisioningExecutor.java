@@ -49,6 +49,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.recovery.util.ExecutorConsentUtils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
@@ -136,6 +137,7 @@ public class UserProvisioningExecutor implements Executor {
     @Override
     public ExecutorResponse rollback(FlowExecutionContext context) {
 
+        RegistrationCompletionDeferral.discard(context);
         Object provisionedUserId = context.getProperty(PROVISIONED_USER_ID);
         if (!(provisionedUserId instanceof String userId) || StringUtils.isBlank(userId)) {
             return null;

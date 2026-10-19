@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -39,10 +40,12 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -129,6 +132,67 @@ public class FlowRegistrationCompletionHandlerTest {
     public void testGetName() {
 
         assertEquals(handler.getName(), "FlowRegistrationCompletionHandler");
+    }
+
+    @Test
+    public void testDispatcherDefersConfirmationButPreparesAccountState() throws Exception {
+
+        setupMocksForEnabledFlowWithNotificationChannelVerified();
+        setupFlowCompletionMocks(true, true);
+        setupNotificationMocks(true, true);
+        FlowExecutionContext context = new FlowExecutionContext();
+        Map<String, Object> properties = createCompleteEventProperties();
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, "must-not-be-retained");
+
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            handler.handleEvent(new Event(POST_ADD_USER, properties));
+        }
+
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                true, true, TENANT_DOMAIN, userStoreManager, USER_NAME));
+        verify(userRecoveryDataStore, never()).store(any());
+        verify(identityEventService, never()).handleEvent(any());
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(), anyString(), anyString(), any(), anyString()), never());
+
+        RegistrationCompletionData completion = (RegistrationCompletionData) context.getProperties().values()
+                .stream().filter(RegistrationCompletionData.class::isInstance).findFirst().orElseThrow();
+        assertEquals(completion.userClaims().get(EMAIL_CLAIM), "test@example.com");
+        handler.completeRegistration(completion);
+
+        verify(userRecoveryDataStore).store(any());
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(), eq("EMAIL"), eq(SECRET_KEY), any(), eq("EVENT_NAME")));
+        // Completion must not lock the account a second time.
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                true, true, TENANT_DOMAIN, userStoreManager, USER_NAME), times(1));
+    }
+
+    @Test
+    public void testDispatcherDefersVerifiedChannelNotificationAndSuccessEvent() throws Exception {
+
+        setupMocksForEnabledFlowWithNotificationChannelVerified();
+        setupFlowCompletionMocks(true, true);
+        setupNotificationMocks(true, true);
+        Map<String, Object> properties = createCompleteEventProperties();
+        properties.put(EMAIL_VERIFIED_CLAIM, "true");
+        FlowExecutionContext context = new FlowExecutionContext();
+
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            handler.handleEvent(new Event(POST_ADD_USER, properties));
+        }
+
+        verify(identityEventService, never()).handleEvent(any());
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                anyString(), anyString(), anyString(), any()), never());
+        RegistrationCompletionData completion = (RegistrationCompletionData) context.getProperties().values()
+                .stream().filter(RegistrationCompletionData.class::isInstance).findFirst().orElseThrow();
+        handler.completeRegistration(completion);
+
+        verify(identityEventService).handleEvent(any());
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME), any()));
+        verify(userRecoveryDataStore, never()).store(any());
     }
 
     @Test
@@ -780,5 +844,3 @@ public class FlowRegistrationCompletionHandlerTest {
                 any(org.wso2.carbon.identity.recovery.model.Property[].class)), times(1));
     }
 }
-
-

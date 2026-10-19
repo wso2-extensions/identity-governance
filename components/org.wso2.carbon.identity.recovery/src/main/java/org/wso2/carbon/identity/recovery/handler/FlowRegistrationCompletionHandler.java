@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -44,9 +43,11 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -131,8 +132,6 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
             }
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-
         try {
 
             boolean isAccountLockOnCreation =  Boolean.parseBoolean(Utils.getFlowCompletionConfig(
@@ -166,63 +165,97 @@ public class FlowRegistrationCompletionHandler extends AbstractEventHandler {
 
             boolean isNotificationClaimAvailable = isNotifyingClaimAvailable(channel.getClaimUri(), eventProperties);
 
-            // If notification channel is verified account is activated without further confirmation. Hence, send the
-            // account creation notification.
-            // If the notification channel is not verified, send the account creation notification if
-            // confirmation on creation is disabled.
-            if (isNotificationInternallyManaged && isNotificationClaimAvailable && isSelfRegistrationConfirmationNotify
-                    && (notificationChannelVerified || !isEnableConfirmationOnCreation)) {
-                triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
-                        user.getUserStoreDomain(), Utils.getArbitraryProperties());
-            }
+            Map<String, String> userClaims =
+                    (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty.USER_CLAIMS);
+            RegistrationCompletionData completion = new RegistrationCompletionData(userName, tenantDomain,
+                    userStoreDomain, preferredChannel, notificationChannelVerified, isNotificationClaimAvailable,
+                    isEnableConfirmationOnCreation, isEffectiveAccountLockOnCreation, isNotificationInternallyManaged,
+                    isSelfRegistrationConfirmationNotify, true, userClaims,
+                    RegistrationCompletionDeferral.snapshotNotificationProperties());
 
-            // Event is not published if account lock on creation is enabled as self registration is not complete yet.
-            // If the notification channel is verified, then self registration is complete hence publish the event.
-            if (notificationChannelVerified || !isEffectiveAccountLockOnCreation) {
-                publishEvent(user, userStoreDomain, tenantDomain, eventProperties,
-                        IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
-            }
-
-            // If the preferred channel is already verified, no need to send the notifications or lock
-            // the account.
-            if (notificationChannelVerified) {
+            if (RegistrationCompletionDeferral.defer(completion)) {
+                // Account state must be prepared during addUser, even when completion notifications are deferred.
+                prepareAccountState(completion, userStoreManager);
                 return;
             }
 
-            // If account lock on creation is enabled, lock the account by persisting the account lock claim.
-            if (isEffectiveAccountLockOnCreation && isNotificationClaimAvailable) {
-                lockUserAccount(true, true, tenantDomain, userStoreManager, userName);
-            } else if (isEnableConfirmationOnCreation) {
-                lockUserAccount(false, true, tenantDomain, userStoreManager, userName);
-            }
-
-            // If notifications are externally managed, no notification are sent from the server.
-            if (!isNotificationInternallyManaged) {
-                return;
-            }
-
-            if (isEnableConfirmationOnCreation && isNotificationClaimAvailable) {
-                userRecoveryDataStore.invalidate(user);
-
-                // Create a secret key based on the preferred notification channel.
-                String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.SELF_SIGN_UP.name(),
-                        tenantDomain, "SelfRegistration");
-
-                // Resolve event name.
-                String eventName = resolveEventName(preferredChannel, userName, userStoreDomain, tenantDomain);
-
-                UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                        RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
-
-                // Notified channel is stored in remaining setIds for recovery purposes.
-                recoveryDataDO.setRemainingSetIds(preferredChannel);
-                userRecoveryDataStore.store(recoveryDataDO);
-                SelfRegistrationUtils.triggerNotification(user, preferredChannel, secretKey,
-                                                          Utils.getArbitraryProperties(), eventName);
-            }
+            // Preserve the existing ordering for ordinary registration, outside the dispatcher.
+            publishRegistrationCompletion(completion);
+            prepareAccountState(completion, userStoreManager);
+            sendConfirmationNotification(completion);
         } catch (IdentityRecoveryException | FlowMgtServerException e) {
             throw new IdentityEventException("Error while sending self sign up notification ", e);
         }
+    }
+
+    /**
+     * Completes registration after the dispatcher has successfully provisioned both resources.
+     * Account state was already prepared by the post-add-user handler.
+     *
+     * @param completion Captured registration completion data.
+     * @throws IdentityEventException If registration notification fails.
+     */
+    public void completeRegistration(RegistrationCompletionData completion) throws IdentityEventException {
+
+        try {
+            publishRegistrationCompletion(completion);
+            sendConfirmationNotification(completion);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while sending self sign up notification ", e);
+        }
+    }
+
+    private void prepareAccountState(RegistrationCompletionData completion, UserStoreManager userStoreManager)
+            throws IdentityEventException {
+
+        if (completion.channelVerified()) {
+            return;
+        }
+        if (completion.effectiveAccountLock() && completion.notificationClaimAvailable()) {
+            lockUserAccount(true, true, completion.tenantDomain(), userStoreManager, completion.username());
+        } else if (completion.confirmationEnabled()) {
+            lockUserAccount(false, true, completion.tenantDomain(), userStoreManager, completion.username());
+        }
+    }
+
+    private void publishRegistrationCompletion(RegistrationCompletionData completion) throws IdentityRecoveryException {
+
+        User user = completion.toUser();
+        if (completion.notificationsInternallyManaged() && completion.notificationClaimAvailable()
+                && completion.completionNotificationEnabled()
+                && (completion.channelVerified() || !completion.confirmationEnabled())) {
+            triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(), user.getUserStoreDomain(),
+                    completion.toNotificationProperties());
+        }
+        if (completion.publishSuccessEvent() && (completion.channelVerified() || !completion.effectiveAccountLock())) {
+            Map<String, Object> eventProperties = new HashMap<>();
+            eventProperties.put(IdentityEventConstants.EventProperty.USER_CLAIMS,
+                    completion.userClaims() == null ? null : new HashMap<>(completion.userClaims()));
+            publishEvent(user, user.getUserStoreDomain(), user.getTenantDomain(), eventProperties,
+                    IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+        }
+    }
+
+    private void sendConfirmationNotification(RegistrationCompletionData completion)
+            throws IdentityRecoveryException, IdentityEventException {
+
+        if (completion.channelVerified() || !completion.notificationsInternallyManaged()
+                || !completion.confirmationEnabled() || !completion.notificationClaimAvailable()) {
+            return;
+        }
+        User user = completion.toUser();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidate(user);
+        String secretKey = Utils.generateSecretKey(completion.preferredChannel(), RecoveryScenarios.SELF_SIGN_UP.name(),
+                completion.tenantDomain(), "SelfRegistration");
+        String eventName = resolveEventName(completion.preferredChannel(), completion.username(),
+                completion.userStoreDomain(), completion.tenantDomain());
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        recoveryDataDO.setRemainingSetIds(completion.preferredChannel());
+        userRecoveryDataStore.store(recoveryDataDO);
+        SelfRegistrationUtils.triggerNotification(user, completion.preferredChannel(), secretKey,
+                completion.toNotificationProperties(), eventName);
     }
 
     /**

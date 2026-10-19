@@ -43,9 +43,11 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -154,6 +156,19 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
                 boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
                         (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION, user.getTenantDomain()));
+
+                if (RegistrationCompletionDeferral.isActive()) {
+                    // A new organization's tenant may use legacy self-registration rather than flow registration.
+                    // Keep its account state and notification conditions, but wait for dispatcher success.
+                    Map<String, String> userClaims = (Map<String, String>) eventProperties.get(
+                            IdentityEventConstants.EventProperty.USER_CLAIMS);
+                    RegistrationCompletionDeferral.defer(new RegistrationCompletionData(userName, tenantDomain,
+                            domainName, preferredChannel, false, true,
+                            isAccountLockOnCreation || isEnableConfirmationOnCreation, isAccountLockOnCreation,
+                            isNotificationInternallyManage, isSelfRegistrationConfirmationNotify, false, userClaims,
+                            RegistrationCompletionDeferral.snapshotNotificationProperties()));
+                    return;
+                }
 
                 // If notify confirmation is enabled and both iAccountLockOnCreation &&
                 // EnableConfirmationOnCreation are disabled then send account creation notification.

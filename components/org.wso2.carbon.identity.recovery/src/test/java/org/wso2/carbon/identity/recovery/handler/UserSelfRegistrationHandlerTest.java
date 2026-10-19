@@ -31,12 +31,15 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -48,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
@@ -115,7 +119,8 @@ public class UserSelfRegistrationHandlerTest {
     }
 
     @Test(dataProvider = "userRegistrationConfig")
-    public void testUserRegistrationEmailTemplates(boolean isEmailOtpEnabled, String expectedEmailTemplate)
+    public void testUserRegistrationEmailTemplates(boolean isEmailOtpEnabled, String expectedEmailTemplate,
+                                                  boolean deferred)
             throws IdentityEventException, IdentityRecoveryException {
 
         Map<String, Object> eventProperties = new HashMap<>();
@@ -151,7 +156,19 @@ public class UserSelfRegistrationHandlerTest {
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
 
         UserSelfRegistrationHandler userSelfRegistrationHandler = new UserSelfRegistrationHandler();
-        userSelfRegistrationHandler.handleEvent(event);
+        if (deferred) {
+            FlowExecutionContext context = new FlowExecutionContext();
+            try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+                userSelfRegistrationHandler.handleEvent(event);
+            }
+            verify(identityEventService, never()).handleEvent(any());
+            verify(userRecoveryDataStore, never()).store(any());
+            RegistrationCompletionData completion = (RegistrationCompletionData) context.getProperties().values()
+                    .stream().filter(RegistrationCompletionData.class::isInstance).findFirst().orElseThrow();
+            new FlowRegistrationCompletionHandler().completeRegistration(completion);
+        } else {
+            userSelfRegistrationHandler.handleEvent(event);
+        }
 
         // Capturing the event value for asserting.
         ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
@@ -169,8 +186,10 @@ public class UserSelfRegistrationHandlerTest {
     private Object[][] buildUserRegistrationConfigs() {
 
         return new Object[][]{
-                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK},
-                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP}
+                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK, false},
+                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP, false},
+                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK, true},
+                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP, true}
         };
     }
 }
