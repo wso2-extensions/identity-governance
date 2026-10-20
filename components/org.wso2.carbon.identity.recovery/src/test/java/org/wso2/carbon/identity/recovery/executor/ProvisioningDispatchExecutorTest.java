@@ -28,6 +28,7 @@ import org.mockito.MockedConstruction;
 import org.testng.annotations.DataProvider;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineServerException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
@@ -37,8 +38,9 @@ import org.wso2.carbon.identity.flow.mgt.model.ExecutorDTO;
 import org.wso2.carbon.identity.flow.mgt.model.NodeConfig;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandler;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
+import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.nio.file.Paths;
 import java.util.Map;
@@ -56,6 +58,10 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorS
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_RETRY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED;
+import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.NOTIFICATION_PROPERTIES;
+import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.NOTIFY_ACCOUNT_CREATION;
+import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.PUBLISH_SUCCESS_EVENT;
+import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.SEND_CONFIRMATION;
 
 /**
  * Unit tests for {@link ProvisioningDispatchExecutor}.
@@ -74,10 +80,12 @@ public class ProvisioningDispatchExecutorTest {
     private Executor userProvisioningExecutor;
     private Executor organizationProvisioningExecutor;
     private Executor roleAssignmentExecutor;
+    private Property[] previousNotificationProperties;
 
     @BeforeMethod
     public void setUp() {
 
+        previousNotificationProperties = Utils.getArbitraryProperties();
         executor = new ProvisioningDispatchExecutor();
         userProvisioningExecutor = namedExecutor(USER_PROVISIONING_EXECUTOR);
         organizationProvisioningExecutor = namedExecutor(ORGANIZATION_PROVISIONING_EXECUTOR);
@@ -94,6 +102,11 @@ public class ProvisioningDispatchExecutorTest {
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(userProvisioningExecutor);
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(organizationProvisioningExecutor);
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(roleAssignmentExecutor);
+        if (previousNotificationProperties == null) {
+            Utils.clearArbitraryProperties();
+        } else {
+            Utils.setArbitraryProperties(previousNotificationProperties);
+        }
     }
 
     @Test(description = "The executor name is referenced by string from persisted flows and must not change.")
@@ -106,8 +119,8 @@ public class ProvisioningDispatchExecutorTest {
     public void testRegistrationCompletesOnlyAfterOrganizationProvisioning() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        RegistrationCompletionData data = completionData(CURRENT_TENANT_DOMAIN);
-        deferDuringUserProvisioning(data, STATUS_COMPLETE);
+        Map<String, Object> completion = expectedCompletion(CURRENT_TENANT_DOMAIN);
+        deferDuringUserProvisioning(CURRENT_TENANT_DOMAIN, STATUS_COMPLETE);
         try (MockedStatic<PrivilegedCarbonContext> ignored = mockedCarbonContext();
              MockedConstruction<FlowRegistrationCompletionHandler> handlers =
                      mockConstruction(FlowRegistrationCompletionHandler.class)) {
@@ -119,9 +132,13 @@ public class ProvisioningDispatchExecutorTest {
             Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
 
             Assert.assertEquals(handlers.constructed().size(), 1);
-            verify(handlers.constructed().get(0)).completeRegistration(data);
+            verify(handlers.constructed().get(0)).completeRegistration(context, completion);
+            Assert.assertEquals(context.getFlowUser().getUsername(), "testuser");
+            Assert.assertEquals(context.getFlowUser().getUserStoreDomain(), "PRIMARY");
+            Assert.assertEquals(context.getFlowUser().getClaims().get("http://wso2.org/claims/emailaddress"),
+                    "test@example.com");
             Assert.assertTrue(context.getProperties().isEmpty());
-            Assert.assertFalse(RegistrationCompletionDeferral.defer(data), "The thread-local scope must be cleared.");
+            Assert.assertFalse(deferCompletion(CURRENT_TENANT_DOMAIN), "The thread-local scope must be cleared.");
         }
     }
 
@@ -129,7 +146,7 @@ public class ProvisioningDispatchExecutorTest {
     public void testFailedOrganizationDiscardsRegistrationCompletion(String status) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        deferDuringUserProvisioning(completionData(CURRENT_TENANT_DOMAIN), STATUS_COMPLETE);
+        deferDuringUserProvisioning(CURRENT_TENANT_DOMAIN, STATUS_COMPLETE);
         stub(organizationProvisioningExecutor, response(status));
         try (MockedConstruction<FlowRegistrationCompletionHandler> handlers =
                      mockConstruction(FlowRegistrationCompletionHandler.class)) {
@@ -144,36 +161,35 @@ public class ProvisioningDispatchExecutorTest {
     public void testOrganizationExceptionDiscardsRegistrationCompletion() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        RegistrationCompletionData data = completionData(CURRENT_TENANT_DOMAIN);
-        deferDuringUserProvisioning(data, STATUS_COMPLETE);
+        deferDuringUserProvisioning(CURRENT_TENANT_DOMAIN, STATUS_COMPLETE);
         when(organizationProvisioningExecutor.execute(context)).thenThrow(
                 new FlowEngineServerException("60000", "Failed", "Failed"));
 
         Assert.assertThrows(FlowEngineException.class, () -> executor.execute(context));
 
         Assert.assertTrue(context.getProperties().isEmpty());
-        Assert.assertFalse(RegistrationCompletionDeferral.defer(data));
+        Assert.assertFalse(deferCompletion(CURRENT_TENANT_DOMAIN));
     }
 
     @Test(dataProvider = "returnToNodeStatusProvider")
     public void testRegistrationCompletionSurvivesRetryAndRunsOnce(String status) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        RegistrationCompletionData data = completionData(CURRENT_TENANT_DOMAIN);
-        deferDuringUserProvisioning(data, STATUS_COMPLETE);
+        Map<String, Object> completion = expectedCompletion(CURRENT_TENANT_DOMAIN);
+        deferDuringUserProvisioning(CURRENT_TENANT_DOMAIN, STATUS_COMPLETE);
         when(organizationProvisioningExecutor.execute(context)).thenReturn(response(status), response(STATUS_COMPLETE));
         try (MockedStatic<PrivilegedCarbonContext> ignored = mockedCarbonContext();
              MockedConstruction<FlowRegistrationCompletionHandler> handlers =
                      mockConstruction(FlowRegistrationCompletionHandler.class)) {
             Assert.assertEquals(executor.execute(context).getResult(), status);
             Assert.assertTrue(handlers.constructed().isEmpty());
-            Assert.assertTrue(context.getProperties().containsValue(data));
+            Assert.assertTrue(context.getProperties().containsValue(completion));
 
             Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
             RegistrationCompletionDeferral.complete(context);
 
             Assert.assertEquals(handlers.constructed().size(), 1);
-            verify(handlers.constructed().get(0)).completeRegistration(data);
+            verify(handlers.constructed().get(0)).completeRegistration(context, completion);
             verify(userProvisioningExecutor).execute(context);
         }
     }
@@ -182,15 +198,15 @@ public class ProvisioningDispatchExecutorTest {
     public void testNewOrganizationCompletionUsesTheUserTenant() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
-        RegistrationCompletionData data = completionData(NEW_ORG_HANDLE);
-        deferDuringUserProvisioning(data, STATUS_COMPLETE);
+        Map<String, Object> completion = expectedCompletion(NEW_ORG_HANDLE);
+        deferDuringUserProvisioning(NEW_ORG_HANDLE, STATUS_COMPLETE);
         stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
         try (MockedStatic<PrivilegedCarbonContext> carbon = mockedCarbonContext();
              MockedConstruction<FlowRegistrationCompletionHandler> handlers =
                      mockConstruction(FlowRegistrationCompletionHandler.class)) {
             executor.execute(context);
 
-            verify(handlers.constructed().get(0)).completeRegistration(data);
+            verify(handlers.constructed().get(0)).completeRegistration(context, completion);
             verify(PrivilegedCarbonContext.getThreadLocalCarbonContext(), org.mockito.Mockito.times(2))
                     .setTenantDomain(NEW_ORG_HANDLE, true);
             carbon.verify(PrivilegedCarbonContext::endTenantFlow, org.mockito.Mockito.times(2));
@@ -202,13 +218,13 @@ public class ProvisioningDispatchExecutorTest {
     public void testNotificationFailureDoesNotRollBackSuccessfulProvisioning() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        deferDuringUserProvisioning(completionData(CURRENT_TENANT_DOMAIN), STATUS_COMPLETE);
+        deferDuringUserProvisioning(CURRENT_TENANT_DOMAIN, STATUS_COMPLETE);
         stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
         try (MockedStatic<PrivilegedCarbonContext> carbon = mockedCarbonContext();
              MockedConstruction<FlowRegistrationCompletionHandler> handlers = mockConstruction(
                      FlowRegistrationCompletionHandler.class, (handler, construction) ->
                              doThrow(new org.wso2.carbon.identity.event.IdentityEventException("Notification failed"))
-                                     .when(handler).completeRegistration(any()))) {
+                                      .when(handler).completeRegistration(any(), any()))) {
             Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
             Assert.assertEquals(handlers.constructed().size(), 1);
             verify(userProvisioningExecutor, never()).rollback(any());
@@ -221,33 +237,42 @@ public class ProvisioningDispatchExecutorTest {
     public void testUserExceptionRestoresDeferralScope() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
-        RegistrationCompletionData data = completionData(CURRENT_TENANT_DOMAIN);
         when(userProvisioningExecutor.execute(context)).thenAnswer(invocation -> {
-            Assert.assertTrue(RegistrationCompletionDeferral.defer(data));
+            Assert.assertTrue(deferCompletion(CURRENT_TENANT_DOMAIN));
             throw new FlowEngineServerException("60000", "Failed", "Failed");
         });
 
         Assert.assertThrows(FlowEngineException.class, () -> executor.execute(context));
 
-        Assert.assertFalse(RegistrationCompletionDeferral.defer(data));
+        Assert.assertFalse(deferCompletion(CURRENT_TENANT_DOMAIN));
         Assert.assertTrue(context.getProperties().isEmpty());
     }
 
-    private void deferDuringUserProvisioning(RegistrationCompletionData data, String status) throws Exception {
+    private void deferDuringUserProvisioning(String tenantDomain, String status) throws Exception {
 
         when(userProvisioningExecutor.execute(any())).thenAnswer(invocation -> {
-            Assert.assertTrue(RegistrationCompletionDeferral.defer(data));
             FlowExecutionContext context = invocation.getArgument(0);
+            context.getFlowUser().setUsername("testuser");
+            context.getFlowUser().setUserStoreDomain("PRIMARY");
+            context.getFlowUser().addClaim("http://wso2.org/claims/emailaddress", "test@example.com");
+            Utils.setArbitraryProperties(new Property[]{new Property("callback", "https://example.com")});
+            Assert.assertTrue(deferCompletion(tenantDomain));
             context.getFlowUser().setUserId("new-user-id");
             return response(status);
         });
     }
 
-    private RegistrationCompletionData completionData(String tenantDomain) {
+    private boolean deferCompletion(String tenantDomain) {
 
-        return new RegistrationCompletionData("testuser", tenantDomain, "PRIMARY", "EMAIL", false,
-                true, true, true, true, true, true, Map.of("http://wso2.org/claims/emailaddress", "test@example.com"),
-                Map.of("callback", "https://example.com"));
+        return RegistrationCompletionDeferral.defer(tenantDomain, "EMAIL", false, true, true);
+    }
+
+    private Map<String, Object> expectedCompletion(String tenantDomain) {
+
+        return Map.of(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain,
+                IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, "EMAIL",
+                NOTIFY_ACCOUNT_CREATION, false, PUBLISH_SUCCESS_EVENT, true, SEND_CONFIRMATION, true,
+                NOTIFICATION_PROPERTIES, Map.of("callback", "https://example.com"));
     }
 
     @Test(description = "Both executors run, and the user is provisioned before the organization.")
