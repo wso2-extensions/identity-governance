@@ -49,7 +49,6 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
@@ -198,8 +197,7 @@ public class UserProvisioningExecutorTest {
         flowUser.setUsername(USERNAME);
         flowUser.getClaims().put(EMAIL_ADDRESS_CLAIM, EMAIL);
         try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
-            RegistrationCompletionDeferral.defer(new RegistrationCompletionData(USERNAME, TENANT_DOMAIN,
-                    PRIMARY_DOMAIN, "EMAIL", false, true, true, true, true, true, true, Map.of(), Map.of()));
+            RegistrationCompletionDeferral.defer(TENANT_DOMAIN, "EMAIL", false, true, true);
         }
 
         ExecutorResponse response = executor.rollback(context);

@@ -43,7 +43,6 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -160,13 +159,12 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 if (RegistrationCompletionDeferral.isActive()) {
                     // A new organization's tenant may use legacy self-registration rather than flow registration.
                     // Keep its account state and notification conditions, but wait for dispatcher success.
-                    Map<String, String> userClaims = (Map<String, String>) eventProperties.get(
-                            IdentityEventConstants.EventProperty.USER_CLAIMS);
-                    RegistrationCompletionDeferral.defer(new RegistrationCompletionData(userName, tenantDomain,
-                            domainName, preferredChannel, false, true,
-                            isAccountLockOnCreation || isEnableConfirmationOnCreation, isAccountLockOnCreation,
-                            isNotificationInternallyManage, isSelfRegistrationConfirmationNotify, false, userClaims,
-                            RegistrationCompletionDeferral.snapshotNotificationProperties()));
+                    boolean notifyAccountCreation = !isAccountLockOnCreation && !isEnableConfirmationOnCreation
+                            && isNotificationInternallyManage && isSelfRegistrationConfirmationNotify;
+                    boolean sendConfirmation = (isAccountLockOnCreation || isEnableConfirmationOnCreation)
+                            && isNotificationInternallyManage;
+                    RegistrationCompletionDeferral.defer(tenantDomain, preferredChannel, notifyAccountCreation,
+                            false, sendConfirmation);
                     return;
                 }
 

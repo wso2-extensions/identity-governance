@@ -24,18 +24,17 @@ import org.mockito.MockedStatic;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandler;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
+import org.wso2.carbon.identity.recovery.model.Property;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
@@ -43,6 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.NOTIFICATION_PROPERTIES;
 
 public class RegistrationCompletionDeferralTest {
 
@@ -51,40 +51,54 @@ public class RegistrationCompletionDeferralTest {
 
         FlowExecutionContext outer = new FlowExecutionContext();
         FlowExecutionContext inner = new FlowExecutionContext();
-        RegistrationCompletionData data = data(Map.of(), Map.of());
         try (RegistrationCompletionDeferral.Scope outerScope = RegistrationCompletionDeferral.begin(outer)) {
             try (RegistrationCompletionDeferral.Scope innerScope = RegistrationCompletionDeferral.begin(inner)) {
-                assertTrue(RegistrationCompletionDeferral.defer(data));
-                assertTrue(inner.getProperties().containsValue(data));
+                assertTrue(defer());
+                assertFalse(inner.getProperties().isEmpty());
                 assertTrue(outer.getProperties().isEmpty());
             }
-            assertTrue(RegistrationCompletionDeferral.defer(data));
-            assertTrue(outer.getProperties().containsValue(data));
+            assertTrue(defer());
+            assertFalse(outer.getProperties().isEmpty());
         }
         assertFalse(RegistrationCompletionDeferral.isActive());
-        assertFalse(RegistrationCompletionDeferral.defer(data));
+        assertFalse(defer());
     }
 
     @Test
-    public void testCompletionSnapshotIsIndependentAndSerializable() throws Exception {
+    public void testNotificationMetadataIsIndependentOfSubsequentThreadLocalChanges() {
 
-        Map<String, String> claims = new HashMap<>();
-        claims.put("email", "original@example.com");
-        Map<String, String> properties = new HashMap<>();
-        properties.put("callback", "https://example.com");
-        RegistrationCompletionData original = data(claims, properties);
-        claims.clear();
-        properties.clear();
+        FlowExecutionContext context = new FlowExecutionContext();
+        Property callback = new Property("callback", "https://example.com");
+        try (MockedStatic<Utils> utils = mockStatic(Utils.class)) {
+            utils.when(Utils::getArbitraryProperties).thenReturn(new Property[]{
+                    new Property("spId", "original-application"), new Property("sp", "Original application"),
+                    callback});
+            try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+                assertTrue(defer());
+            }
+            callback.setValue("https://changed.example.com");
+            utils.when(Utils::getArbitraryProperties).thenReturn(null);
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ObjectOutputStream output = new ObjectOutputStream(bytes)) {
-            output.writeObject(original);
+            Map<String, Object> completion = pending(context);
+            assertEquals(completion.get(NOTIFICATION_PROPERTIES), Map.of(
+                    "spId", "original-application", "sp", "Original application", "callback", "https://example.com"));
+            assertEquals(completion.size(), 6);
+            assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.USER_CLAIMS));
+            assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.CREDENTIAL));
+            assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.USER_STORE_MANAGER));
         }
-        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-            RegistrationCompletionData restored = (RegistrationCompletionData) input.readObject();
-            assertEquals(restored, original);
-            assertEquals(restored.userClaims().get("email"), "original@example.com");
-            assertEquals(restored.toNotificationProperties()[0].getValue(), "https://example.com");
+    }
+
+    @Test
+    public void testMissingNotificationMetadataProducesEmptyMap() {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        try (MockedStatic<Utils> utils = mockStatic(Utils.class)) {
+            utils.when(Utils::getArbitraryProperties).thenReturn(null);
+            try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+                assertTrue(defer());
+            }
+            assertEquals(pending(context).get(NOTIFICATION_PROPERTIES), Map.of());
         }
     }
 
@@ -93,14 +107,17 @@ public class RegistrationCompletionDeferralTest {
 
         FlowExecutionContext context = new FlowExecutionContext();
         context.setProperty("unrelated", "preserved");
-        RegistrationCompletionData original = data(Map.of("email", "original@example.com"),
-                Map.of("callback", "https://example.com"));
+        context.setTenantDomain("parent.example.com");
+        context.getFlowUser().setUsername("testuser");
+        context.getFlowUser().setUserStoreDomain("SECONDARY");
+        context.getFlowUser().addClaim("email", "original@example.com");
         try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
-            assertTrue(RegistrationCompletionDeferral.defer(original));
+            assertTrue(defer());
         }
         ObjectMapper mapper = new ObjectMapper();
         FlowExecutionContext restored = mapper.readValue(mapper.writeValueAsString(context), FlowExecutionContext.class);
         assertTrue(restored.getProperties().values().stream().anyMatch(Map.class::isInstance));
+        Map<String, Object> completion = pending(restored);
 
         System.setProperty(CarbonBaseConstants.CARBON_HOME,
                 Paths.get(System.getProperty("user.dir"), "target", "test-classes").toString());
@@ -114,10 +131,41 @@ public class RegistrationCompletionDeferralTest {
             RegistrationCompletionDeferral.complete(restored);
 
             assertEquals(handlers.constructed().size(), 1);
-            verify(handlers.constructed().get(0)).completeRegistration(original);
-            verify(tenantContext).setTenantDomain(original.tenantDomain(), true);
+            verify(handlers.constructed().get(0)).completeRegistration(restored, completion);
+            verify(tenantContext).setTenantDomain("carbon.super", true);
+            carbon.verify(PrivilegedCarbonContext::startTenantFlow);
             carbon.verify(PrivilegedCarbonContext::endTenantFlow);
             assertEquals(restored.getProperties(), Map.of("unrelated", "preserved"));
+            assertEquals(restored.getTenantDomain(), "parent.example.com");
+            assertEquals(restored.getFlowUser().getUserStoreDomain(), "SECONDARY");
+            assertEquals(restored.getFlowUser().getClaims().get("email"), "original@example.com");
+        }
+    }
+
+    @Test
+    public void testCompletionFailureDoesNotEscapeOrLeavePendingWork() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setProperty("unrelated", "preserved");
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            assertTrue(defer());
+        }
+        System.setProperty(CarbonBaseConstants.CARBON_HOME,
+                Paths.get(System.getProperty("user.dir"), "target", "test-classes").toString());
+        try (MockedStatic<PrivilegedCarbonContext> carbon = mockStatic(PrivilegedCarbonContext.class);
+             MockedConstruction<FlowRegistrationCompletionHandler> handlers = mockConstruction(
+                     FlowRegistrationCompletionHandler.class, (handler, construction) ->
+                             doThrow(new IdentityEventException("Notification failed"))
+                                     .when(handler).completeRegistration(any(), any()))) {
+            carbon.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                    .thenReturn(mock(PrivilegedCarbonContext.class));
+
+            RegistrationCompletionDeferral.complete(context);
+            RegistrationCompletionDeferral.complete(context);
+
+            assertEquals(handlers.constructed().size(), 1);
+            carbon.verify(PrivilegedCarbonContext::endTenantFlow);
+            assertEquals(context.getProperties(), Map.of("unrelated", "preserved"));
         }
     }
 
@@ -127,15 +175,19 @@ public class RegistrationCompletionDeferralTest {
         FlowExecutionContext context = new FlowExecutionContext();
         context.setProperty("unrelated", "preserved");
         try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
-            RegistrationCompletionDeferral.defer(data(Map.of(), Map.of()));
+            defer();
         }
         RegistrationCompletionDeferral.discard(context);
         assertEquals(context.getProperties(), Map.of("unrelated", "preserved"));
     }
 
-    private RegistrationCompletionData data(Map<String, String> claims, Map<String, String> properties) {
+    private boolean defer() {
 
-        return new RegistrationCompletionData("testuser", "carbon.super", "PRIMARY", "EMAIL", false,
-                true, true, true, true, true, true, claims, properties);
+        return RegistrationCompletionDeferral.defer("carbon.super", "EMAIL", false, true, true);
+    }
+
+    private Map<String, Object> pending(FlowExecutionContext context) {
+
+        return (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
     }
 }

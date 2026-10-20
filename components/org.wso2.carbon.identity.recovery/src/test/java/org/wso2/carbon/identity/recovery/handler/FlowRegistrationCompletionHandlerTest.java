@@ -18,10 +18,12 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -29,28 +31,30 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
-import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -64,6 +68,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.fail;
 
 public class FlowRegistrationCompletionHandlerTest {
@@ -140,7 +146,7 @@ public class FlowRegistrationCompletionHandlerTest {
         setupMocksForEnabledFlowWithNotificationChannelVerified();
         setupFlowCompletionMocks(true, true);
         setupNotificationMocks(true, true);
-        FlowExecutionContext context = new FlowExecutionContext();
+        FlowExecutionContext context = createFlowContext();
         Map<String, Object> properties = createCompleteEventProperties();
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, "must-not-be-retained");
 
@@ -155,10 +161,12 @@ public class FlowRegistrationCompletionHandlerTest {
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
                 any(), anyString(), anyString(), any(), anyString()), never());
 
-        RegistrationCompletionData completion = (RegistrationCompletionData) context.getProperties().values()
-                .stream().filter(RegistrationCompletionData.class::isInstance).findFirst().orElseThrow();
-        assertEquals(completion.userClaims().get(EMAIL_CLAIM), "test@example.com");
-        handler.completeRegistration(completion);
+        Map<String, Object> completion =
+                (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
+        assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.USER_CLAIMS));
+        assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.CREDENTIAL));
+        assertFalse(completion.containsKey(IdentityEventConstants.EventProperty.USER_STORE_MANAGER));
+        handler.completeRegistration(context, completion);
 
         verify(userRecoveryDataStore).store(any());
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
@@ -176,7 +184,7 @@ public class FlowRegistrationCompletionHandlerTest {
         setupNotificationMocks(true, true);
         Map<String, Object> properties = createCompleteEventProperties();
         properties.put(EMAIL_VERIFIED_CLAIM, "true");
-        FlowExecutionContext context = new FlowExecutionContext();
+        FlowExecutionContext context = createFlowContext();
 
         try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
             handler.handleEvent(new Event(POST_ADD_USER, properties));
@@ -185,14 +193,126 @@ public class FlowRegistrationCompletionHandlerTest {
         verify(identityEventService, never()).handleEvent(any());
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
                 anyString(), anyString(), anyString(), any()), never());
-        RegistrationCompletionData completion = (RegistrationCompletionData) context.getProperties().values()
-                .stream().filter(RegistrationCompletionData.class::isInstance).findFirst().orElseThrow();
-        handler.completeRegistration(completion);
+        Map<String, Object> completion =
+                (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
+        handler.completeRegistration(context, completion);
 
-        verify(identityEventService).handleEvent(any());
+        ArgumentCaptor<Event> event = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(event.capture());
+        assertEquals(event.getValue().getEventName(), IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+        assertSame(event.getValue().getEventProperties().get(IdentityEventConstants.EventProperty.USER_CLAIMS),
+                context.getFlowUser().getClaims());
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
                 eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME), any()));
         verify(userRecoveryDataStore, never()).store(any());
+    }
+
+    @Test
+    public void testDeferredConfirmationUsesProvisionedTenantAndSecondaryUserStore() throws Exception {
+
+        setupMocksForEnabledFlowWithNotificationChannelVerified();
+        setupFlowCompletionMocks(true, true);
+        setupNotificationMocks(true, true);
+        utilsMockedStatic.when(Utils::getArbitraryProperties)
+                .thenReturn(new Property[]{new Property("callback", "https://original.example.com")});
+        FlowExecutionContext context = createFlowContext();
+        context.setTenantDomain("parent.example.com");
+        try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+            handler.handleEvent(new Event(POST_ADD_USER, createCompleteEventProperties()));
+        }
+        context.getFlowUser().setUserStoreDomain("SECONDARY");
+        context.getFlowUser().setUsername("SECONDARY/" + USER_NAME);
+        utilsMockedStatic.when(Utils::getArbitraryProperties)
+                .thenReturn(new Property[]{new Property("callback", "https://changed.example.com")});
+        Map<String, Object> completion =
+                (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
+
+        handler.completeRegistration(context, completion);
+
+        ArgumentCaptor<UserRecoveryData> recoveryData = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryData.capture());
+        User user = recoveryData.getValue().getUser();
+        assertEquals(user.getUserName(), USER_NAME);
+        assertEquals(user.getTenantDomain(), TENANT_DOMAIN);
+        assertEquals(user.getUserStoreDomain(), "SECONDARY");
+        ArgumentCaptor<Property[]> notificationProperties = ArgumentCaptor.forClass(Property[].class);
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(), eq("EMAIL"), eq(SECRET_KEY), notificationProperties.capture(), any()));
+        Map<String, String> captured = new HashMap<>();
+        for (Property property : notificationProperties.getValue()) {
+            captured.put(property.getKey(), property.getValue());
+        }
+        assertEquals(captured.get("callback"), "https://original.example.com");
+    }
+
+    @Test(dataProvider = "completionConditions")
+    public void testCompletionConditions(boolean deferred, boolean verified, boolean confirmationEnabled,
+                                         boolean accountLockEnabled, boolean internallyManaged,
+                                         boolean completionNotificationEnabled, boolean notificationClaimAvailable)
+            throws Exception {
+
+        setupMocksForEnabledFlowWithNotificationChannelVerified();
+        setupFlowCompletionMocks(accountLockEnabled, confirmationEnabled);
+        setupNotificationMocks(internallyManaged, completionNotificationEnabled);
+        Map<String, Object> properties = createCompleteEventProperties();
+        properties.put(EMAIL_VERIFIED_CLAIM, Boolean.toString(verified));
+        if (!notificationClaimAvailable) {
+            properties.remove(IdentityEventConstants.EventProperty.USER_CLAIMS);
+        }
+        FlowExecutionContext context = createFlowContext();
+        if (deferred) {
+            try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+                handler.handleEvent(new Event(POST_ADD_USER, properties));
+            }
+            verify(identityEventService, never()).handleEvent(any());
+            verify(userRecoveryDataStore, never()).store(any());
+            Map<String, Object> completion =
+                    (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
+            handler.completeRegistration(context, completion);
+        } else {
+            handler.handleEvent(new Event(POST_ADD_USER, properties));
+        }
+
+        boolean notifyCreation = internallyManaged && notificationClaimAvailable && completionNotificationEnabled
+                && (verified || !confirmationEnabled);
+        boolean notifyConfirmation = !verified && internallyManaged && confirmationEnabled
+                && notificationClaimAvailable;
+        boolean publishSuccess = verified || !(accountLockEnabled && confirmationEnabled);
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerAccountCreationNotification(
+                eq(USER_NAME), eq(TENANT_DOMAIN), eq(DOMAIN_NAME), any()), times(notifyCreation ? 1 : 0));
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(
+                any(), eq("EMAIL"), eq(SECRET_KEY), any(), eq("EVENT_NAME")), times(notifyConfirmation ? 1 : 0));
+        verify(userRecoveryDataStore, times(notifyConfirmation ? 1 : 0)).store(any());
+        verify(identityEventService, times(publishSuccess ? 1 : 0)).handleEvent(any());
+        boolean lockAccount = !verified && accountLockEnabled && confirmationEnabled && notificationClaimAvailable;
+        boolean preparePendingAccount = !verified && confirmationEnabled && !lockAccount;
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                true, true, TENANT_DOMAIN, userStoreManager, USER_NAME), times(lockAccount ? 1 : 0));
+        selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(
+                false, true, TENANT_DOMAIN, userStoreManager, USER_NAME), times(preparePendingAccount ? 1 : 0));
+    }
+
+    @DataProvider(name = "completionConditions")
+    public Object[][] completionConditions() {
+
+        List<Object[]> conditions = new ArrayList<>();
+        for (int combination = 0; combination < 128; combination++) {
+            Object[] flags = new Object[7];
+            for (int index = 0; index < flags.length; index++) {
+                flags[index] = (combination & (1 << index)) != 0;
+            }
+            conditions.add(flags);
+        }
+        return conditions.toArray(new Object[0][]);
+    }
+
+    private FlowExecutionContext createFlowContext() {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.getFlowUser().setUsername(USER_NAME);
+        context.getFlowUser().setUserStoreDomain(DOMAIN_NAME);
+        context.getFlowUser().addClaim(EMAIL_CLAIM, "test@example.com");
+        return context;
     }
 
     @Test

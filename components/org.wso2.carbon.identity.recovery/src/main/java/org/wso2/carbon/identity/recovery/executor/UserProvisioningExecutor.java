@@ -138,8 +138,8 @@ public class UserProvisioningExecutor implements Executor {
     public ExecutorResponse rollback(FlowExecutionContext context) {
 
         RegistrationCompletionDeferral.discard(context);
-        Object provisionedUserId = context.getProperty(PROVISIONED_USER_ID);
-        if (!(provisionedUserId instanceof String userId) || StringUtils.isBlank(userId)) {
+        String userId = (String) context.getProperty(PROVISIONED_USER_ID);
+        if (StringUtils.isBlank(userId)) {
             return null;
         }
 

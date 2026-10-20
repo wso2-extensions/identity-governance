@@ -18,18 +18,14 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.recovery.handler.FlowRegistrationCompletionHandler;
 import org.wso2.carbon.identity.recovery.model.Property;
-import org.wso2.carbon.identity.recovery.model.RegistrationCompletionData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,10 +36,14 @@ import java.util.Map;
  */
 public final class RegistrationCompletionDeferral {
 
+    public static final String NOTIFY_ACCOUNT_CREATION = "notifyAccountCreation";
+    public static final String PUBLISH_SUCCESS_EVENT = "publishSuccessEvent";
+    public static final String SEND_CONFIRMATION = "sendConfirmation";
+    public static final String NOTIFICATION_PROPERTIES = "notificationProperties";
+
     private static final Log LOG = LogFactory.getLog(RegistrationCompletionDeferral.class);
     private static final String PENDING_COMPLETION = "pendingRegistrationCompletion";
     private static final ThreadLocal<FlowExecutionContext> CONTEXT = new ThreadLocal<>();
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private RegistrationCompletionDeferral() {
 
@@ -56,13 +56,22 @@ public final class RegistrationCompletionDeferral {
         return new Scope(previous);
     }
 
-    public static boolean defer(RegistrationCompletionData data) {
+    public static boolean defer(String tenantDomain, String preferredChannel, boolean notifyAccountCreation,
+                                boolean publishSuccessEvent, boolean sendConfirmation) {
 
         FlowExecutionContext context = CONTEXT.get();
         if (context == null) {
             return false;
         }
-        context.setProperty(PENDING_COMPLETION, data);
+        // Retain only completion decisions and notification metadata, not another copy of the flow user.
+        Map<String, Object> completion = new HashMap<>();
+        completion.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        completion.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, preferredChannel);
+        completion.put(NOTIFY_ACCOUNT_CREATION, notifyAccountCreation);
+        completion.put(PUBLISH_SUCCESS_EVENT, publishSuccessEvent);
+        completion.put(SEND_CONFIRMATION, sendConfirmation);
+        completion.put(NOTIFICATION_PROPERTIES, captureNotificationProperties());
+        context.setProperty(PENDING_COMPLETION, completion);
         return true;
     }
 
@@ -72,16 +81,11 @@ public final class RegistrationCompletionDeferral {
     }
 
     /**
-     * Copies notification properties which would otherwise be lost when the request returns on a retry.
+     * Preserves registration notification metadata while subsequent provisioning runs.
      */
-    public static Map<String, String> snapshotNotificationProperties() {
+    private static Map<String, String> captureNotificationProperties() {
 
         Map<String, String> properties = new HashMap<>();
-        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                .get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
-        if (StringUtils.isNotBlank(serviceProviderUUID)) {
-            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
-        }
         Property[] arbitraryProperties = Utils.getArbitraryProperties();
         if (arbitraryProperties != null) {
             for (Property property : arbitraryProperties) {
@@ -106,11 +110,10 @@ public final class RegistrationCompletionDeferral {
         // The dispatcher restores the parent tenant after provisioning in a new organization.
         PrivilegedCarbonContext.startTenantFlow();
         try {
-            // JSON-restored flow properties contain a map rather than the original record.
-            RegistrationCompletionData data = pending instanceof RegistrationCompletionData completion ? completion :
-                    OBJECT_MAPPER.convertValue(pending, RegistrationCompletionData.class);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(data.tenantDomain(), true);
-            new FlowRegistrationCompletionHandler().completeRegistration(data);
+            Map<String, Object> completion = (Map<String, Object>) pending;
+            String tenantDomain = (String) completion.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+            new FlowRegistrationCompletionHandler().completeRegistration(context, completion);
         } catch (IdentityEventException | RuntimeException e) {
             // Provisioning has succeeded. A notification failure must not delete the provisioned resources.
             LOG.error("Unable to complete registration notifications for flow: " + context.getContextIdentifier(), e);
