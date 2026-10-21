@@ -103,14 +103,12 @@ public final class RegistrationCompletionDeferral {
 
     public static void complete(FlowExecutionContext context) {
 
-        Object pending = context.getProperties().remove(PENDING_COMPLETION);
-        if (pending == null) {
-            return;
-        }
-
         boolean tenantFlowStarted = false;
         try {
-            Map<String, Object> completion = (Map<String, Object>) pending;
+            Map<String, Object> completion = (Map<String, Object>) context.getProperties().remove(PENDING_COMPLETION);
+            if (completion == null) {
+                return;
+            }
             String tenantDomain = (String) completion.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
             // Re-enter the user's tenant only when provisioning restored a different (parent) tenant.
             if (!StringUtils.equals(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(),
