@@ -51,9 +51,6 @@ public class ProvisioningDispatchExecutor implements Executor {
     private static final String ORGANIZATION_ROLE_ASSIGNMENT_EXECUTOR = "OrganizationRoleAssignmentExecutor";
     private static final String ROLE_IDS = "roleIds";
 
-    /**
-     * Selects where to provision the user. Defaults to the organization running the flow.
-     */
     private static final String PROVISION_TARGET = "provisionTarget";
     private static final String NEW_ORGANIZATION = "NEW_ORGANIZATION";
 
@@ -125,16 +122,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         }
     }
 
-    /**
-     * Provisions the user in the current organization, then creates the child organization.
-     * Rolls back the user if organization provisioning fails.
-     *
-     * @param userProvisioningExecutor         Executor that provisions the user.
-     * @param organizationProvisioningExecutor Executor that creates the organization.
-     * @param context                          Flow execution context.
-     * @return The user response if incomplete, otherwise the organization response.
-     * @throws FlowEngineException If an executor fails.
-     */
     private ExecutorResponse provisionInCurrentOrganization(Executor userProvisioningExecutor,
                                                             Executor organizationProvisioningExecutor,
                                                             FlowExecutionContext context)
@@ -162,16 +149,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         return organizationResponse;
     }
 
-    /**
-     * Creates the organization, then provisions the user inside it.
-     * Rolls back the organization if user provisioning fails.
-     *
-     * @param userProvisioningExecutor         Executor that provisions the user.
-     * @param organizationProvisioningExecutor Executor that creates the organization.
-     * @param context                          Flow execution context.
-     * @return The organization response if incomplete, otherwise the user response.
-     * @throws FlowEngineException If an executor fails.
-     */
     private ExecutorResponse provisionInChildOrganization(Executor userProvisioningExecutor,
                                                           Executor organizationProvisioningExecutor,
                                                           FlowExecutionContext context)
@@ -206,15 +183,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         return userResponse;
     }
 
-    /**
-     * Provisions the user inside the given organization.
-     *
-     * @param userProvisioningExecutor Executor that provisions the user.
-     * @param context                  Flow execution context.
-     * @param organizationTenantDomain Tenant domain of the organization to provision the user in.
-     * @return The user step's outcome.
-     * @throws FlowEngineException If the executor fails.
-     */
     private ExecutorResponse provisionUserInOrganization(Executor userProvisioningExecutor,
                                                          FlowExecutionContext context,
                                                          String organizationTenantDomain)
@@ -246,17 +214,12 @@ public class ProvisioningDispatchExecutor implements Executor {
         return STATUS_ERROR.equals(response.getResult()) || STATUS_USER_ERROR.equals(response.getResult());
     }
 
-    /**
-     * Rolls back a step and logs any rollback failure without replacing the original error.
-     *
-     * @param executor Executor whose step is rolled back.
-     * @param context  Flow execution context.
-     */
     private void rollbackStep(Executor executor, FlowExecutionContext context) {
 
         try {
             executor.rollback(context);
         } catch (FlowEngineException e) {
+            // Preserve the original provisioning failure if rollback fails.
             LOG.error("Failed to roll back the step of executor: " + executor.getName(), e);
         }
     }
@@ -271,14 +234,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         return currentNode.getExecutorConfig().getMetadata().get(key);
     }
 
-    /**
-     * Runs an executor against the same flow context.
-     *
-     * @param executor Executor to run.
-     * @param context  Flow execution context.
-     * @return The executor's response, never {@code null}.
-     * @throws FlowEngineException If the executor fails.
-     */
     private ExecutorResponse dispatch(Executor executor, FlowExecutionContext context)
             throws FlowEngineException {
 
