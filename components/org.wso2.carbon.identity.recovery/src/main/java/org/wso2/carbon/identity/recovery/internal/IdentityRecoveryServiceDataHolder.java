@@ -375,10 +375,7 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     /**
-     * Add a flow executor, keyed by the name it is bound to in a flow definition.
-     * <p>
-     * Executors are collected from every bundle that contributes them, so an executor owned by another
-     * component can be resolved here without depending on that component directly.
+     * Add a flow executor by name.
      *
      * @param executor Flow executor contributed as an OSGi service.
      */
@@ -402,7 +399,7 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     /**
-     * Get a flow executor by the name it is bound to in a flow definition.
+     * Get a flow executor by name.
      *
      * @param executorName Name of the executor.
      * @return The executor, or {@code null} if no executor is registered under that name.

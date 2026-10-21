@@ -40,7 +40,6 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorS
 
 /**
  * Provisions a user and an organization in the order configured by the flow, then assigns configured roles.
- * Resolves executors by name from registered services.
  */
 public class ProvisioningDispatchExecutor implements Executor {
 
@@ -183,7 +182,6 @@ public class ProvisioningDispatchExecutor implements Executor {
             return organizationResponse;
         }
 
-        // The organization handle is the new tenant domain.
         String organizationTenantDomain = context.getFlowOrganization().getOrganizationHandle();
         if (StringUtils.isBlank(organizationTenantDomain)) {
             LOG.error("The organization was created but its handle is unknown, so the user cannot be "
@@ -243,12 +241,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         }
     }
 
-    /**
-     * Checks whether the response ends the flow with ERROR or USER_ERROR.
-     *
-     * @param response Response of a dispatched executor.
-     * @return {@code true} if the flow ends on this response.
-     */
     private boolean endsFlow(ExecutorResponse response) {
 
         return STATUS_ERROR.equals(response.getResult()) || STATUS_USER_ERROR.equals(response.getResult());
@@ -269,13 +261,6 @@ public class ProvisioningDispatchExecutor implements Executor {
         }
     }
 
-    /**
-     * Reads executor metadata from the current node.
-     *
-     * @param context Flow execution context.
-     * @param key     Metadata key.
-     * @return The configured value, or {@code null} if absent.
-     */
     private String getMetadataValue(FlowExecutionContext context, String key) {
 
         NodeConfig currentNode = context.getCurrentNode();
@@ -302,7 +287,6 @@ public class ProvisioningDispatchExecutor implements Executor {
                     + context.getContextIdentifier());
         }
         ExecutorResponse response = executor.execute(context);
-        // Treat a missing response as an error.
         if (response == null) {
             LOG.error("Executor returned no response: " + executor.getName());
             ExecutorResponse failure = new ExecutorResponse();

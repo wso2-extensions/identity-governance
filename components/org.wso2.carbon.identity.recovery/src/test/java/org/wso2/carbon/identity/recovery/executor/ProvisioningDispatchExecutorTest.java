@@ -109,7 +109,7 @@ public class ProvisioningDispatchExecutorTest {
         }
     }
 
-    @Test(description = "The executor name is referenced by string from persisted flows and must not change.")
+    @Test
     public void testExecutorName() {
 
         Assert.assertEquals(executor.getName(), "ProvisioningDispatchExecutor");
@@ -275,7 +275,7 @@ public class ProvisioningDispatchExecutorTest {
                 NOTIFICATION_PROPERTIES, Map.of("callback", "https://example.com"));
     }
 
-    @Test(description = "Both executors run, and the user is provisioned before the organization.")
+    @Test
     public void testUserIsProvisionedBeforeOrganization() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -292,8 +292,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor, never()).rollback(any());
     }
 
-    @Test(dataProvider = "incompleteUserStatusProvider",
-            description = "If user provisioning does not complete, the organization must not be created.")
+    @Test(dataProvider = "incompleteUserStatusProvider")
     public void testOrganizationIsSkippedWhenUserProvisioningDoesNotComplete(String status) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -315,8 +314,7 @@ public class ProvisioningDispatchExecutorTest {
         };
     }
 
-    @Test(description = "A missing organization executor is a deployment problem, not a user error, and it "
-            + "must be detected before a user is provisioned and left without an organization.")
+    @Test
     public void testMissingOrganizationExecutorReturnsErrorWithoutProvisioningUser() throws Exception {
 
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(organizationProvisioningExecutor);
@@ -328,8 +326,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor, never()).execute(any());
     }
 
-    @Test(description = "When the flow returns to this node after the user was provisioned, the user must not "
-            + "be provisioned a second time.")
+    @Test
     public void testUserIsNotProvisionedAgainOnRetry() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -343,8 +340,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(organizationProvisioningExecutor).execute(context);
     }
 
-    @Test(description = "The Executor contract does not promise a response, and the implementation behind "
-            + "a name is not known here, so a null response is reported rather than propagated.")
+    @Test
     public void testNullResponseFromDispatchedExecutorReturnsError() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -356,7 +352,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(organizationProvisioningExecutor, never()).execute(any());
     }
 
-    @Test(description = "A missing user executor fails before anything is provisioned.")
+    @Test
     public void testMissingUserExecutorReturnsError() throws Exception {
 
         IdentityRecoveryServiceDataHolder.getInstance().removeFlowExecutor(userProvisioningExecutor);
@@ -368,8 +364,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(organizationProvisioningExecutor, never()).execute(any());
     }
 
-    @Test(description = "Without the provision target set, the user is provisioned in the organization "
-            + "the flow is executing in, which is what every flow published so far does.")
+    @Test
     public void testUserIsProvisionedInCurrentOrganizationByDefault() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -385,8 +380,7 @@ public class ProvisioningDispatchExecutorTest {
 
     }
 
-    @Test(description = "Targeting the new organization creates it first, then provisions the user inside "
-            + "it, so the user never gets a record in the organization the flow is executing in.")
+    @Test
     public void testUserIsProvisionedInsideTheNewOrganization() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -406,8 +400,7 @@ public class ProvisioningDispatchExecutorTest {
         }
     }
 
-    @Test(description = "The user must be provisioned against the new organization's tenant, not the one "
-            + "the flow is executing in.")
+    @Test
     public void testUserIsProvisionedAgainstTheNewOrganizationTenant() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -427,8 +420,7 @@ public class ProvisioningDispatchExecutorTest {
                 "The flow context tenant must be restored once provisioning is done.");
     }
 
-    @Test(description = "A failure inside the new organization must not leave the tenant switched, or the "
-            + "next request on this thread runs as the wrong tenant.")
+    @Test
     public void testTenantIsRestoredWhenUserProvisioningFails() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -444,8 +436,7 @@ public class ProvisioningDispatchExecutorTest {
         Assert.assertEquals(context.getTenantDomain(), CURRENT_TENANT_DOMAIN);
     }
 
-    @Test(description = "Without a handle the new organization's tenant is unknown, so provisioning the "
-            + "user would silently target the wrong organization.")
+    @Test
     public void testMissingOrganizationHandleReturnsError() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -458,7 +449,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor, never()).execute(any());
     }
 
-    @Test(description = "A failed organization creation is reported as is, and no user is provisioned.")
+    @Test
     public void testUserIsNotProvisionedWhenOrganizationCreationFails() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -471,9 +462,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(organizationProvisioningExecutor, never()).rollback(any());
     }
 
-    @Test(dataProvider = "flowEndingStatusProvider",
-            description = "If organization creation ends the flow, the user is rolled back and the organization "
-                    + "step's outcome is reported as is.")
+    @Test(dataProvider = "flowEndingStatusProvider")
     public void testUserIsRolledBackWhenOrganizationCreationEndsTheFlow(String status) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -487,8 +476,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor).rollback(context);
     }
 
-    @Test(dataProvider = "returnToNodeStatusProvider",
-            description = "A status that brings the flow back to this node keeps the user for the next pass.")
+    @Test(dataProvider = "returnToNodeStatusProvider")
     public void testUserIsKeptWhenOrganizationCreationReturnsToThisNode(String status) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -501,7 +489,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor, never()).rollback(any());
     }
 
-    @Test(description = "An organization executor that throws also ends the flow, so the user is rolled back.")
+    @Test
     public void testUserIsRolledBackWhenOrganizationCreationThrows() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -513,8 +501,7 @@ public class ProvisioningDispatchExecutorTest {
         verify(userProvisioningExecutor).rollback(context);
     }
 
-    @Test(description = "A failed rollback is logged, not thrown, so the flow reports the failure that "
-            + "caused it.")
+    @Test
     public void testFailedRollbackDoesNotReplaceTheOriginalFailure() throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -529,9 +516,7 @@ public class ProvisioningDispatchExecutorTest {
         Assert.assertSame(response, organizationResponse);
     }
 
-    @Test(dataProvider = "flowEndingStatusProvider",
-            description = "If user provisioning ends the flow, the new organization is rolled back once the "
-                    + "tenant is switched back, because an organization cannot delete itself.")
+    @Test(dataProvider = "flowEndingStatusProvider")
     public void testOrganizationIsRolledBackWhenUserProvisioningEndsTheFlow(String status) throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -554,8 +539,7 @@ public class ProvisioningDispatchExecutorTest {
         }
     }
 
-    @Test(description = "A user executor that throws also ends the flow, so the new organization is rolled "
-            + "back.")
+    @Test
     public void testOrganizationIsRolledBackWhenUserProvisioningThrows() throws Exception {
 
         FlowExecutionContext context = newOrganizationContext();
@@ -717,10 +701,6 @@ public class ProvisioningDispatchExecutorTest {
         };
     }
 
-    /**
-     * A context targeting the new organization, with the handle the organization executor would have
-     * recorded once it created it.
-     */
     private FlowExecutionContext newOrganizationContext() {
 
         FlowExecutionContext context = new FlowExecutionContext();
@@ -741,10 +721,6 @@ public class ProvisioningDispatchExecutorTest {
         return nodeConfig;
     }
 
-    /**
-     * PrivilegedCarbonContext fails to load unless carbon home is set, and switching the tenant needs a running
-     * server, so the static calls are mocked and can be verified.
-     */
     private MockedStatic<PrivilegedCarbonContext> mockedCarbonContext() {
 
         System.setProperty(CarbonBaseConstants.CARBON_HOME,
