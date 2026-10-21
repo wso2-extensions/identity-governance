@@ -49,6 +49,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.recovery.util.ExecutorConsentUtils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
@@ -112,6 +113,7 @@ public class UserProvisioningExecutor implements Executor {
     private static final String COMPONENT_ID = "UserProvisioningExecutor";
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String USERNAME_PATTERN_VALIDATION_SKIPPED = "isUsernamePatternValidationSkipped";
+    private static final String PROVISIONED_USER_ID = "provisionedUserId";
 
     @Override
     public String getName() {
@@ -128,9 +130,38 @@ public class UserProvisioningExecutor implements Executor {
         return Collections.emptyList();
     }
 
+    /**
+     * Deletes the user this executor created in the flow. A failed delete is logged rather than thrown, so the
+     * flow reports the failure that caused the rollback.
+     */
     @Override
     public ExecutorResponse rollback(FlowExecutionContext context) {
 
+        RegistrationCompletionDeferral.discard(context);
+        String userId = (String) context.getProperty(PROVISIONED_USER_ID);
+        if (StringUtils.isBlank(userId)) {
+            return null;
+        }
+
+        try {
+            FlowUser flowUser = context.getFlowUser();
+            UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(),
+                    flowUser.getUserStoreDomain(), context.getContextIdentifier(),
+                    context.getFlowType());
+            ((AbstractUserStoreManager) userStoreManager).deleteUserWithID(userId);
+            // Clearing the record keeps a second rollback from attempting the delete again.
+            context.getProperties().remove(PROVISIONED_USER_ID);
+            if (StringUtils.equals(flowUser.getUserId(), userId)) {
+                flowUser.setUserId(null);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Rolled back the user: " + userId + " provisioned in the flow: "
+                        + context.getContextIdentifier());
+            }
+        } catch (FlowEngineException | UserStoreException e) {
+            LOG.error("Failed to roll back the user: " + userId + " provisioned in the flow: "
+                    + context.getContextIdentifier(), e);
+        }
         return null;
     }
 
@@ -277,6 +308,8 @@ public class UserProvisioningExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUsername());
             user.setUserStoreDomain(userStoreDomainName);
             user.setUserId(userid);
+            // Only a user created here may be rolled back; the flow user's ID is also set for existing users.
+            context.setProperty(PROVISIONED_USER_ID, userid);
 
             ExecutorConsentUtils.processUserConsent(COMPONENT_ID, context, user, userStoreDomainName);
 

@@ -26,17 +26,20 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -48,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
@@ -115,10 +119,12 @@ public class UserSelfRegistrationHandlerTest {
     }
 
     @Test(dataProvider = "userRegistrationConfig")
-    public void testUserRegistrationEmailTemplates(boolean isEmailOtpEnabled, String expectedEmailTemplate)
+    public void testUserRegistrationEmailTemplates(boolean isEmailOtpEnabled, String expectedEmailTemplate,
+                                                  boolean deferred)
             throws IdentityEventException, IdentityRecoveryException {
 
         Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, "testuser");
         eventProperties.put(TENANT_DOMAIN_KEY, TENANT_DOMAIN);
         eventProperties.put(USER_STORE_KEY, userStoreManager);
         eventProperties.put(ROLE_LIST_KEY, new String[]{SELF_SIGNUP_ROLE});
@@ -151,7 +157,21 @@ public class UserSelfRegistrationHandlerTest {
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
 
         UserSelfRegistrationHandler userSelfRegistrationHandler = new UserSelfRegistrationHandler();
-        userSelfRegistrationHandler.handleEvent(event);
+        if (deferred) {
+            FlowExecutionContext context = new FlowExecutionContext();
+            context.getFlowUser().setUsername("testuser");
+            context.getFlowUser().setUserStoreDomain(DOMAIN_NAME);
+            try (RegistrationCompletionDeferral.Scope ignored = RegistrationCompletionDeferral.begin(context)) {
+                userSelfRegistrationHandler.handleEvent(event);
+            }
+            verify(identityEventService, never()).handleEvent(any());
+            verify(userRecoveryDataStore, never()).store(any());
+            Map<String, Object> completion =
+                    (Map<String, Object>) context.getProperty("pendingRegistrationCompletion");
+            new FlowRegistrationCompletionHandler().completeRegistration(context, completion);
+        } else {
+            userSelfRegistrationHandler.handleEvent(event);
+        }
 
         // Capturing the event value for asserting.
         ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
@@ -159,6 +179,7 @@ public class UserSelfRegistrationHandlerTest {
         Event capturedEvent = captor.getValue();
         Map<String, Object> capturedEventEventProperties = capturedEvent.getEventProperties();
         assertEquals(capturedEvent.getEventName(), EVENT_NAME);
+        assertEquals(capturedEventEventProperties.get(IdentityEventConstants.EventProperty.USER_NAME), "testuser");
         assertEquals(capturedEventEventProperties.get(TENANT_DOMAIN_KEY), TENANT_DOMAIN);
         assertEquals(capturedEventEventProperties.get(USER_STORE_DOMAIN_KEY), DOMAIN_NAME);
         assertEquals(capturedEventEventProperties.get(NOTIFICATION_CHANNEL_KEY), EMAIL);
@@ -169,8 +190,10 @@ public class UserSelfRegistrationHandlerTest {
     private Object[][] buildUserRegistrationConfigs() {
 
         return new Object[][]{
-                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK},
-                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP}
+                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK, false},
+                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP, false},
+                {false, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK, true},
+                {true, NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP, true}
         };
     }
 }
