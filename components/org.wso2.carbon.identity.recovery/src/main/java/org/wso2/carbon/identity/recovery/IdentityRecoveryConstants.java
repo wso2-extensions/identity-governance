@@ -79,6 +79,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD = "OrchestratedResendAskPassword";
     public static final String FLOW_TYPE = "flowType";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
+    public static final String NOTIFICATION_TYPE_PROFILE_UPDATE_SUCCESS = "profileUpdateSuccess";
     public static final String ACCOUNT_ACTIVATION_SUCCESS = "accountActivationSuccess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
