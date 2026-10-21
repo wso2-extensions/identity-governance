@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -38,7 +39,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -102,8 +105,15 @@ public class RegistrationCompletionDeferralTest {
         }
     }
 
-    @Test
-    public void testCompletionSurvivesJsonRestoredContextAndRunsOnce() throws Exception {
+    @DataProvider(name = "completionTenantProvider")
+    public Object[][] completionTenantProvider() {
+
+        return new Object[][]{{"carbon.super", false}, {"parent.example.com", true}};
+    }
+
+    @Test(dataProvider = "completionTenantProvider")
+    public void testCompletionSurvivesJsonRestoredContextAndRunsOnce(String currentTenantDomain,
+                                                                  boolean tenantSwitchRequired) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
         context.setProperty("unrelated", "preserved");
@@ -125,6 +135,7 @@ public class RegistrationCompletionDeferralTest {
              MockedConstruction<FlowRegistrationCompletionHandler> handlers =
                      mockConstruction(FlowRegistrationCompletionHandler.class)) {
             PrivilegedCarbonContext tenantContext = mock(PrivilegedCarbonContext.class);
+            when(tenantContext.getTenantDomain()).thenReturn(currentTenantDomain);
             carbon.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(tenantContext);
 
             RegistrationCompletionDeferral.complete(restored);
@@ -132,9 +143,9 @@ public class RegistrationCompletionDeferralTest {
 
             assertEquals(handlers.constructed().size(), 1);
             verify(handlers.constructed().get(0)).completeRegistration(restored, completion);
-            verify(tenantContext).setTenantDomain("carbon.super", true);
-            carbon.verify(PrivilegedCarbonContext::startTenantFlow);
-            carbon.verify(PrivilegedCarbonContext::endTenantFlow);
+            verify(tenantContext, times(tenantSwitchRequired ? 1 : 0)).setTenantDomain("carbon.super", true);
+            carbon.verify(PrivilegedCarbonContext::startTenantFlow, times(tenantSwitchRequired ? 1 : 0));
+            carbon.verify(PrivilegedCarbonContext::endTenantFlow, times(tenantSwitchRequired ? 1 : 0));
             assertEquals(restored.getProperties(), Map.of("unrelated", "preserved"));
             assertEquals(restored.getTenantDomain(), "parent.example.com");
             assertEquals(restored.getFlowUser().getUserStoreDomain(), "SECONDARY");
@@ -142,8 +153,9 @@ public class RegistrationCompletionDeferralTest {
         }
     }
 
-    @Test
-    public void testCompletionFailureDoesNotEscapeOrLeavePendingWork() throws Exception {
+    @Test(dataProvider = "completionTenantProvider")
+    public void testCompletionFailureDoesNotEscapeOrLeavePendingWork(String currentTenantDomain,
+                                                                   boolean tenantSwitchRequired) throws Exception {
 
         FlowExecutionContext context = new FlowExecutionContext();
         context.setProperty("unrelated", "preserved");
@@ -157,14 +169,17 @@ public class RegistrationCompletionDeferralTest {
                      FlowRegistrationCompletionHandler.class, (handler, construction) ->
                              doThrow(new IdentityEventException("Notification failed"))
                                      .when(handler).completeRegistration(any(), any()))) {
-            carbon.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
-                    .thenReturn(mock(PrivilegedCarbonContext.class));
+            PrivilegedCarbonContext tenantContext = mock(PrivilegedCarbonContext.class);
+            when(tenantContext.getTenantDomain()).thenReturn(currentTenantDomain);
+            carbon.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(tenantContext);
 
             RegistrationCompletionDeferral.complete(context);
             RegistrationCompletionDeferral.complete(context);
 
             assertEquals(handlers.constructed().size(), 1);
-            carbon.verify(PrivilegedCarbonContext::endTenantFlow);
+            verify(tenantContext, times(tenantSwitchRequired ? 1 : 0)).setTenantDomain("carbon.super", true);
+            carbon.verify(PrivilegedCarbonContext::startTenantFlow, times(tenantSwitchRequired ? 1 : 0));
+            carbon.verify(PrivilegedCarbonContext::endTenantFlow, times(tenantSwitchRequired ? 1 : 0));
             assertEquals(context.getProperties(), Map.of("unrelated", "preserved"));
         }
     }

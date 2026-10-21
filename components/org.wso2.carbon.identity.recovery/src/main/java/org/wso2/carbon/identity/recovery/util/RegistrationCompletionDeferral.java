@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -107,18 +108,25 @@ public final class RegistrationCompletionDeferral {
             return;
         }
 
-        // The dispatcher restores the parent tenant after provisioning in a new organization.
-        PrivilegedCarbonContext.startTenantFlow();
+        boolean tenantFlowStarted = false;
         try {
             Map<String, Object> completion = (Map<String, Object>) pending;
             String tenantDomain = (String) completion.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+            // Re-enter the user's tenant only when provisioning restored a different (parent) tenant.
+            if (!StringUtils.equals(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(),
+                    tenantDomain)) {
+                PrivilegedCarbonContext.startTenantFlow();
+                tenantFlowStarted = true;
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+            }
             new FlowRegistrationCompletionHandler().completeRegistration(context, completion);
         } catch (IdentityEventException | RuntimeException e) {
             // Provisioning has succeeded. A notification failure must not delete the provisioned resources.
             LOG.error("Unable to complete registration notifications for flow: " + context.getContextIdentifier(), e);
         } finally {
-            PrivilegedCarbonContext.endTenantFlow();
+            if (tenantFlowStarted) {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
         }
     }
 
