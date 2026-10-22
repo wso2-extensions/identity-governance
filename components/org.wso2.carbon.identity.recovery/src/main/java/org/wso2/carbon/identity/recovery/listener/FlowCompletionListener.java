@@ -138,6 +138,11 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
 
             return handlePasswordRecoveryCompletion(step, context);
         }
+
+        if (Constants.FlowTypes.PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType())) {
+
+            return handleProfileUpdateCompletion(context);
+        }
         return true;
     }
 
@@ -339,6 +344,53 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                     context.getFlowType(), context.getContextIdentifier());
         } catch (IdentityEventException e) {
             log.error("Error while publishing event: " + IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, e);
+        }
+        return true;
+    }
+
+    private boolean handleProfileUpdateCompletion(FlowExecutionContext context) {
+
+        FlowUser flowUser = context.getFlowUser();
+        String tenantDomain = context.getTenantDomain();
+        String userStoreDomain = resolveUserStoreDomain(flowUser.getUsername());
+
+        User user = new User();
+        user.setUserName(flowUser.getUsername());
+        user.setTenantDomain(tenantDomain);
+        user.setUserStoreDomain(userStoreDomain);
+
+        Map<String, Object> loggerInputs = new HashMap<>();
+
+        // Start building the input map for the diagnostic logs.
+        loggerInputs.put(FLOW_ID, context.getContextIdentifier());
+        loggerInputs.put(USER_NAME, maskIfRequired(user.getUserName()));
+
+        try {
+            boolean isEnableNotificationOnProfileUpdate = Boolean.parseBoolean(Utils.getFlowCompletionConfig(
+                    Constants.FlowTypes.PROFILE_UPDATE, tenantDomain,
+                    Constants.FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED));
+
+            if (!isEnableNotificationOnProfileUpdate) {
+                return true;
+            }
+
+            boolean internallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+
+            String preferredChannel = resolveNotificationChannel(user.getUserName(), tenantDomain, userStoreDomain);
+            NotificationChannels channel = getNotificationChannel(user.getUserName(), preferredChannel);
+
+            // Send notification on successful profile update if the notification claim is available.
+            if (isNotifyingClaimAvailable(channel.getClaimUri(), flowUser.getClaims(), loggerInputs)) {
+                handleNotifications(user, StringUtils.EMPTY, channel.getChannelType(), StringUtils.EMPTY,
+                        internallyManaged, IdentityRecoveryConstants.NOTIFICATION_TYPE_PROFILE_UPDATE_SUCCESS,
+                        context.getApplicationId());
+            }
+        } catch (FlowMgtServerException | IdentityEventException | IdentityRecoveryException e) {
+            log.error("Error while sending the profile update notification in the flow: " +
+                    context.getContextIdentifier(), e);
+            logDiagnostic("Error while triggering profile update notification.", FAILED,
+                    TRIGGER_NOTIFICATION, loggerInputs);
         }
         return true;
     }
