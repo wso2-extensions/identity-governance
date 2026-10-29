@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -597,7 +598,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     private SqlBuilder getQueryString(List<ExpressionCondition> identityClaimFilterExpressionConditions,
                                       int limit, int offset, String userStoreDomain, int tenantID, String dbType) {
 
-        boolean hitClaimFilter = false;
         String userNameWithDomain;
         StringBuilder sqlStatement = new StringBuilder("SELECT DISTINCT USER_NAME FROM IDN_IDENTITY_USER_DATA ");
         SqlBuilder sqlBuilder = new SqlBuilder(sqlStatement);
@@ -615,17 +615,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
         addingWheres(sqlBuilder, header);
 
-        for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
-            String claimValue = expressionCondition.getAttributeValue();
-            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
-                // This is to support LDAP like queries. Value having only * is restricted except one *.
-                if (!claimValue.matches("(\\*)\\1+")) {
-                    // Convert all the * to % except \*.
-                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
-                }
-            }
-            // Adding filter claims.
-            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, expressionCondition);
+        boolean hitClaimFilter = false;
+        for (Map.Entry<String, List<ExpressionCondition>> groupedCondition :
+                groupConditionsByAttribute(identityClaimFilterExpressionConditions).entrySet()) {
+            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, groupedCondition.getValue());
             hitClaimFilter = true;
         }
 
@@ -672,14 +665,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         sqlBuilder.updateSql(" AND (");
         for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
-            String claimValue = expressionCondition.getAttributeValue();
-            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
-                // This is to support LDAP like queries. Value having only * is restricted except one *.
-                if (!claimValue.matches("(\\*)\\1+")) {
-                    // Convert all the * to % except \*.
-                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
-                }
-            }
+            String claimValue = normalizeClaimFilterValue(expressionCondition.getAttributeValue());
             buildClaimWhereConditionsWithOROperator(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), claimValue, hitClaimFilter);
             hitClaimFilter = true;
@@ -690,10 +676,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return sqlBuilder;
     }
 
-    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
-                                           String attributeValue) {
+    private void buildClaimValueWhereConditions(SqlBuilder sqlBuilder, String operation, String attributeValue) {
 
-        sqlBuilder.where("DATA_KEY = ?", attributeName);
         if (ExpressionOperation.EQ.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE = ?", attributeValue);
         } else if (ExpressionOperation.EW.toString().equals(operation)) {
@@ -707,6 +691,18 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         } else if (ExpressionOperation.LE.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE <= ?", attributeValue);
         }
+    }
+
+    private String normalizeClaimFilterValue(String claimValue) {
+
+        if (claimValue != null && claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+            // This is to support LDAP like queries. Value having only * is restricted except one *.
+            if (!claimValue.matches("(\\*)\\1+")) {
+                // Convert all the * to % except \*.
+                return claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
+            }
+        }
+        return claimValue;
     }
 
     private void buildClaimWhereConditionsWithOROperator(SqlBuilder sqlBuilder, String attributeName, String operation,
@@ -754,18 +750,34 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     private void multiClaimQueryBuilder(SqlBuilder sqlBuilder, SqlBuilder header, boolean hitFirstRound,
-                                        ExpressionCondition expressionCondition) {
+                                        List<ExpressionCondition> expressionConditions) {
+
+        if (expressionConditions.isEmpty()) {
+            return;
+        }
 
         // Taking intersection for multi-attribute filtering.
         if (hitFirstRound) {
             sqlBuilder.updateSql(" INTERSECT " + header.getSql());
             addingWheres(header, sqlBuilder);
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
-                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
-        } else {
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
-                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
+
+        sqlBuilder.where("DATA_KEY = ?", expressionConditions.get(0).getAttributeName());
+        for (ExpressionCondition expressionCondition : expressionConditions) {
+            buildClaimValueWhereConditions(sqlBuilder, expressionCondition.getOperation(),
+                    normalizeClaimFilterValue(expressionCondition.getAttributeValue()));
+        }
+    }
+
+    private Map<String, List<ExpressionCondition>> groupConditionsByAttribute(
+            List<ExpressionCondition> expressionConditions) {
+
+        Map<String, List<ExpressionCondition>> groupedConditions = new LinkedHashMap<>();
+        for (ExpressionCondition expressionCondition : expressionConditions) {
+            groupedConditions.computeIfAbsent(expressionCondition.getAttributeName(),
+                    key -> new ArrayList<>()).add(expressionCondition);
+        }
+        return groupedConditions;
     }
 
     /**
