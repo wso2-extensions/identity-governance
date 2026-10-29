@@ -55,6 +55,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -429,8 +430,24 @@ public class JDBCIdentityDataStoreTest {
         SqlBuilder sqlBuilder = (SqlBuilder) getQueryStringMethod.invoke(jdbcIdentityDataStore, conditions, 10, 0,
                 "DEFAULT", TENANT_ID, "h2");
 
-        assertTrue(!sqlBuilder.getQuery().contains("INTERSECT"),
+        assertFalse(sqlBuilder.getQuery().contains("INTERSECT"),
                 "Query should avoid INTERSECT for duplicate-key claim filters.");
+    }
+
+    @Test(description = "Test SQL query generation preserves literal wildcard values for EQ operations.")
+    public void testQueryGenerationWithEQLiteralAsteriskPreservesValue() throws Exception {
+
+        List<ExpressionCondition> conditions = Collections.singletonList(
+                new ExpressionCondition(ExpressionOperation.EQ.toString(), CLAIM_URI, "*"));
+
+        Method getQueryStringMethod = JDBCIdentityDataStore.class.getDeclaredMethod("getQueryString", List.class,
+                int.class, int.class, String.class, int.class, String.class);
+        getQueryStringMethod.setAccessible(true);
+        SqlBuilder sqlBuilder = (SqlBuilder) getQueryStringMethod.invoke(jdbcIdentityDataStore, conditions, 10, 0,
+                "DEFAULT", TENANT_ID, "h2");
+
+        assertEquals(sqlBuilder.getStringParameters().get(4), "*",
+                "EQ operation should preserve literal wildcard value.");
     }
 
     private void verifyUserStoreOnlyUserIncluded(List<String> usernames) {

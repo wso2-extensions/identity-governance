@@ -665,7 +665,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         sqlBuilder.updateSql(" AND (");
         for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
-            String claimValue = normalizeClaimFilterValue(expressionCondition.getAttributeValue());
+            String claimValue = getClaimValueByOperation(expressionCondition.getOperation(),
+                    expressionCondition.getAttributeValue());
             buildClaimWhereConditionsWithOROperator(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), claimValue, hitClaimFilter);
             hitClaimFilter = true;
@@ -701,6 +702,16 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 // Convert all the * to % except \*.
                 return claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
             }
+        }
+        return claimValue;
+    }
+
+    private String getClaimValueByOperation(String operation, String claimValue) {
+
+        if (ExpressionOperation.EW.toString().equals(operation) ||
+                ExpressionOperation.CO.toString().equals(operation) ||
+                ExpressionOperation.SW.toString().equals(operation)) {
+            return normalizeClaimFilterValue(claimValue);
         }
         return claimValue;
     }
@@ -765,7 +776,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         sqlBuilder.where("DATA_KEY = ?", expressionConditions.get(0).getAttributeName());
         for (ExpressionCondition expressionCondition : expressionConditions) {
             buildClaimValueWhereConditions(sqlBuilder, expressionCondition.getOperation(),
-                    normalizeClaimFilterValue(expressionCondition.getAttributeValue()));
+                    getClaimValueByOperation(expressionCondition.getOperation(),
+                            expressionCondition.getAttributeValue()));
         }
     }
 
