@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -615,7 +616,9 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
         addingWheres(sqlBuilder, header);
 
-        for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
+        String previousAttributeName = null;
+        for (ExpressionCondition expressionCondition :
+                groupConditionsByAttribute(identityClaimFilterExpressionConditions)) {
             String claimValue = expressionCondition.getAttributeValue();
             if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
                 // This is to support LDAP like queries. Value having only * is restricted except one *.
@@ -624,9 +627,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                     claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
                 }
             }
-            // Adding filter claims.
-            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, expressionCondition);
+            // Adding filter claims. Conditions on the same claim are combined without INTERSECT.
+            boolean isNewClaim = !expressionCondition.getAttributeName().equals(previousAttributeName);
+            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter && isNewClaim, expressionCondition);
             hitClaimFilter = true;
+            previousAttributeName = expressionCondition.getAttributeName();
         }
 
         if (DB2.equals(dbType)) {
@@ -766,6 +771,18 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
+    }
+
+    private List<ExpressionCondition> groupConditionsByAttribute(List<ExpressionCondition> expressionConditions) {
+
+        Map<String, List<ExpressionCondition>> groupedConditions = new LinkedHashMap<>();
+        for (ExpressionCondition expressionCondition : expressionConditions) {
+            groupedConditions.computeIfAbsent(expressionCondition.getAttributeName(),
+                    key -> new ArrayList<>()).add(expressionCondition);
+        }
+        List<ExpressionCondition> orderedConditions = new ArrayList<>();
+        groupedConditions.values().forEach(orderedConditions::addAll);
+        return orderedConditions;
     }
 
     /**

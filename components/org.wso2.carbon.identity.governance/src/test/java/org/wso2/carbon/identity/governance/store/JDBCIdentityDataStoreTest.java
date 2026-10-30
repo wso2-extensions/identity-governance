@@ -39,9 +39,11 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.SqlBuilder;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.dbcreator.DatabaseCreator;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +55,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -64,6 +67,8 @@ public class JDBCIdentityDataStoreTest {
     private static final String CLAIM_URI = "http://wso2.org/claims/identity/lastLogonTime";
     private static final String CLAIM_VALUE_1 = "1680000000000";
     private static final String CLAIM_VALUE_2 = "1673000000000";
+    private static final String CLAIM_VALUE_3 = "1673481600000";
+    private static final String CLAIM_VALUE_4 = "1674518400000";
     private static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     private static final String ACCOUNT_STATE_CLAIM_VALUE = "DISABLED";
     private static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
@@ -396,6 +401,37 @@ public class JDBCIdentityDataStoreTest {
 
         // Verify the results. Should return all 6 users since none have the non-existent claim URI.
         assertEquals(result.size(), 6, "Should return all 6 users for NE operation with non-existent claim URI");
+    }
+
+    @Test(description = "Test duplicate key range filtering combines the claim conditions correctly.")
+    public void testListPaginatedUsersNamesWithDuplicateClaimKeyRangeFilters() throws Exception {
+
+        List<ExpressionCondition> conditions = new ArrayList<>();
+        conditions.add(new ExpressionCondition(ExpressionOperation.GE.toString(), CLAIM_URI, CLAIM_VALUE_3));
+        conditions.add(new ExpressionCondition(ExpressionOperation.LE.toString(), CLAIM_URI, CLAIM_VALUE_4));
+
+        List<String> filteredUserNames = new ArrayList<>();
+        List<String> result = jdbcIdentityDataStore.listPaginatedUsersNames(
+                conditions, filteredUserNames, "DEFAULT", userStoreManager, 10, 1);
+
+        assertEquals(result.size(), 3, "Expected users with lastLogonTime within the given range.");
+    }
+
+    @Test(description = "Test SQL query generation avoids INTERSECT when duplicate-key claim filters are used.")
+    public void testQueryGenerationWithDuplicateClaimKeyFiltersAvoidsIntersect() throws Exception {
+
+        List<ExpressionCondition> conditions = new ArrayList<>();
+        conditions.add(new ExpressionCondition(ExpressionOperation.GE.toString(), CLAIM_URI, CLAIM_VALUE_3));
+        conditions.add(new ExpressionCondition(ExpressionOperation.LE.toString(), CLAIM_URI, CLAIM_VALUE_4));
+
+        Method getQueryStringMethod = JDBCIdentityDataStore.class.getDeclaredMethod("getQueryString", List.class,
+                int.class, int.class, String.class, int.class, String.class);
+        getQueryStringMethod.setAccessible(true);
+        SqlBuilder sqlBuilder = (SqlBuilder) getQueryStringMethod.invoke(jdbcIdentityDataStore, conditions, 10, 0,
+                "DEFAULT", TENANT_ID, "h2");
+
+        assertFalse(sqlBuilder.getQuery().contains("INTERSECT"),
+                "Query should avoid INTERSECT for duplicate-key claim filters.");
     }
 
     private void verifyUserStoreOnlyUserIncluded(List<String> usernames) {
