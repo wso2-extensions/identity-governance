@@ -503,7 +503,7 @@ public class UserProvisioningExecutor implements Executor {
                     if (StringUtils.isNotBlank(idpName) && StringUtils.isNotBlank(idpSubjectId)) {
                         try {
                             User localUser = new User();
-                            localUser.setUserName(user.getUsername());
+                            localUser.setUserName(UserCoreUtil.removeDomainFromName(user.getUsername()));
                             localUser.setTenantDomain(tenantDomain);
                             localUser.setUserStoreDomain(user.getUserStoreDomain());
                             fedAssociationManager.createFederatedAssociation(localUser, idpName, idpSubjectId);
