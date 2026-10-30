@@ -665,8 +665,14 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         sqlBuilder.updateSql(" AND (");
         for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
-            String claimValue = getClaimValueByOperation(expressionCondition.getOperation(),
-                    expressionCondition.getAttributeValue());
+            String claimValue = expressionCondition.getAttributeValue();
+            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+                // This is to support LDAP like queries. Value having only * is restricted except one *.
+                if (!claimValue.matches("(\\*)\\1+")) {
+                    // Convert all the * to % except \*.
+                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
+                }
+            }
             buildClaimWhereConditionsWithOROperator(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), claimValue, hitClaimFilter);
             hitClaimFilter = true;
@@ -692,28 +698,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         } else if (ExpressionOperation.LE.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE <= ?", attributeValue);
         }
-    }
-
-    private String normalizeClaimFilterValue(String claimValue) {
-
-        if (claimValue != null && claimValue.contains(QUERY_FILTER_STRING_ANY)) {
-            // This is to support LDAP like queries. Value having only * is restricted except one *.
-            if (!claimValue.matches("(\\*)\\1+")) {
-                // Convert all the * to % except \*.
-                return claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
-            }
-        }
-        return claimValue;
-    }
-
-    private String getClaimValueByOperation(String operation, String claimValue) {
-
-        if (ExpressionOperation.EW.toString().equals(operation) ||
-                ExpressionOperation.CO.toString().equals(operation) ||
-                ExpressionOperation.SW.toString().equals(operation)) {
-            return normalizeClaimFilterValue(claimValue);
-        }
-        return claimValue;
     }
 
     private void buildClaimWhereConditionsWithOROperator(SqlBuilder sqlBuilder, String attributeName, String operation,
@@ -776,8 +760,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         sqlBuilder.where("DATA_KEY = ?", expressionConditions.get(0).getAttributeName());
         for (ExpressionCondition expressionCondition : expressionConditions) {
             buildClaimValueWhereConditions(sqlBuilder, expressionCondition.getOperation(),
-                    getClaimValueByOperation(expressionCondition.getOperation(),
-                            expressionCondition.getAttributeValue()));
+                    expressionCondition.getAttributeValue());
         }
     }
 
