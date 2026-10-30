@@ -598,6 +598,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     private SqlBuilder getQueryString(List<ExpressionCondition> identityClaimFilterExpressionConditions,
                                       int limit, int offset, String userStoreDomain, int tenantID, String dbType) {
 
+        boolean hitClaimFilter = false;
         String userNameWithDomain;
         StringBuilder sqlStatement = new StringBuilder("SELECT DISTINCT USER_NAME FROM IDN_IDENTITY_USER_DATA ");
         SqlBuilder sqlBuilder = new SqlBuilder(sqlStatement);
@@ -615,10 +616,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
         addingWheres(sqlBuilder, header);
 
-        boolean hitClaimFilter = false;
-        for (Map.Entry<String, List<ExpressionCondition>> groupedCondition :
-                groupConditionsByAttribute(identityClaimFilterExpressionConditions).entrySet()) {
-            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, groupedCondition.getValue());
+        for (List<ExpressionCondition> claimConditions :
+                groupConditionsByAttribute(identityClaimFilterExpressionConditions).values()) {
+            // Adding filter claims.
+            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, claimConditions);
             hitClaimFilter = true;
         }
 
@@ -683,8 +684,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return sqlBuilder;
     }
 
-    private void buildClaimValueWhereConditions(SqlBuilder sqlBuilder, String operation, String attributeValue) {
+    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
+                                           String attributeValue) {
 
+        sqlBuilder.where("DATA_KEY = ?", attributeName);
         if (ExpressionOperation.EQ.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE = ?", attributeValue);
         } else if (ExpressionOperation.EW.toString().equals(operation)) {
@@ -745,22 +748,17 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     private void multiClaimQueryBuilder(SqlBuilder sqlBuilder, SqlBuilder header, boolean hitFirstRound,
-                                        List<ExpressionCondition> expressionConditions) {
-
-        if (expressionConditions.isEmpty()) {
-            return;
-        }
+                                        List<ExpressionCondition> claimConditions) {
 
         // Taking intersection for multi-attribute filtering.
         if (hitFirstRound) {
             sqlBuilder.updateSql(" INTERSECT " + header.getSql());
             addingWheres(header, sqlBuilder);
         }
-
-        sqlBuilder.where("DATA_KEY = ?", expressionConditions.get(0).getAttributeName());
-        for (ExpressionCondition expressionCondition : expressionConditions) {
-            buildClaimValueWhereConditions(sqlBuilder, expressionCondition.getOperation(),
-                    expressionCondition.getAttributeValue());
+        // Conditions on the same claim are combined in the same query block.
+        for (ExpressionCondition expressionCondition : claimConditions) {
+            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
     }
 
