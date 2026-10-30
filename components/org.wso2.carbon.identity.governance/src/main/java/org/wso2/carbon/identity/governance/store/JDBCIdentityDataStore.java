@@ -616,11 +616,22 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
         addingWheres(sqlBuilder, header);
 
-        for (List<ExpressionCondition> claimConditions :
-                groupConditionsByAttribute(identityClaimFilterExpressionConditions).values()) {
-            // Adding filter claims.
-            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, claimConditions);
+        String previousAttributeName = null;
+        for (ExpressionCondition expressionCondition :
+                groupConditionsByAttribute(identityClaimFilterExpressionConditions)) {
+            String claimValue = expressionCondition.getAttributeValue();
+            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+                // This is to support LDAP like queries. Value having only * is restricted except one *.
+                if (!claimValue.matches("(\\*)\\1+")) {
+                    // Convert all the * to % except \*.
+                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
+                }
+            }
+            // Adding filter claims. Conditions on the same claim are combined without INTERSECT.
+            boolean isNewClaim = !expressionCondition.getAttributeName().equals(previousAttributeName);
+            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter && isNewClaim, expressionCondition);
             hitClaimFilter = true;
+            previousAttributeName = expressionCondition.getAttributeName();
         }
 
         if (DB2.equals(dbType)) {
@@ -748,29 +759,30 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     private void multiClaimQueryBuilder(SqlBuilder sqlBuilder, SqlBuilder header, boolean hitFirstRound,
-                                        List<ExpressionCondition> claimConditions) {
+                                        ExpressionCondition expressionCondition) {
 
         // Taking intersection for multi-attribute filtering.
         if (hitFirstRound) {
             sqlBuilder.updateSql(" INTERSECT " + header.getSql());
             addingWheres(header, sqlBuilder);
-        }
-        // Conditions on the same claim are combined in the same query block.
-        for (ExpressionCondition expressionCondition : claimConditions) {
+            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
+        } else {
             buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
     }
 
-    private Map<String, List<ExpressionCondition>> groupConditionsByAttribute(
-            List<ExpressionCondition> expressionConditions) {
+    private List<ExpressionCondition> groupConditionsByAttribute(List<ExpressionCondition> expressionConditions) {
 
         Map<String, List<ExpressionCondition>> groupedConditions = new LinkedHashMap<>();
         for (ExpressionCondition expressionCondition : expressionConditions) {
             groupedConditions.computeIfAbsent(expressionCondition.getAttributeName(),
                     key -> new ArrayList<>()).add(expressionCondition);
         }
-        return groupedConditions;
+        List<ExpressionCondition> orderedConditions = new ArrayList<>();
+        groupedConditions.values().forEach(orderedConditions::addAll);
+        return orderedConditions;
     }
 
     /**
