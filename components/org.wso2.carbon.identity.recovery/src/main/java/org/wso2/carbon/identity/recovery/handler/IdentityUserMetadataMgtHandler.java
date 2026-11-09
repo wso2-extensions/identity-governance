@@ -21,12 +21,14 @@ package org.wso2.carbon.identity.recovery.handler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -37,6 +39,7 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.exception.FederatedAssociationManagerException;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -195,6 +198,8 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
                                        Map<String, String> userClaims, String eventName)
             throws IdentityEventException {
 
+        boolean isClaimUpdateInProgress =
+                IdentityUtil.threadLocalProperties.get().containsKey(PRE_SET_USER_CLAIM_VALUES);
         try {
             // Storing attribute values of users into identity store database.
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityDataStoreService().storeInIdentityDataStore(
@@ -202,6 +207,59 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
         } catch (UserStoreException e) {
             throw new IdentityEventException(
                     String.format("Error occurred while updating user claims related to %s event.", eventName), e);
+        }
+        if (userClaims.isEmpty() || isClaimUpdateInProgress) {
+            return;
+        }
+        setUserMetadataValuesInUserStore(userStoreManager, authenticatedUser, userClaims, eventName);
+    }
+
+    /**
+     * Store the user metadata values in the user store, in the tenant of the user. A failure is logged and not
+     * thrown, so that it does not affect the other handlers of the event.
+     *
+     * @param userStoreManager  User Store manager.
+     * @param authenticatedUser Authenticated user.
+     * @param userClaims        User claims managed in the user store.
+     * @param eventName         Event name.
+     */
+    private void setUserMetadataValuesInUserStore(UserStoreManager userStoreManager,
+                                                  AuthenticatedUser authenticatedUser,
+                                                  Map<String, String> userClaims, String eventName) {
+
+        String tenantDomain = authenticatedUser.getTenantDomain();
+        boolean isTenantFlowStarted = false;
+        try {
+            if (userStoreManager.isReadOnly()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("User store is read only. Hence skipped storing user metadata claims: "
+                            + userClaims.keySet() + " related to " + eventName + " event.");
+                }
+                return;
+            }
+            if (StringUtils.isNotBlank(tenantDomain) && !StringUtils.equals(tenantDomain,
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain())) {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                isTenantFlowStarted = true;
+            }
+            userStoreManager.setUserClaimValues(authenticatedUser.getUserName(), new HashMap<>(userClaims), null);
+        } catch (UserStoreClientException e) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Skipped storing user metadata claims: %s related to %s event.",
+                        userClaims.keySet(), eventName), e);
+            }
+        } catch (UserStoreException | RuntimeException e) {
+            log.warn(String.format("Error occurred while storing user metadata claims: %s related to %s event in " +
+                    "the user store: %s. %s", userClaims.keySet(), eventName, authenticatedUser.getUserStoreDomain(),
+                    e.getMessage()));
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while storing user metadata claims in the user store.", e);
+            }
+        } finally {
+            if (isTenantFlowStarted) {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
         }
     }
 
