@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
@@ -30,12 +31,23 @@ import org.wso2.carbon.consent.mgt.core.model.PIICategory;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.util.ConsentReceiptUtils;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.action.execution.api.model.ActionType;
+import org.wso2.carbon.identity.action.execution.api.model.Error;
+import org.wso2.carbon.identity.action.execution.api.model.ErrorStatus;
+import org.wso2.carbon.identity.action.execution.api.model.FailedStatus;
+import org.wso2.carbon.identity.action.execution.api.model.Failure;
+import org.wso2.carbon.identity.action.execution.api.model.FlowContext;
+import org.wso2.carbon.identity.action.execution.api.model.SuccessStatus;
+import org.wso2.carbon.identity.action.execution.api.service.ActionExecutorService;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -52,6 +64,8 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
+import org.wso2.carbon.identity.user.action.api.model.UserActionContext;
+import org.wso2.carbon.identity.user.action.api.model.UserActionRequestDTO;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -66,6 +80,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -92,13 +107,17 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROFILE_UPDATE_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 
 /**
@@ -116,6 +135,7 @@ public class UserProvisioningExecutorTest {
     private static final String PRIMARY_DOMAIN = "PRIMARY";
     private static final String SECONDARY_DOMAIN = "SECONDARY";
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
+    private static final String GIVEN_NAME_CLAIM = WSO2_CLAIM_DIALECT + "givenname";
     private static final int TENANT_ID = 1234;
 
     private UserProvisioningExecutor executor;
@@ -1448,6 +1468,201 @@ public class UserProvisioningExecutorTest {
         }
     }
 
+    @Test
+    public void testExecuteProfileUpdateWithPreUpdateProfileActionDisabled() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(false);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(actionExecutorService, never()).execute(any(ActionType.class), any(FlowContext.class), anyString());
+        verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(GIVEN_NAME_CLAIM, "John")), isNull());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateWithPreUpdateProfileActionSuccess() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+        when(actionExecutorService.execute(eq(ActionType.PRE_UPDATE_PROFILE), any(FlowContext.class),
+                eq(TENANT_DOMAIN))).thenReturn(new SuccessStatus.Builder().build());
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        UserActionRequestDTO userActionRequestDTO = capturePreUpdateProfileActionRequest(actionExecutorService);
+        assertEquals(userActionRequestDTO.getUserId(), USER_ID);
+        assertEquals(userActionRequestDTO.getClaims().get(GIVEN_NAME_CLAIM), "John");
+        verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(GIVEN_NAME_CLAIM, "John")), isNull());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateWithPreUpdateProfileActionFailure() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+        when(actionExecutorService.execute(eq(ActionType.PRE_UPDATE_PROFILE), any(FlowContext.class),
+                eq(TENANT_DOMAIN))).thenReturn(new FailedStatus(
+                new Failure("invalid_name", "The given name is not allowed.")));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_USER_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE.getCode());
+        assertEquals(response.getErrorMessage(), "invalid_name");
+        assertEquals(response.getErrorDescription(), "The given name is not allowed.");
+        verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateWithPreUpdateProfileActionError() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+        when(actionExecutorService.execute(eq(ActionType.PRE_UPDATE_PROFILE), any(FlowContext.class),
+                eq(TENANT_DOMAIN))).thenReturn(new ErrorStatus(
+                new Error("server_error", "The action endpoint failed.")));
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_USER_PROFILE_UPDATE_FAILURE.getCode());
+        verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateClaimSaveFailureReturnsProfileUpdateError() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+        doThrow(new UserStoreException("Claim update failed")).when(userStoreManager)
+                .setUserClaimValues(anyString(), any(), any());
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_USER_PROFILE_UPDATE_FAILURE.getCode());
+    }
+
+    @Test
+    public void testExecutePasswordRecoveryClaimSaveFailureReturnsOnboardError() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PASSWORD_RECOVERY.getType(), GIVEN_NAME_CLAIM,
+                "John");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        doThrow(new UserStoreException("Claim update failed")).when(userStoreManager)
+                .setUserClaimValues(anyString(), any(), any());
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_ERROR);
+        assertEquals(response.getErrorCode(), ERROR_CODE_USER_ONBOARD_FAILURE.getCode());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateSendsMultiValuedClaimAsArray() throws Exception {
+
+        String emailAddressesClaim = WSO2_CLAIM_DIALECT + "emailAddresses";
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), emailAddressesClaim,
+                "john@example.com,doe@example.com");
+        setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+        when(actionExecutorService.execute(eq(ActionType.PRE_UPDATE_PROFILE), any(FlowContext.class),
+                eq(TENANT_DOMAIN))).thenReturn(new SuccessStatus.Builder().build());
+        ClaimMetadataManagementService claimMetadataManagementService =
+                IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService();
+        when(claimMetadataManagementService.getLocalClaim(emailAddressesClaim, TENANT_DOMAIN)).thenReturn(
+                Optional.of(new LocalClaim(emailAddressesClaim, new ArrayList<>(),
+                        Collections.singletonMap(ClaimConstants.MULTI_VALUED_PROPERTY, "true"))));
+        mockedFrameworkUtils.when(FrameworkUtils::getMultiAttributeSeparator).thenReturn(",");
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        UserActionRequestDTO userActionRequestDTO = capturePreUpdateProfileActionRequest(actionExecutorService);
+        assertEquals((String[]) userActionRequestDTO.getClaims().get(emailAddressesClaim),
+                new String[]{"john@example.com", "doe@example.com"});
+    }
+
+    @Test
+    public void testExecuteProfileUpdateWithoutUpdatedClaimsSkipsPreUpdateProfileAction() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        when(context.getFlowUser().getUpdatedClaimUris()).thenReturn(Collections.emptySet());
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(actionExecutorService, never()).execute(any(ActionType.class), any(FlowContext.class), anyString());
+        verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
+    }
+
+    @DataProvider(name = "nonProfileUpdateFlowTypes")
+    public Object[][] nonProfileUpdateFlowTypes() {
+
+        return new Object[][]{
+                {REGISTRATION.getType()},
+                {PASSWORD_RECOVERY.getType()}
+        };
+    }
+
+    @Test(dataProvider = "nonProfileUpdateFlowTypes")
+    public void testExecuteNonProfileUpdateFlowSkipsPreUpdateProfileAction(String flowType) throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(flowType, GIVEN_NAME_CLAIM, "John");
+        setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(actionExecutorService, never()).execute(any(ActionType.class), any(FlowContext.class), anyString());
+    }
+
+    @Test
+    public void testExecuteInvitedUserRegistrationSkipsPreUpdateProfileAction() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(INVITED_USER_REGISTRATION.getType(),
+                GIVEN_NAME_CLAIM, "John");
+        when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
+        when(context.getProperty(RECOVERY_SCENARIO)).thenReturn("ASK_PASSWORD");
+
+        User resolvedUser = new User();
+        resolvedUser.setUserName(USERNAME);
+        resolvedUser.setTenantDomain(TENANT_DOMAIN);
+        resolvedUser.setUserStoreDomain(PRIMARY_DOMAIN);
+
+        setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+
+        IdentityContext identityContext = mock(IdentityContext.class);
+        when(identityContext.getCurrentFlow()).thenReturn(null);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class);
+             MockedStatic<IdentityContext> mockedIdentityContext = mockStatic(IdentityContext.class)) {
+
+            mockedUtils.when(() -> Utils.resolveUserFromContext(context)).thenReturn(resolvedUser);
+            mockedIdentityContext.when(IdentityContext::getThreadLocalIdentityContext).thenReturn(identityContext);
+
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            verify(actionExecutorService, never()).execute(any(ActionType.class), any(FlowContext.class),
+                    anyString());
+        }
+    }
+
     private FlowUser createTestFlowUser(String username) {
 
         FlowUser flowUser = mock(FlowUser.class);
@@ -1638,6 +1853,46 @@ public class UserProvisioningExecutorTest {
         context.getFlowUser().setUserId(USER_ID);
         context.setProperty("provisionedUserId", USER_ID);
         return context;
+    }
+
+    private FlowExecutionContext buildContextWithUpdatedClaim(String flowType, String claimUri, String claimValue) {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+        flowUser.getClaims().put(claimUri, claimValue);
+        when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(claimUri));
+        when(flowUser.getUserId()).thenReturn(USER_ID);
+
+        when(context.getFlowType()).thenReturn(flowType);
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+        when(context.getProperty("isUsernamePatternValidationSkipped")).thenReturn(null);
+        return context;
+    }
+
+    private ActionExecutorService setupPreUpdateProfileActionMocks(boolean executionEnabled) throws Exception {
+
+        IdentityRecoveryServiceDataHolder dataHolder = IdentityRecoveryServiceDataHolder.getInstance();
+        ActionExecutorService actionExecutorService = mock(ActionExecutorService.class);
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(dataHolder.getActionExecutorService()).thenReturn(actionExecutorService);
+        when(dataHolder.getClaimMetadataManagementService()).thenReturn(claimMetadataManagementService);
+        when(actionExecutorService.isExecutionEnabled(ActionType.PRE_UPDATE_PROFILE)).thenReturn(executionEnabled);
+        when(claimMetadataManagementService.getLocalClaim(anyString(), anyString()))
+                .thenAnswer(invocation -> Optional.of(new LocalClaim(invocation.getArgument(0))));
+        return actionExecutorService;
+    }
+
+    private UserActionRequestDTO capturePreUpdateProfileActionRequest(ActionExecutorService actionExecutorService)
+            throws Exception {
+
+        ArgumentCaptor<FlowContext> flowContextCaptor = ArgumentCaptor.forClass(FlowContext.class);
+        verify(actionExecutorService).execute(eq(ActionType.PRE_UPDATE_PROFILE), flowContextCaptor.capture(),
+                eq(TENANT_DOMAIN));
+        return flowContextCaptor.getValue().getValue(UserActionContext.USER_ACTION_CONTEXT_REFERENCE_KEY,
+                UserActionContext.class).getUserActionRequestDTO();
     }
 
     private AbstractUserStoreManager setupUserStoreManagerMocks() throws Exception {

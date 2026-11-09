@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.recovery.internal;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.action.execution.api.service.ActionExecutorService;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
@@ -71,6 +72,7 @@ public class IdentityRecoveryServiceDataHolder {
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     private WorkflowManagementService workflowService;
     private CompatibilitySettingsService compatibilitySettingsService;
+    private ActionExecutorService actionExecutorService;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -427,5 +429,25 @@ public class IdentityRecoveryServiceDataHolder {
     public CompatibilitySettingsService getCompatibilitySettingsService() {
 
         return this.compatibilitySettingsService;
+    }
+
+    /**
+     * Set ActionExecutorService OSGi service.
+     *
+     * @param actionExecutorService Action Executor Service.
+     */
+    public void setActionExecutorService(ActionExecutorService actionExecutorService) {
+
+        this.actionExecutorService = actionExecutorService;
+    }
+
+    /**
+     * Get ActionExecutorService OSGi service.
+     *
+     * @return Action Executor Service.
+     */
+    public ActionExecutorService getActionExecutorService() {
+
+        return this.actionExecutorService;
     }
 }

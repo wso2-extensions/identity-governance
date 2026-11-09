@@ -22,12 +22,24 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.action.execution.api.exception.ActionExecutionException;
+import org.wso2.carbon.identity.action.execution.api.model.ActionExecutionStatus;
+import org.wso2.carbon.identity.action.execution.api.model.ActionType;
+import org.wso2.carbon.identity.action.execution.api.model.Error;
+import org.wso2.carbon.identity.action.execution.api.model.Failure;
+import org.wso2.carbon.identity.action.execution.api.model.FlowContext;
+import org.wso2.carbon.identity.action.execution.api.model.Organization;
+import org.wso2.carbon.identity.action.execution.api.service.ActionExecutorService;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -54,6 +66,9 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.recovery.util.ExecutorConsentUtils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionServerException;
+import org.wso2.carbon.identity.user.action.api.model.UserActionContext;
+import org.wso2.carbon.identity.user.action.api.model.UserActionRequestDTO;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.exception.FederatedAssociationManagerException;
 import org.wso2.carbon.user.api.UserRealm;
@@ -75,6 +90,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
@@ -84,6 +100,7 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.STATUS_CO
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
@@ -92,10 +109,12 @@ import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLI
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DUPLICATE_CLAIM_ERROR_CODE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_RESOLVE_NOTIFICATION_PROPERTY_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERNAME_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USERSTORE_MANAGER_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROFILE_UPDATE_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
@@ -185,6 +204,7 @@ public class UserProvisioningExecutor implements Executor {
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
+            handlePreUpdateProfileAction(userClaims, user, context);
             handleUserPasswordUpdate(userCredentials, user, userStoreManager, context);
             handleUserClaimUpdate(userClaims, user, userStoreManager, userStoreDomainName);
 
@@ -197,8 +217,7 @@ public class UserProvisioningExecutor implements Executor {
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (UserStoreException e) {
-            response = buildClientErrorResponseForActionFailure(response, e,
-                    Constants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode());
+            response = buildClientErrorResponseForActionFailure(response, e, context.getFlowType());
             if (response.getResult() != null) {
                 return response;
             }
@@ -213,6 +232,10 @@ public class UserProvisioningExecutor implements Executor {
                 }
                 return userErrorResponse(response, ERROR_CODE_USER_PROVISIONING_FAILURE,
                         context.getContextIdentifier());
+            }
+            if (PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType())) {
+                return errorResponse(response, ERROR_CODE_USER_PROFILE_UPDATE_FAILURE, e,
+                        Utils.maskIfRequired(context.getFlowUser().getUsername()), context.getContextIdentifier());
             }
             return errorResponse(response, ERROR_CODE_USER_ONBOARD_FAILURE, e, context.getFlowUser().getUsername(),
                     context.getContextIdentifier());
@@ -266,6 +289,123 @@ public class UserProvisioningExecutor implements Executor {
         } finally {
             Arrays.fill(password, '\0');
         }
+    }
+
+    private void handlePreUpdateProfileAction(Map<String, String> userClaims, FlowUser user,
+                                              FlowExecutionContext context) throws UserStoreException {
+
+        ActionExecutorService actionExecutorService =
+                IdentityRecoveryServiceDataHolder.getInstance().getActionExecutorService();
+        if (!PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType()) || userClaims.isEmpty() ||
+                !actionExecutorService.isExecutionEnabled(ActionType.PRE_UPDATE_PROFILE)) {
+            return;
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Executing pre update profile action for user: " + user.getUserId() + " in the flow: "
+                    + context.getContextIdentifier());
+        }
+        try {
+            UserActionRequestDTO userActionRequestDTO = buildUserActionRequestDTO(userClaims, user,
+                    context.getTenantDomain());
+            UserActionContext userActionContext = new UserActionContext(userActionRequestDTO);
+
+            FlowContext flowContext = FlowContext.create();
+            flowContext.add(UserActionContext.USER_ACTION_CONTEXT_REFERENCE_KEY, userActionContext);
+
+            ActionExecutionStatus<?> actionExecutionStatus = actionExecutorService.execute(
+                    ActionType.PRE_UPDATE_PROFILE, flowContext, context.getTenantDomain());
+            handleActionExecutionStatus(actionExecutionStatus);
+        } catch (ActionExecutionException e) {
+            throw new UserActionExecutionServerException(UserActionError.PRE_UPDATE_PROFILE_ACTION_SERVER_ERROR,
+                    "Error while executing pre update profile action.", e);
+        }
+    }
+
+    private UserActionRequestDTO buildUserActionRequestDTO(Map<String, String> userClaims, FlowUser user,
+                                                           String tenantDomain) throws UserStoreException {
+
+        UserActionRequestDTO.Builder userActionRequestDTOBuilder = new UserActionRequestDTO.Builder()
+                .userId(user.getUserId())
+                .residentOrganization(getUserResidentOrganization());
+
+        populateUpdatingClaimsInUserActionRequestDTO(userClaims, userActionRequestDTOBuilder, tenantDomain);
+
+        return userActionRequestDTOBuilder.build();
+    }
+
+    private void handleActionExecutionStatus(ActionExecutionStatus<?> actionExecutionStatus)
+            throws UserStoreException {
+
+        switch (actionExecutionStatus.getStatus()) {
+            case SUCCESS:
+                return;
+            case FAILED:
+                Failure failure = (Failure) actionExecutionStatus.getResponse();
+                throw new UserActionExecutionClientException(UserActionError.PRE_UPDATE_PROFILE_ACTION_EXECUTION_FAILED,
+                        failure.getFailureReason(), failure.getFailureDescription());
+            case ERROR:
+                Error error = (Error) actionExecutionStatus.getResponse();
+                throw new UserActionExecutionServerException(UserActionError.PRE_UPDATE_PROFILE_ACTION_EXECUTION_ERROR,
+                        error.getErrorMessage(), error.getErrorDescription());
+            default:
+                throw new UserActionExecutionServerException(UserActionError.PRE_UPDATE_PROFILE_ACTION_SERVER_ERROR,
+                        "Unknown execution status received when executing pre update profile action.");
+        }
+    }
+
+    private void populateUpdatingClaimsInUserActionRequestDTO(Map<String, String> userClaims,
+                                                              UserActionRequestDTO.Builder userActionRequestDTOBuilder,
+                                                              String tenantDomain) throws UserStoreException {
+
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+        for (Map.Entry<String, String> entry : userClaims.entrySet()) {
+            String claimKey = entry.getKey();
+            String claimValue = entry.getValue();
+            if (isMultiValuedClaim(claimKey, tenantDomain)) {
+                userActionRequestDTOBuilder.addClaim(claimKey,
+                        StringUtils.isBlank(claimValue) ? new String[]{} :
+                                claimValue.split(Pattern.quote(multiAttributeSeparator)));
+            } else {
+                userActionRequestDTOBuilder.addClaim(claimKey, claimValue);
+            }
+        }
+    }
+
+    private boolean isMultiValuedClaim(String claimUri, String tenantDomain) throws UserStoreException {
+
+        try {
+            Optional<LocalClaim> localClaim = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getClaimMetadataManagementService().getLocalClaim(claimUri, tenantDomain);
+            if (!localClaim.isPresent()) {
+                throw new UserActionExecutionServerException(UserActionError.PRE_UPDATE_PROFILE_ACTION_SERVER_ERROR,
+                        "Claim not found for claim URI: " + claimUri);
+            }
+            return Boolean.parseBoolean(localClaim.get().getClaimProperty(ClaimConstants.MULTI_VALUED_PROPERTY));
+        } catch (ClaimMetadataException e) {
+            throw new UserActionExecutionServerException(UserActionError.PRE_UPDATE_PROFILE_ACTION_SERVER_ERROR,
+                    "Error while retrieving claim metadata for claim URI: " + claimUri, e);
+        }
+    }
+
+    private Organization getUserResidentOrganization() {
+
+        // User resident organization is the accessing organization as shared users are not supported. Shared users
+        // should invoke the flow from their resident organization.
+        org.wso2.carbon.identity.core.context.model.Organization accessingOrganization =
+                IdentityContext.getThreadLocalIdentityContext().getOrganization();
+        if (accessingOrganization == null) {
+            LOG.warn("Accessing organization is not present in the identity context. " +
+                    "Hence cannot populate the user resident organization.");
+            return null;
+        }
+
+        return new Organization.Builder()
+                .id(accessingOrganization.getId())
+                .name(accessingOrganization.getName())
+                .orgHandle(accessingOrganization.getOrganizationHandle())
+                .depth(accessingOrganization.getDepth())
+                .build();
     }
 
     private void handleUserClaimUpdate(Map<String, String> userClaims, FlowUser user, UserStoreManager userStoreManager,
@@ -322,8 +462,7 @@ public class UserProvisioningExecutor implements Executor {
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (UserStoreException e) {
-            response = buildClientErrorResponseForActionFailure(response, e,
-                    ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode());
+            response = buildClientErrorResponseForActionFailure(response, e, context.getFlowType());
             if (response.getResult() != null) {
                 return response;
             }
@@ -361,11 +500,21 @@ public class UserProvisioningExecutor implements Executor {
     }
 
     private ExecutorResponse buildClientErrorResponseForActionFailure(ExecutorResponse response, UserStoreException e,
-                                                                      String errorCode) {
+                                                                      String flowType) {
 
+        if (e instanceof UserActionExecutionClientException) {
+            UserActionExecutionClientException exception = (UserActionExecutionClientException) e;
+            if (UserActionError.PRE_UPDATE_PROFILE_ACTION_EXECUTION_FAILED.equals(exception.getErrorCode())) {
+                return userErrorResponse(response, ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE.getCode(),
+                        exception.getError(), exception.getDescription(), e);
+            }
+        }
         if (e instanceof UserStoreClientException &&
                 UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED
                         .equals(((UserStoreClientException) e).getErrorCode())) {
+            String errorCode = REGISTRATION.getType().equalsIgnoreCase(flowType)
+                    ? ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode()
+                    : Constants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_VALIDATION_FAILURE.getCode();
             Throwable cause = e.getCause();
             while (cause != null) {
                 if (cause instanceof UserActionExecutionClientException) {
