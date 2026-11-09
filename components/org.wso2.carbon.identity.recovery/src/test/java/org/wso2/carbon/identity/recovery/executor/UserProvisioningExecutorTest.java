@@ -344,21 +344,10 @@ public class UserProvisioningExecutorTest {
     @Test
     public void testExecuteProfileUpdateUsesFlowUserStoreDomain() throws Exception {
 
-        FlowExecutionContext context = mock(FlowExecutionContext.class);
-        FlowUser flowUser = createTestFlowUser(USERNAME);
-        when(flowUser.getUserStoreDomain()).thenReturn(PRIMARY_DOMAIN);
-
-        String givenNameClaim = WSO2_CLAIM_DIALECT + "givenname";
-        flowUser.getClaims().put(givenNameClaim, "John");
-        when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(givenNameClaim));
-
-        when(context.getFlowType()).thenReturn(PROFILE_UPDATE.getType());
-        when(context.getFlowUser()).thenReturn(flowUser);
-        when(context.getUserInputData()).thenReturn(new HashMap<>());
-        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
-        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
-
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        when(context.getFlowUser().getUserStoreDomain()).thenReturn(PRIMARY_DOMAIN);
         AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
         // A default registration user store must not override the user store of an existing user.
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG))
                 .thenReturn(SECONDARY_DOMAIN);
@@ -368,7 +357,7 @@ public class UserProvisioningExecutorTest {
         assertEquals(response.getResult(), STATUS_COMPLETE);
         verify(userStoreManager, never()).getSecondaryUserStoreManager(anyString());
         verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
-                eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
+                eq(Collections.singletonMap(GIVEN_NAME_CLAIM, "John")), isNull());
     }
 
     @Test
