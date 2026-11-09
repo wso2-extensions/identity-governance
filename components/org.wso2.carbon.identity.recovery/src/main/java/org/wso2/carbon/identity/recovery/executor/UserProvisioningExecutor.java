@@ -200,7 +200,10 @@ public class UserProvisioningExecutor implements Executor {
             Map<String, String> userClaims = filterUpdatedClaims(user);
             Map<String, char[]> userCredentials = user.getUserCredentials();
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            String userStoreDomainName = PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType())
+                    && StringUtils.isNotBlank(user.getUserStoreDomain())
+                    ? user.getUserStoreDomain()
+                    : resolveUserStoreDomain(user.getUsername());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 

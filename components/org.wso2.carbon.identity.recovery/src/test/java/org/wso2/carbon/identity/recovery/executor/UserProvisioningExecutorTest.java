@@ -119,6 +119,7 @@ import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.Execu
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROFILE_UPDATE_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 
 /**
  * Unit tests for {@link UserProvisioningExecutor}.
@@ -338,6 +339,36 @@ public class UserProvisioningExecutorTest {
                 eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
         // Only a registration creates a user, so no other flow records one for a rollback to delete.
         verify(context, never()).setProperty(eq("provisionedUserId"), any());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateUsesFlowUserStoreDomain() throws Exception {
+
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        FlowUser flowUser = createTestFlowUser(USERNAME);
+        when(flowUser.getUserStoreDomain()).thenReturn(PRIMARY_DOMAIN);
+
+        String givenNameClaim = WSO2_CLAIM_DIALECT + "givenname";
+        flowUser.getClaims().put(givenNameClaim, "John");
+        when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(givenNameClaim));
+
+        when(context.getFlowType()).thenReturn(PROFILE_UPDATE.getType());
+        when(context.getFlowUser()).thenReturn(flowUser);
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(context.getContextIdentifier()).thenReturn(CONTEXT_ID);
+
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        // A default registration user store must not override the user store of an existing user.
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG))
+                .thenReturn(SECONDARY_DOMAIN);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager, never()).getSecondaryUserStoreManager(anyString());
+        verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
     }
 
     @Test

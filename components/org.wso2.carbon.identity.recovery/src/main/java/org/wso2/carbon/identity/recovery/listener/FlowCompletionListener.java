@@ -354,9 +354,6 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
         FlowUser flowUser = context.getFlowUser();
         String tenantDomain = context.getTenantDomain();
         String userStoreDomain = flowUser.getUserStoreDomain();
-        if (StringUtils.isBlank(userStoreDomain)) {
-            userStoreDomain = IdentityUtil.extractDomainFromName(flowUser.getUsername());
-        }
 
         User user = new User();
         user.setUserName(UserCoreUtil.removeDomainFromName(flowUser.getUsername()));
@@ -381,7 +378,8 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
             boolean internallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(
                     IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
 
-            String preferredChannel = resolveNotificationChannel(user.getUserName(), tenantDomain, userStoreDomain);
+            String preferredChannel = resolveNotificationChannel(getDomainQualifiedUsername(flowUser), tenantDomain,
+                    userStoreDomain);
             NotificationChannels channel = getNotificationChannel(user.getUserName(), preferredChannel);
 
             // Send notification on successful profile update if the notification claim is available.

@@ -1188,7 +1188,9 @@ public class FlowCompletionListenerTest {
         when(context.getFlowUser()).thenReturn(flowUser);
         when(flowUser.getUsername()).thenReturn("testUser");
         when(flowUser.getClaims()).thenReturn(userClaims);
-        mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName("testUser")).thenReturn("PRIMARY");
+        when(flowUser.getUserStoreDomain()).thenReturn("PRIMARY");
+        mockedUtilsStatic.when(() -> Utils.getDomainQualifiedUsername(any(FlowUser.class)))
+                .thenReturn("testUser");
 
         return context;
     }
