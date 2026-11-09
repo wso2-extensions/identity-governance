@@ -50,6 +50,9 @@ public class ExecutorConstants {
         ERROR_CODE_USER_PROVISIONING_FAILURE("60005",
                 "Error while provisioning user.",
                 "Error occurred while provisioning user in the request of flow id: %s"),
+        ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE("60006",
+                "%s",
+                "%s"),
         ERROR_CODE_USER_ONBOARD_FAILURE("65001",
                 "Error while onboarding user.",
                 "Error occurred while onboarding user: %s in the request of flow id: %s"),
@@ -63,7 +66,10 @@ public class ExecutorConstants {
                         "in the request of flow id: %s"),
         ERROR_CODE_USER_EXISTENCE_CHECK_FAILURE("65004",
                 "Error while checking user existence.",
-                "Error occurred while checking the existence of user: %s in the request of flow id: %s.");
+                "Error occurred while checking the existence of user: %s in the request of flow id: %s."),
+        ERROR_CODE_USER_PROFILE_UPDATE_FAILURE("65005",
+                "Error while updating user profile.",
+                "Error occurred while updating the profile of user: %s in the request of flow id: %s.");
 
         private static final String ERROR_PREFIX = "FEE";
         private final String code;
