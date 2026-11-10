@@ -200,10 +200,7 @@ public class UserProvisioningExecutor implements Executor {
             Map<String, String> userClaims = filterUpdatedClaims(user);
             Map<String, char[]> userCredentials = user.getUserCredentials();
 
-            String userStoreDomainName = PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType())
-                    && StringUtils.isNotBlank(user.getUserStoreDomain())
-                    ? user.getUserStoreDomain()
-                    : resolveUserStoreDomain(user.getUsername());
+            String userStoreDomainName = resolveUserStoreDomain(user, context.getFlowType());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
@@ -430,7 +427,7 @@ public class UserProvisioningExecutor implements Executor {
             password =
                     credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
 
-            String userStoreDomainName = resolveUserStoreDomain(user.getUsername());
+            String userStoreDomainName = resolveUserStoreDomain(user, context.getFlowType());
             String usernameWithoutDomain = UserCoreUtil.removeDomainFromName(user.getUsername());
             userClaims.put(USERNAME_CLAIM_URI, usernameWithoutDomain);
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
@@ -587,8 +584,13 @@ public class UserProvisioningExecutor implements Executor {
         }
     }
 
-    private String resolveUserStoreDomain(String username) {
+    private String resolveUserStoreDomain(FlowUser user, String flowType) {
 
+        if (PROFILE_UPDATE.getType().equalsIgnoreCase(flowType) && StringUtils.isNotBlank(user.getUserStoreDomain())) {
+            return user.getUserStoreDomain();
+        }
+
+        String username = user.getUsername();
         int separatorIndex = username.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
         if (separatorIndex >= 0) {
             String domain = username.substring(0, separatorIndex);
@@ -631,7 +633,7 @@ public class UserProvisioningExecutor implements Executor {
         try {
             String userStoreDomain = StringUtils.isNotBlank(user.getUserStoreDomain())
                     ? user.getUserStoreDomain()
-                    : resolveUserStoreDomain(user.getUsername());
+                    : resolveUserStoreDomain(user, context.getFlowType());
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomain,
                     context.getContextIdentifier(), context.getFlowType());
             return userStoreManager.isExistingUser(user.getUsername());
