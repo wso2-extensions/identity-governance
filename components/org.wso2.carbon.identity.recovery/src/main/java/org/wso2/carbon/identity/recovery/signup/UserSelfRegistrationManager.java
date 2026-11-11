@@ -146,6 +146,7 @@ public class UserSelfRegistrationManager {
     private static final String PURPOSE_GROUP_TYPE_SYSTEM = "SYSTEM";
     private static final String AUTH_ATTRIBUTE_USERNAME = "username";
     private static final String AUTH_ATTRIBUTE_PASSWORD = "password";
+    private static final String ANONYMOUS_PROFILE_TRACKER = "anonymous_profile_tracker";
 
     private UserSelfRegistrationManager() {
 
@@ -161,7 +162,9 @@ public class UserSelfRegistrationManager {
 
         NotificationResponseBean notificationResponseBean;
         try {
-            enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER);
+            String anonymousProfileTracker = getPropertyValue(properties, ANONYMOUS_PROFILE_TRACKER);
+            enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER,
+                    StringUtils.isNotBlank(anonymousProfileTracker) ? anonymousProfileTracker : null);
             String tenantDomain = user.getTenantDomain();
 
             publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
@@ -2610,10 +2613,25 @@ public class UserSelfRegistrationManager {
      */
     private void enterFlow(Flow.Name flowName, Flow.InitiatingPersona initiatingPersona) {
 
+        enterFlow(flowName, initiatingPersona, null);
+    }
+
+    /**
+     * This is used to set the flow and initiator in the identity context
+     * for the user flows, along with the anonymous profile tracker identifier if applicable.
+     *
+     * @param flowName                The name of the flow to set in the identity context.
+     * @param initiatingPersona       The persona initiating the flow.
+     * @param anonymousProfileTracker The anonymous profile tracker identifier, or null if not applicable.
+     */
+    private void enterFlow(Flow.Name flowName, Flow.InitiatingPersona initiatingPersona,
+                            String anonymousProfileTracker) {
+
         IdentityContext.getThreadLocalIdentityContext()
                 .enterFlow(new Flow.Builder()
                         .name(flowName)
                         .initiatingPersona(initiatingPersona)
+                        .anonymousProfileTracker(anonymousProfileTracker)
                         .build());
     }
 
