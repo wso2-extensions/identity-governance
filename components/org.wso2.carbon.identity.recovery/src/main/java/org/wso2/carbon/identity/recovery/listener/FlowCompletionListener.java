@@ -389,7 +389,6 @@ public class FlowCompletionListener extends AbstractFlowExecutionListener {
                         context.getApplicationId());
             }
         } catch (FlowMgtServerException | IdentityEventException | IdentityRecoveryException e) {
-            log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
             log.error("Error while sending the profile update notification in the flow: " +
                     context.getContextIdentifier(), e);
             logDiagnostic("Error while triggering profile update notification.", FAILED,
