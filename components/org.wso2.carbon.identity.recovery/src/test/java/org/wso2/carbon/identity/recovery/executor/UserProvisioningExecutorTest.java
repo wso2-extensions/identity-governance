@@ -119,6 +119,7 @@ import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.Execu
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_ONBOARD_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROFILE_UPDATE_FAILURE;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_USER_PROVISIONING_FAILURE;
+import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.REGISTRATION_DEFAULT_USER_STORE_CONFIG;
 
 /**
  * Unit tests for {@link UserProvisioningExecutor}.
@@ -338,6 +339,25 @@ public class UserProvisioningExecutorTest {
                 eq(Collections.singletonMap(givenNameClaim, "John")), isNull());
         // Only a registration creates a user, so no other flow records one for a rollback to delete.
         verify(context, never()).setProperty(eq("provisionedUserId"), any());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateUsesFlowUserStoreDomain() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "John");
+        when(context.getFlowUser().getUserStoreDomain()).thenReturn(PRIMARY_DOMAIN);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+        // A default registration user store must not override the user store of an existing user.
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(REGISTRATION_DEFAULT_USER_STORE_CONFIG))
+                .thenReturn(SECONDARY_DOMAIN);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager, never()).getSecondaryUserStoreManager(anyString());
+        verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(GIVEN_NAME_CLAIM, "John")), isNull());
     }
 
     @Test
