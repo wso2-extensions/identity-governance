@@ -59,6 +59,7 @@ import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral;
@@ -110,7 +111,12 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_REC
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.DISPLAY_CLAIM_AVAILABILITY_CONFIG;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.recovery.executor.ExecutorConstants.ExecutorErrorMessages.ERROR_CODE_PRE_UPDATE_PROFILE_ACTION_VALIDATION_FAILURE;
@@ -1628,6 +1634,106 @@ public class UserProvisioningExecutorTest {
         verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
     }
 
+    @Test
+    public void testExecuteProfileUpdateSavesOtpVerifiedEmailAsVerified() throws Exception {
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(EMAIL_ADDRESS_CLAIM, "new@example.com");
+        updatedClaims.put(EMAIL_VERIFIED_CLAIM, "true");
+        updatedClaims.put(VERIFIED_EMAIL_ADDRESSES_CLAIM, "new@example.com");
+        FlowExecutionContext context = buildContextWithUpdatedClaims(PROFILE_UPDATE.getType(), updatedClaims);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            Map<String, String> savedClaims = new HashMap<>();
+            savedClaims.put(EMAIL_ADDRESS_CLAIM, "new@example.com");
+            savedClaims.put(EMAIL_VERIFIED_CLAIM, "true");
+            savedClaims.put(VERIFIED_EMAIL_ADDRESSES_CLAIM, "new@example.com");
+            verify(userStoreManager).setUserClaimValues(
+                    eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME), eq(savedClaims), isNull());
+            mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(
+                    IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString()));
+            mockedUtils.verify(Utils::unsetThreadLocalToSkipSendingEmailVerificationOnUpdate);
+        }
+    }
+
+    @Test
+    public void testExecuteProfileUpdateDropsEmailVerifiedForEmailNotVerifiedByOtp() throws Exception {
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(EMAIL_ADDRESS_CLAIM, "new@example.com");
+        updatedClaims.put(EMAIL_VERIFIED_CLAIM, "true");
+        updatedClaims.put(VERIFIED_EMAIL_ADDRESSES_CLAIM, "old@example.com");
+        FlowExecutionContext context = buildContextWithUpdatedClaims(PROFILE_UPDATE.getType(), updatedClaims);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            Map<String, String> savedClaims = new HashMap<>();
+            savedClaims.put(EMAIL_ADDRESS_CLAIM, "new@example.com");
+            savedClaims.put(VERIFIED_EMAIL_ADDRESSES_CLAIM, "old@example.com");
+            verify(userStoreManager).setUserClaimValues(
+                    eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME), eq(savedClaims), isNull());
+            mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(anyString()),
+                    never());
+        }
+    }
+
+    @Test
+    public void testExecuteProfileUpdateKeepsOtpVerifiedClaimsWhenEmailNotUpdated() throws Exception {
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(EMAIL_VERIFIED_CLAIM, "true");
+        updatedClaims.put(VERIFIED_EMAIL_ADDRESSES_CLAIM, "current@example.com");
+        FlowExecutionContext context = buildContextWithUpdatedClaims(PROFILE_UPDATE.getType(), updatedClaims);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            verify(userStoreManager).setUserClaimValues(
+                    eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME), eq(updatedClaims), isNull());
+            mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(anyString()),
+                    never());
+        }
+    }
+
+    @Test
+    public void testExecuteProfileUpdateSavesOtpVerifiedMobileAsVerified() throws Exception {
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(MOBILE_NUMBER_CLAIM, "+94771234567");
+        updatedClaims.put(VERIFIED_MOBILE_NUMBERS_CLAIM, "+94771234567");
+        FlowExecutionContext context = buildContextWithUpdatedClaims(PROFILE_UPDATE.getType(), updatedClaims);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            ExecutorResponse response = executor.execute(context);
+
+            assertEquals(response.getResult(), STATUS_COMPLETE);
+            Map<String, String> savedClaims = new HashMap<>();
+            savedClaims.put(MOBILE_NUMBER_CLAIM, "+94771234567");
+            savedClaims.put(MOBILE_VERIFIED_CLAIM, "true");
+            savedClaims.put(VERIFIED_MOBILE_NUMBERS_CLAIM, "+94771234567");
+            verify(userStoreManager).setUserClaimValues(
+                    eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME), eq(savedClaims), isNull());
+            mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
+                    IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW
+                            .toString()));
+            mockedUtils.verify(Utils::unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate);
+        }
+    }
+
     @DataProvider(name = "nonProfileUpdateFlowTypes")
     public Object[][] nonProfileUpdateFlowTypes() {
 
@@ -1877,10 +1983,15 @@ public class UserProvisioningExecutorTest {
 
     private FlowExecutionContext buildContextWithUpdatedClaim(String flowType, String claimUri, String claimValue) {
 
+        return buildContextWithUpdatedClaims(flowType, Collections.singletonMap(claimUri, claimValue));
+    }
+
+    private FlowExecutionContext buildContextWithUpdatedClaims(String flowType, Map<String, String> updatedClaims) {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = createTestFlowUser(USERNAME);
-        flowUser.getClaims().put(claimUri, claimValue);
-        when(flowUser.getUpdatedClaimUris()).thenReturn(Collections.singleton(claimUri));
+        flowUser.getClaims().putAll(updatedClaims);
+        when(flowUser.getUpdatedClaimUris()).thenReturn(updatedClaims.keySet());
         when(flowUser.getUserId()).thenReturn(USER_ID);
 
         when(context.getFlowType()).thenReturn(flowType);
