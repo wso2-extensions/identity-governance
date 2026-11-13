@@ -58,6 +58,7 @@ import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorS
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_RETRY;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.PROVISIONED_TENANT_DOMAIN;
 import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.NOTIFICATION_PROPERTIES;
 import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.NOTIFY_ACCOUNT_CREATION;
 import static org.wso2.carbon.identity.recovery.util.RegistrationCompletionDeferral.PUBLISH_SUCCESS_EVENT;
@@ -418,6 +419,46 @@ public class ProvisioningDispatchExecutorTest {
 
         Assert.assertEquals(context.getTenantDomain(), CURRENT_TENANT_DOMAIN,
                 "The flow context tenant must be restored once provisioning is done.");
+    }
+
+    @Test
+    public void testProvisionedTenantIsRecordedWhenUserIsCreatedInTheOrganization() throws Exception {
+
+        FlowExecutionContext context = newOrganizationContext();
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(userProvisioningExecutor, response(STATUS_COMPLETE));
+
+        try (MockedStatic<PrivilegedCarbonContext> ignored = mockedCarbonContext()) {
+            Assert.assertEquals(executor.execute(context).getResult(), STATUS_COMPLETE);
+        }
+
+        Assert.assertEquals(context.getProperty(PROVISIONED_TENANT_DOMAIN), NEW_ORG_HANDLE,
+                "The tenant of the created user must be recorded for auto login.");
+    }
+
+    @Test
+    public void testProvisionedTenantIsNotRecordedWhenUserProvisioningFails() throws Exception {
+
+        FlowExecutionContext context = newOrganizationContext();
+        stub(organizationProvisioningExecutor, response(STATUS_COMPLETE));
+        stub(userProvisioningExecutor, response(STATUS_ERROR));
+
+        try (MockedStatic<PrivilegedCarbonContext> ignored = mockedCarbonContext()) {
+            Assert.assertEquals(executor.execute(context).getResult(), STATUS_ERROR);
+        }
+
+        Assert.assertNull(context.getProperty(PROVISIONED_TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testRollbackClearsTheProvisionedTenant() throws Exception {
+
+        FlowExecutionContext context = new FlowExecutionContext();
+        context.setProperty(PROVISIONED_TENANT_DOMAIN, NEW_ORG_HANDLE);
+
+        executor.rollback(context);
+
+        Assert.assertNull(context.getProperty(PROVISIONED_TENANT_DOMAIN));
     }
 
     @Test
