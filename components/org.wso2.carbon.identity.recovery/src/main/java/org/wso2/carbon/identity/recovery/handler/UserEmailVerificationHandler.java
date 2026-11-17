@@ -638,6 +638,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
          */
         if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
                 (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
+            if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                sendNotificationToExistingEmailOnEmailUpdate(
+                        user, userStoreManager, claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_UPDATE_WITHOUT_VERIFICATION);
+            }
             invalidatePendingEmailVerification(user, userStoreManager, claims);
             return;
         }

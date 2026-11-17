@@ -204,9 +204,12 @@ public class UserProvisioningExecutor implements Executor {
             UserStoreManager userStoreManager = getUserStoreManager(context.getTenantDomain(), userStoreDomainName,
                     context.getContextIdentifier(), context.getFlowType());
 
+            if (PROFILE_UPDATE.getType().equalsIgnoreCase(context.getFlowType())) {
+                resolveVerifiedClaims(userClaims);
+            }
             handlePreUpdateProfileAction(userClaims, user, context);
             handleUserPasswordUpdate(userCredentials, user, userStoreManager, context);
-            handleUserClaimUpdate(userClaims, user, userStoreManager, userStoreDomainName);
+            handleUserClaimUpdate(userClaims, user, userStoreManager, userStoreDomainName, context.getFlowType());
 
             ExecutorConsentUtils.processUserConsent(COMPONENT_ID, context, user, userStoreDomainName);
 
@@ -409,11 +412,72 @@ public class UserProvisioningExecutor implements Executor {
     }
 
     private void handleUserClaimUpdate(Map<String, String> userClaims, FlowUser user, UserStoreManager userStoreManager,
-                                       String userStoreDomainName) throws FlowEngineException, UserStoreException {
+                                       String userStoreDomainName, String flowType)
+            throws FlowEngineException, UserStoreException {
 
         String domainQualifiedName = IdentityUtil.addDomainToName(user.getUsername(), userStoreDomainName);
-        if (!userClaims.isEmpty()) {
+        if (userClaims.isEmpty()) {
+            return;
+        }
+        boolean isProfileUpdate = PROFILE_UPDATE.getType().equalsIgnoreCase(flowType);
+        try {
+            if (isProfileUpdate) {
+                skipVerificationOnUpdate(userClaims);
+            }
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+        } finally {
+            if (isProfileUpdate) {
+                Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+                Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
+            }
+        }
+    }
+
+    /**
+     * When the email or mobile is updated, keeps its verified claim only for a value verified by an OTP in the flow.
+     *
+     * @param userClaims Claims updated in the flow.
+     */
+    private void resolveVerifiedClaims(Map<String, String> userClaims) {
+
+        resolveVerifiedClaim(userClaims, IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+        resolveVerifiedClaim(userClaims, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM);
+    }
+
+    private void resolveVerifiedClaim(Map<String, String> userClaims, String claimUri, String verifiedValuesClaimUri,
+                                      String verifiedClaimUri) {
+
+        if (!userClaims.containsKey(claimUri)) {
+            return;
+        }
+        String verifiedValue = userClaims.get(verifiedValuesClaimUri);
+        String value = userClaims.get(claimUri);
+        userClaims.remove(verifiedClaimUri);
+        if (StringUtils.isNotBlank(value) && value.equals(verifiedValue)) {
+            userClaims.put(verifiedClaimUri, Boolean.TRUE.toString());
+        }
+    }
+
+    /**
+     * Skips the email and mobile verification on update for an updated value verified in the flow.
+     *
+     * @param userClaims Claims to be saved.
+     */
+    private void skipVerificationOnUpdate(Map<String, String> userClaims) {
+
+        if (userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                Boolean.parseBoolean(userClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM))) {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString());
+        }
+        if (userClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
+                Boolean.parseBoolean(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM))) {
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString());
         }
     }
 
