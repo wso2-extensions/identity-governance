@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.AnonymousUser;
 import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -124,6 +125,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
 import static org.wso2.carbon.identity.event.IdentityEventConstants.Event.POST_MOBILE_CHANGE_VERIFICATION;
 import static org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty.VERIFIED_MOBILE;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ANONYMOUS_PROFILE_TRACKER;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
@@ -160,8 +162,10 @@ public class UserSelfRegistrationManager {
             throws IdentityRecoveryException {
 
         NotificationResponseBean notificationResponseBean;
+        boolean isAnonymousUserSet = false;
         try {
             enterFlow(Flow.Name.REGISTER, Flow.InitiatingPersona.USER);
+            isAnonymousUserSet = setAnonymousUser(properties);
             String tenantDomain = user.getTenantDomain();
 
             publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
@@ -331,9 +335,30 @@ public class UserSelfRegistrationManager {
 
             publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         } finally {
+            if (isAnonymousUserSet) {
+                IdentityContext.getThreadLocalIdentityContext().removeAnonymousUser();
+            }
             IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Set the anonymous user in the identity context, if the registration request has an anonymous profile tracker.
+     *
+     * @param properties Properties of the registration request.
+     * @return True if the anonymous user is set in the identity context.
+     */
+    private boolean setAnonymousUser(Property[] properties) {
+
+        String anonymousProfileTracker = getPropertyValue(properties, ANONYMOUS_PROFILE_TRACKER);
+        if (StringUtils.isBlank(anonymousProfileTracker)) {
+            return false;
+        }
+        IdentityContext.getThreadLocalIdentityContext().setAnonymousUser(new AnonymousUser.Builder()
+                .anonymousProfileTracker(anonymousProfileTracker)
+                .build());
+        return true;
     }
 
     /**
