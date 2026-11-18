@@ -197,7 +197,7 @@ public class UserProvisioningExecutor implements Executor {
             FlowUser user = updateUserProfile(context);
             // Only persist claims the user actually changed during this flow. The preloaded CONSOLE-profile
             // snapshot (which includes non-attribute claims like role/roles) must not be written back.
-            Map<String, String> userClaims = filterUpdatedClaims(user);
+            Map<String, String> userClaims = filterUpdatedClaims(user, context.getFlowType());
             Map<String, char[]> userCredentials = user.getUserCredentials();
 
             String userStoreDomainName = resolveUserStoreDomain(user, context.getFlowType());
@@ -921,15 +921,17 @@ public class UserProvisioningExecutor implements Executor {
      * Returns claims the user actually changed during this flow, based on
      * {@link FlowUser#getUpdatedClaimUris()}.
      *
-     * @param user flow user whose claims are being filtered.
+     * @param user     flow user whose claims are being filtered.
+     * @param flowType type of the flow.
      * @return map of user-updated claims; empty when nothing was changed in this flow.
      */
-    private Map<String, String> filterUpdatedClaims(FlowUser user) {
+    private Map<String, String> filterUpdatedClaims(FlowUser user, String flowType) {
 
         Set<String> updated = user.getUpdatedClaimUris();
         if (updated == null || updated.isEmpty()) {
             return new HashMap<>();
         }
+        boolean isProfileUpdate = PROFILE_UPDATE.getType().equalsIgnoreCase(flowType);
         Map<String, String> result = new HashMap<>();
         for (String uri : updated) {
             // Skip updating username in non-registration flows.
@@ -937,7 +939,7 @@ public class UserProvisioningExecutor implements Executor {
                 continue;
             }
             String value = user.getClaims().get(uri);
-            if (value != null) {
+            if (value != null && !(isProfileUpdate && StringUtils.isBlank(value))) {
                 result.put(uri, value);
             }
         }

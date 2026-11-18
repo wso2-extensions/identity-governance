@@ -1635,6 +1635,38 @@ public class UserProvisioningExecutorTest {
     }
 
     @Test
+    public void testExecuteProfileUpdateSkipsBlankClaims() throws Exception {
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(GIVEN_NAME_CLAIM, "John");
+        updatedClaims.put(EMAIL_ADDRESS_CLAIM, "");
+        updatedClaims.put(MOBILE_NUMBER_CLAIM, " ");
+        FlowExecutionContext context = buildContextWithUpdatedClaims(PROFILE_UPDATE.getType(), updatedClaims);
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        setupPreUpdateProfileActionMocks(false);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(userStoreManager).setUserClaimValues(eq(PRIMARY_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USERNAME),
+                eq(Collections.singletonMap(GIVEN_NAME_CLAIM, "John")), isNull());
+    }
+
+    @Test
+    public void testExecuteProfileUpdateWithOnlyBlankClaimsSkipsClaimUpdate() throws Exception {
+
+        FlowExecutionContext context = buildContextWithUpdatedClaim(PROFILE_UPDATE.getType(), GIVEN_NAME_CLAIM, "");
+        AbstractUserStoreManager userStoreManager = setupUserStoreManagerMocks();
+        ActionExecutorService actionExecutorService = setupPreUpdateProfileActionMocks(true);
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), STATUS_COMPLETE);
+        verify(actionExecutorService, never()).execute(any(ActionType.class), any(FlowContext.class), anyString());
+        verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
+    }
+
+    @Test
     public void testExecuteProfileUpdateSavesOtpVerifiedEmailAsVerified() throws Exception {
 
         Map<String, String> updatedClaims = new HashMap<>();
