@@ -603,14 +603,6 @@ public class UserProvisioningExecutor implements Executor {
                 }
             }
         });
-
-        Object anonymousProfileTracker = context.getProperty(Constants.ANONYMOUS_PROFILE_TRACKER);
-        if (anonymousProfileTracker != null) {
-            String cdsProfileClaimUri = WSO2_CLAIM_DIALECT + IdentityRecoveryConstants.CDS_PROFILE_ATTRIBUTE;
-            if (!user.getClaims().containsKey(cdsProfileClaimUri)) {
-                user.addUpdatedClaim(cdsProfileClaimUri, String.valueOf(anonymousProfileTracker));
-            }
-        }
         user.setUsername(resolveUsername(user, context));
         setUsernamePatternValidation(context);
         return user;
