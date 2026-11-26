@@ -212,7 +212,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             // Remove claim to prevent persisting this temporary claim
             claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
 
-            String OTP = generateOTPValue();
+            String OTP = generateOTPValue(user.getTenantDomain());
             String notificationType = "";
             Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
 
@@ -330,7 +330,16 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         return 27;
     }
 
-    private String generateOTPValue() {
+    private String generateOTPValue(String tenantDomain) throws IdentityEventException {
+
+        try {
+            String otp = Utils.generateAdminForcedPasswordResetOTP(tenantDomain);
+            if (otp != null) {
+                return otp;
+            }
+        } catch (IdentityRecoveryServerException e) {
+            throw new IdentityEventException("Error while generating the admin forced password reset OTP.", e);
+        }
         char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
         SecureRandom rnd = new SecureRandom();
         StringBuilder sb = new StringBuilder("");

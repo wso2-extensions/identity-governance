@@ -64,6 +64,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1154,5 +1156,49 @@ public class ResendConfirmationManagerTest {
         mockedUtils.when(() -> Utils.handleClientException(any(IdentityRecoveryConstants.ErrorMessages.class),
                 anyString())).thenReturn(new IdentityRecoveryClientException("test-code", "test-dec"));
 
+    }
+
+    @Test(description = "Resend for admin forced password reset OTP uses the configured OTP when the OTP length is " +
+            "configured.", dataProvider = "adminForcedPasswordResetOTPScenarios")
+    public void testGetSecretKeyForAdminForcedPasswordResetWithConfiguredOTP(String recoveryScenario, String channel)
+            throws Exception {
+
+        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN))
+                .thenReturn("ABCDEFGH1234");
+
+        assertEquals(invokeGetSecretKey(channel, recoveryScenario), "ABCDEFGH1234");
+        mockedUtils.verify(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), any()), never());
+    }
+
+    @Test(description = "Resend for admin forced password reset OTP keeps the default OTP generation when the OTP " +
+            "length is not configured.", dataProvider = "adminForcedPasswordResetOTPScenarios")
+    public void testGetSecretKeyForAdminForcedPasswordResetWithoutConfiguredOTP(String recoveryScenario,
+                                                                              String channel) throws Exception {
+
+        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN)).thenReturn(null);
+        mockedUtils.when(() -> Utils.generateSecretKey(channel, recoveryScenario, TEST_TENANT_DOMAIN, null))
+                .thenReturn("aB3dE6");
+
+        assertEquals(invokeGetSecretKey(channel, recoveryScenario), "aB3dE6");
+        mockedUtils.verify(() -> Utils.generateSecretKey(channel, recoveryScenario, TEST_TENANT_DOMAIN, null));
+    }
+
+    @DataProvider
+    public Object[][] adminForcedPasswordResetOTPScenarios() {
+
+        return new Object[][]{
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name(),
+                        NotificationChannels.EMAIL_CHANNEL.getChannelType()},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.name(),
+                        NotificationChannels.SMS_CHANNEL.getChannelType()}
+        };
+    }
+
+    private String invokeGetSecretKey(String channel, String recoveryScenario) throws Exception {
+
+        Method getSecretKey = ResendConfirmationManager.class.getDeclaredMethod("getSecretKey", String.class,
+                String.class, String.class);
+        getSecretKey.setAccessible(true);
+        return (String) getSecretKey.invoke(resendConfirmationManager, channel, recoveryScenario, TEST_TENANT_DOMAIN);
     }
 }

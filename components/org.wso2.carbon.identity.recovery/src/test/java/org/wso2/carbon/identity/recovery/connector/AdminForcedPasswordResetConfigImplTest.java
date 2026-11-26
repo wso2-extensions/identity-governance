@@ -89,6 +89,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 "Enable password reset offline");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
                 "Admin forced password reset code expiry time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH,
+                "OTP Length");
 
         Map<String, String> nameMapping = adminForcedPasswordResetConfigIml.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -108,6 +110,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 "An OTP generated and stored in users claims");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
                 "Validity time of the admin forced password reset code in minutes");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH,
+                "Length of the admin forced password reset OTP. If not set, the default OTP generation is used");
 
         Map<String, String> descriptionMapping = adminForcedPasswordResetConfigIml.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -122,9 +126,11 @@ public class AdminForcedPasswordResetConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH);
         String[] propertiesListExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = adminForcedPasswordResetConfigIml.getPropertyNames();
+        assertEquals(properties.length, propertiesListExpected.length);
 
         for (int i = 0; i < properties.length; i++) {
             assertEquals(properties[i], propertiesListExpected[i]);
@@ -151,6 +157,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 testEnableAdminPasswordResetOffline);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
                 testAdminPasswordResetExpiryTime);
+        // OTP length is empty by default, which keeps the default OTP generation behaviour.
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, "");
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself

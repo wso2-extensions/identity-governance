@@ -130,6 +130,8 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
+    // Same character set as the default admin forced password reset OTP.
+    private static final String ADMIN_PASSWORD_RESET_OTP_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -1446,6 +1448,82 @@ public class Utils {
             }
         }
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Generate the OTP for the admin forced password reset flow using the configured OTP length.
+     * The custom generation is used only when a valid OTP length is configured. Otherwise this method returns null so
+     * that the callers keep their default OTP generation behaviour. The OTP is generated here instead of through the
+     * OTPGenerator service, since that service limits the OTP length to 10 characters.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return Generated OTP, or null if a valid OTP length is not configured.
+     * @throws IdentityRecoveryServerException If an error occurred while generating the OTP.
+     */
+    public static String generateAdminForcedPasswordResetOTP(String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        String otpLengthValue = getOptionalRecoveryConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, tenantDomain);
+        if (StringUtils.isBlank(otpLengthValue)) {
+            return null;
+        }
+        int otpLength;
+        try {
+            otpLength = Integer.parseInt(otpLengthValue.trim());
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Invalid admin forced password reset OTP length: " + otpLengthValue + ". Using default OTP.");
+            }
+            return null;
+        }
+        if (otpLength < IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_MIN_LENGTH ||
+                otpLength > IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_MAX_LENGTH) {
+            if (log.isDebugEnabled()) {
+                log.debug("Admin forced password reset OTP length out of range: " + otpLength + ". Using default OTP.");
+            }
+            return null;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Generating admin forced password reset OTP of length: " + otpLength + " for tenant: " +
+                    tenantDomain);
+        }
+        char[] otpChars = ADMIN_PASSWORD_RESET_OTP_CHARS.toCharArray();
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder otp = new StringBuilder(otpLength);
+        for (int i = 0; i < otpLength; i++) {
+            otp.append(otpChars[secureRandom.nextInt(otpChars.length)]);
+        }
+        return otp.toString();
+    }
+
+    /**
+     * Get a recovery config value without failing when the property is not available. Empty property values are not
+     * persisted in some databases (e.g. Oracle), hence a missing property is treated as not configured.
+     *
+     * @param key          Config name.
+     * @param tenantDomain Tenant domain.
+     * @return Config value, or null if the property is not available.
+     * @throws IdentityRecoveryServerException If an error occurred while loading the configs.
+     */
+    private static String getOptionalRecoveryConfig(String key, String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        try {
+            Property[] connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService().getConfiguration(new String[]{key}, tenantDomain);
+            if (connectorConfigs != null) {
+                for (Property connectorConfig : connectorConfigs) {
+                    if (connectorConfig != null && key.equals(connectorConfig.getName())) {
+                        return connectorConfig.getValue();
+                    }
+                }
+            }
+            return null;
+        } catch (IdentityGovernanceException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+        }
     }
 
     /**
