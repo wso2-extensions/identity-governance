@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.governance;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.annotation.bundle.Capability;
@@ -153,18 +154,14 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private void validateAdminForcedPasswordResetOTPLength(Map<String, String> configurationDetails)
             throws IdentityGovernanceClientException {
 
-        String otpLength = configurationDetails.get(ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH);
-        if (StringUtils.isBlank(otpLength)) {
+        String otpLength = StringUtils.trim(configurationDetails.get(ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH));
+        if (StringUtils.isEmpty(otpLength)) {
             return;
         }
-        try {
-            int length = Integer.parseInt(otpLength.trim());
-            if (length >= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH &&
-                    length <= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
-                return;
-            }
-        } catch (NumberFormatException e) {
-            // Handled below as an invalid OTP length.
+        int length = NumberUtils.toInt(otpLength, -1);
+        if (length >= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH &&
+                length <= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
+            return;
         }
         throw new IdentityGovernanceClientException(String.format("Invalid connector configuration. Admin forced " +
                         "password reset OTP length should be an integer between %d and %d.",
