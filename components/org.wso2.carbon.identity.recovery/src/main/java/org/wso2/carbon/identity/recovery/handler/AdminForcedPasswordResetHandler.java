@@ -211,11 +211,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             // Remove claim to prevent persisting this temporary claim
             claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
 
-            // The recovery link option uses a UUID instead, so the OTP config is not read for it.
-            String OTP = null;
-            if (adminPasswordResetOffline || adminPasswordResetEmailOTP || adminPasswordResetSMSOTP) {
-                OTP = generateOTPValue(user.getTenantDomain());
-            }
+            String OTP = generateOTPValue(user.getTenantDomain());
             String notificationType = "";
             Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
 

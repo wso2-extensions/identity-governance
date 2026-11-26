@@ -192,7 +192,6 @@ public class AdminForcedPasswordResetHandlerTest {
         String storedCode = recoveryDataCaptor.getValue().getSecret();
         if (isEmailLinkEnabled) {
             assertTrue(storedCode.matches("[0-9a-f-]{36}"), "Unexpected recovery link code: " + storedCode);
-            mockedUtils.verify(() -> Utils.generateAdminForcedPasswordResetOTP(anyString()), never());
         } else {
             assertTrue(storedCode.matches("[A-Z0-9]{6}"), "Unexpected default OTP: " + storedCode);
         }
