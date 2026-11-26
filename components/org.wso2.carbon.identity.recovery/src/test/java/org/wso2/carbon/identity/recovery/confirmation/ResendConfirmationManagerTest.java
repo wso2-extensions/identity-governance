@@ -64,7 +64,6 @@ import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -1158,47 +1157,64 @@ public class ResendConfirmationManagerTest {
 
     }
 
-    @Test(description = "Resend for admin forced password reset OTP uses the configured OTP when the OTP length is " +
-            "configured.", dataProvider = "adminForcedPasswordResetOTPScenarios")
-    public void testGetSecretKeyForAdminForcedPasswordResetWithConfiguredOTP(String recoveryScenario, String channel)
+    @Test(description = "Resend for admin forced password reset OTP sends the configured OTP when the OTP length is " +
+            "configured, and keeps the default OTP generation otherwise.",
+            dataProvider = "adminForcedPasswordResetOTPResendScenarios")
+    public void testResendConfirmationCodeForAdminForcedPasswordReset(RecoveryScenarios recoveryScenario,
+                                                                      String notificationType, String channel,
+                                                                      String configuredOTP, String expectedCode)
             throws Exception {
 
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, "old-code", recoveryScenario,
+                RecoverySteps.UPDATE_PASSWORD);
+        userRecoveryData.setRemainingSetIds(channel);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user, recoveryScenario))
+                .thenReturn(userRecoveryData);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData, channel)).thenReturn(false);
+        mockedUtils.when(() -> Utils.resolveEventName(anyString())).thenReturn("TRIGGER_SMS_NOTIFICATION");
+        mockedUtils.when(() -> Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))
+                .thenReturn("+94770000001");
         mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN))
-                .thenReturn("ABCDEFGH1234");
-
-        assertEquals(invokeGetSecretKey(channel, recoveryScenario), "ABCDEFGH1234");
-        mockedUtils.verify(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), any()), never());
-    }
-
-    @Test(description = "Resend for admin forced password reset OTP keeps the default OTP generation when the OTP " +
-            "length is not configured.", dataProvider = "adminForcedPasswordResetOTPScenarios")
-    public void testGetSecretKeyForAdminForcedPasswordResetWithoutConfiguredOTP(String recoveryScenario,
-                                                                              String channel) throws Exception {
-
-        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN)).thenReturn(null);
-        mockedUtils.when(() -> Utils.generateSecretKey(channel, recoveryScenario, TEST_TENANT_DOMAIN, null))
+                .thenReturn(configuredOTP);
+        mockedUtils.when(() -> Utils.generateSecretKey(channel, recoveryScenario.name(), TEST_TENANT_DOMAIN, null))
                 .thenReturn("aB3dE6");
 
-        assertEquals(invokeGetSecretKey(channel, recoveryScenario), "aB3dE6");
-        mockedUtils.verify(() -> Utils.generateSecretKey(channel, recoveryScenario, TEST_TENANT_DOMAIN, null));
+        resendConfirmationManager.resendConfirmationCode(user, recoveryScenario.name(),
+                RecoverySteps.UPDATE_PASSWORD.name(), notificationType, properties);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        assertEquals(recoveryDataCaptor.getValue().getSecret(), expectedCode);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        assertEquals(eventCaptor.getValue().getEventProperties().get(IdentityRecoveryConstants.CONFIRMATION_CODE),
+                expectedCode);
     }
 
     @DataProvider
-    public Object[][] adminForcedPasswordResetOTPScenarios() {
+    public Object[][] adminForcedPasswordResetOTPResendScenarios() {
 
+        String email = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String sms = NotificationChannels.SMS_CHANNEL.getChannelType();
         return new Object[][]{
-                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name(),
-                        NotificationChannels.EMAIL_CHANNEL.getChannelType()},
-                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.name(),
-                        NotificationChannels.SMS_CHANNEL.getChannelType()}
+                // recoveryScenario, notificationType, channel, configuredOTP, expectedCode
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP,
+                        email, "ABCDEFGH1234", "ABCDEFGH1234"},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP,
+                        email, null, "aB3dE6"},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP,
+                        sms, "ABCDEFGH1234", "ABCDEFGH1234"},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP,
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP,
+                        sms, null, "aB3dE6"}
         };
-    }
-
-    private String invokeGetSecretKey(String channel, String recoveryScenario) throws Exception {
-
-        Method getSecretKey = ResendConfirmationManager.class.getDeclaredMethod("getSecretKey", String.class,
-                String.class, String.class);
-        getSecretKey.setAccessible(true);
-        return (String) getSecretKey.invoke(resendConfirmationManager, channel, recoveryScenario, TEST_TENANT_DOMAIN);
     }
 }

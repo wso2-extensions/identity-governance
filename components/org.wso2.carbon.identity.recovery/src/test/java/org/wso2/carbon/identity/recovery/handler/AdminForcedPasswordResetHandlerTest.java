@@ -142,6 +142,8 @@ public class AdminForcedPasswordResetHandlerTest {
         when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME))
                 .thenReturn(TEST_USER_STORE_DOMAIN);
         mockedUtils.when(() -> Utils.maskIfRequired(any())).thenReturn(MASKED_TEST_USERNAME);
+        // Use the real generator for the default OTP. The configured OTP is stubbed per test.
+        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(anyInt())).thenCallRealMethod();
 
     }
 
@@ -158,7 +160,7 @@ public class AdminForcedPasswordResetHandlerTest {
     public void testHandleClaimUpdate(boolean isEmailOtpEnabled,
                                       boolean isEmailLinkEnabled, boolean isSmsOtpEnabled,
                                       String expectedTemplateName, String expectedRecoveryScenario)
-            throws IdentityEventException {
+            throws Exception {
 
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
@@ -184,6 +186,16 @@ public class AdminForcedPasswordResetHandlerTest {
                     TEST_TENANT_DOMAIN)).thenReturn(String.valueOf(true));
         }
         adminForcedPasswordResetHandler.handleClaimUpdate(eventProperties, userStoreManager);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        String storedCode = recoveryDataCaptor.getValue().getSecret();
+        if (isEmailLinkEnabled) {
+            assertTrue(storedCode.matches("[0-9a-f-]{36}"), "Unexpected recovery link code: " + storedCode);
+            mockedUtils.verify(() -> Utils.generateAdminForcedPasswordResetOTP(anyString()), never());
+        } else {
+            assertTrue(storedCode.matches("[A-Z0-9]{6}"), "Unexpected default OTP: " + storedCode);
+        }
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         verify(identityEventService, times(1)).handleEvent(eventCaptor.capture());
         Event event = eventCaptor.getValue();
@@ -519,7 +531,6 @@ public class AdminForcedPasswordResetHandlerTest {
     public void testHandleClaimUpdateWithoutConfiguredOTP() throws Exception {
 
         mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN)).thenReturn(null);
-        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(anyInt())).thenCallRealMethod();
 
         String storedCode = handleEmailOTPClaimUpdateAndGetStoredCode();
         assertTrue(storedCode.matches("[A-Z0-9]{6}"), "Unexpected default OTP: " + storedCode);

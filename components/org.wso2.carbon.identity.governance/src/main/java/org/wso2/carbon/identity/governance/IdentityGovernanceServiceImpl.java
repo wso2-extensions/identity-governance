@@ -75,7 +75,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private  static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
     private static final String USERNAME_RECOVERY_SMS_ENABLE = "Recovery.Notification.Username.SMS.Enable";
     private static final String FALSE_STRING = "false";
-    private static final String ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH = "Recovery.AdminPasswordReset.OTP.OTPLength";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -154,7 +153,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private void validateAdminForcedPasswordResetOTPLength(Map<String, String> configurationDetails)
             throws IdentityGovernanceClientException {
 
-        String otpLength = StringUtils.trim(configurationDetails.get(ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH));
+        String otpLength = StringUtils.trim(configurationDetails.get(
+                IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH));
         if (StringUtils.isEmpty(otpLength)) {
             return;
         }
