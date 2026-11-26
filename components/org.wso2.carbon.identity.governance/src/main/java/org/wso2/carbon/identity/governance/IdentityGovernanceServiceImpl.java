@@ -74,10 +74,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private  static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
     private static final String USERNAME_RECOVERY_SMS_ENABLE = "Recovery.Notification.Username.SMS.Enable";
     private static final String FALSE_STRING = "false";
+    private static final String ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH = "Recovery.AdminPasswordReset.OTP.OTPLength";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
 
+        validateAdminForcedPasswordResetOTPLength(configurationDetails);
         try {
             IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
             IdentityProvider residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
@@ -140,6 +142,34 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             throw new IdentityGovernanceException(String.format("Error while checking if tenant %s is an organization.",
                     tenantDomain), e);
         }
+    }
+
+    /**
+     * Validate the admin forced password reset OTP length. An empty value is allowed and keeps the default OTP.
+     *
+     * @param configurationDetails Configurations to be updated.
+     * @throws IdentityGovernanceClientException If the OTP length is not an integer within the allowed range.
+     */
+    private void validateAdminForcedPasswordResetOTPLength(Map<String, String> configurationDetails)
+            throws IdentityGovernanceClientException {
+
+        String otpLength = configurationDetails.get(ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH);
+        if (StringUtils.isBlank(otpLength)) {
+            return;
+        }
+        try {
+            int length = Integer.parseInt(otpLength.trim());
+            if (length >= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH &&
+                    length <= IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
+                return;
+            }
+        } catch (NumberFormatException e) {
+            // Handled below as an invalid OTP length.
+        }
+        throw new IdentityGovernanceClientException(String.format("Invalid connector configuration. Admin forced " +
+                        "password reset OTP length should be an integer between %d and %d.",
+                IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH,
+                IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH), null);
     }
 
     @Override

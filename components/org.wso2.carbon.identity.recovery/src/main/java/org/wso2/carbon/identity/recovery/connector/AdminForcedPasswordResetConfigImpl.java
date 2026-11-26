@@ -128,8 +128,6 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         String enableAdminPasswordResetWithSMSOTP = "false";
         String enableAdminPasswordResetOffline = "false";
         String adminPasswordResetCodeExpiry = "1440";
-        // An empty OTP length keeps the default OTP generation behaviour.
-        String adminPasswordResetOTPLength = StringUtils.EMPTY;
 
         String adminPasswordRecoveryWithLinkProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
@@ -157,11 +155,6 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         if (StringUtils.isNotBlank(adminPasswordResetCodeExpiryProperty)) {
             adminPasswordResetCodeExpiry = adminPasswordResetCodeExpiryProperty;
         }
-        String adminPasswordResetOTPLengthProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH);
-        if (StringUtils.isNotBlank(adminPasswordResetOTPLengthProperty)) {
-            adminPasswordResetOTPLength = adminPasswordResetOTPLengthProperty;
-        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
@@ -174,8 +167,9 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
                 enableAdminPasswordResetOffline);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
                 adminPasswordResetCodeExpiry);
+        // An empty OTP length keeps the default OTP generation behaviour.
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH,
-                adminPasswordResetOTPLength);
+                StringUtils.EMPTY);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

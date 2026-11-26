@@ -59,6 +59,7 @@ import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -130,8 +131,6 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
-    // Same character set as the default admin forced password reset OTP.
-    private static final String ADMIN_PASSWORD_RESET_OTP_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -1477,8 +1476,8 @@ public class Utils {
             }
             return null;
         }
-        if (otpLength < IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_MIN_LENGTH ||
-                otpLength > IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_MAX_LENGTH) {
+        if (otpLength < IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH ||
+                otpLength > IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
             if (log.isDebugEnabled()) {
                 log.debug("Admin forced password reset OTP length out of range: " + otpLength + ". Using default OTP.");
             }
@@ -1488,7 +1487,7 @@ public class Utils {
             log.debug("Generating admin forced password reset OTP of length: " + otpLength + " for tenant: " +
                     tenantDomain);
         }
-        char[] otpChars = ADMIN_PASSWORD_RESET_OTP_CHARS.toCharArray();
+        char[] otpChars = IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.toCharArray();
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder otp = new StringBuilder(otpLength);
         for (int i = 0; i < otpLength; i++) {

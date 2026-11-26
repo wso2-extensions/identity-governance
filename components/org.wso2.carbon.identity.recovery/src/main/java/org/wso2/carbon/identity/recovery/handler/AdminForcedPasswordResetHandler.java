@@ -340,7 +340,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         } catch (IdentityRecoveryServerException e) {
             throw new IdentityEventException("Error while generating the admin forced password reset OTP.", e);
         }
-        char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        char[] chars = IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.toCharArray();
         SecureRandom rnd = new SecureRandom();
         StringBuilder sb = new StringBuilder("");
         for (int i = 0; i < 6; i++) {
