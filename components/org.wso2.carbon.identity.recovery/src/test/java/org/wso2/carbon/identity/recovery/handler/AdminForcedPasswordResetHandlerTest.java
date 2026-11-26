@@ -519,6 +519,7 @@ public class AdminForcedPasswordResetHandlerTest {
     public void testHandleClaimUpdateWithoutConfiguredOTP() throws Exception {
 
         mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(TEST_TENANT_DOMAIN)).thenReturn(null);
+        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(anyInt())).thenCallRealMethod();
 
         String storedCode = handleEmailOTPClaimUpdateAndGetStoredCode();
         assertTrue(storedCode.matches("[A-Z0-9]{6}"), "Unexpected default OTP: " + storedCode);

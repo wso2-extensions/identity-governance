@@ -39,7 +39,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -334,18 +333,10 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
         try {
             String otp = Utils.generateAdminForcedPasswordResetOTP(tenantDomain);
-            if (otp != null) {
-                return otp;
-            }
+            return otp != null ? otp :
+                    Utils.generateAdminForcedPasswordResetOTP(IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH);
         } catch (IdentityRecoveryServerException e) {
             throw new IdentityEventException("Error while generating the admin forced password reset OTP.", e);
         }
-        char[] chars = IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder("");
-        for (int i = 0; i < 6; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
     }
 }

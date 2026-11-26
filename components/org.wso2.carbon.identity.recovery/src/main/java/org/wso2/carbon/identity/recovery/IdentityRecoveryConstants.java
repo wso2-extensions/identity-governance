@@ -206,8 +206,6 @@ public class IdentityRecoveryConstants {
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
     public static final int OTP_CODE_DEFAULT_LENGTH = 6;
-    // Characters used for the admin forced password reset OTP.
-    public static final String ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
     public static final int RECOVERY_FLOW_ID_DEFAULT_EXPIRY_TIME = 15;
     // Recovery code given at the username and password recovery initiation.

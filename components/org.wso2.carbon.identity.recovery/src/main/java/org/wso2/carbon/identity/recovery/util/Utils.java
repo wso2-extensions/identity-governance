@@ -25,6 +25,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
@@ -131,6 +132,7 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
+    private static final String ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -1451,9 +1453,8 @@ public class Utils {
 
     /**
      * Generate the OTP for the admin forced password reset flow using the configured OTP length.
-     * The custom generation is used only when a valid OTP length is configured. Otherwise this method returns null so
-     * that the callers keep their default OTP generation behaviour. The OTP is generated here instead of through the
-     * OTPGenerator service, since that service limits the OTP length to 10 characters.
+     * Returns null when no OTP length is configured, so that the callers keep their default OTP generation. The OTP
+     * is generated here instead of through the OTPGenerator service, since that service limits the length to 10.
      *
      * @param tenantDomain Tenant domain.
      * @return Generated OTP, or null if a valid OTP length is not configured.
@@ -1462,36 +1463,29 @@ public class Utils {
     public static String generateAdminForcedPasswordResetOTP(String tenantDomain)
             throws IdentityRecoveryServerException {
 
-        String otpLengthValue = getOptionalRecoveryConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, tenantDomain);
-        if (StringUtils.isBlank(otpLengthValue)) {
-            return null;
-        }
-        int otpLength;
-        try {
-            otpLength = Integer.parseInt(otpLengthValue.trim());
-        } catch (NumberFormatException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Invalid admin forced password reset OTP length: " + otpLengthValue + ". Using default OTP.");
-            }
-            return null;
-        }
+        int otpLength = NumberUtils.toInt(StringUtils.trim(getOptionalRecoveryConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, tenantDomain)), -1);
+        // Not configured. Invalid values are rejected when the configuration is saved.
         if (otpLength < IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH ||
                 otpLength > IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
-            if (log.isDebugEnabled()) {
-                log.debug("Admin forced password reset OTP length out of range: " + otpLength + ". Using default OTP.");
-            }
             return null;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Generating admin forced password reset OTP of length: " + otpLength + " for tenant: " +
-                    tenantDomain);
-        }
-        char[] otpChars = IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.toCharArray();
+        return generateAdminForcedPasswordResetOTP(otpLength);
+    }
+
+    /**
+     * Generate an admin forced password reset OTP of the given length using uppercase letters and digits.
+     *
+     * @param otpLength OTP length.
+     * @return Generated OTP.
+     */
+    public static String generateAdminForcedPasswordResetOTP(int otpLength) {
+
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder otp = new StringBuilder(otpLength);
         for (int i = 0; i < otpLength; i++) {
-            otp.append(otpChars[secureRandom.nextInt(otpChars.length)]);
+            otp.append(ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.charAt(
+                    secureRandom.nextInt(ADMIN_FORCED_PASSWORD_RESET_OTP_CHARS.length())));
         }
         return otp.toString();
     }
