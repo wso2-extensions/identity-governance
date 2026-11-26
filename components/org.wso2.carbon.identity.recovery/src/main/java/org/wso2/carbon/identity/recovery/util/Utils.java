@@ -1465,7 +1465,6 @@ public class Utils {
 
         int otpLength = NumberUtils.toInt(StringUtils.trim(getOptionalRecoveryConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, tenantDomain)), -1);
-        // Not configured. Invalid values are rejected when the configuration is saved.
         if (otpLength < IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH ||
                 otpLength > IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
             return null;
