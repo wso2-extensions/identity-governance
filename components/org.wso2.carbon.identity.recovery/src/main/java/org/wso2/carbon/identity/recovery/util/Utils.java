@@ -1469,16 +1469,16 @@ public class Utils {
                 otpLength > IdentityMgtConstants.ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH) {
             return null;
         }
-        return generateAdminForcedPasswordResetOTP(otpLength);
+        return generateUppercaseAlphanumericOTP(otpLength);
     }
 
     /**
-     * Generate an admin forced password reset OTP of the given length using uppercase letters and digits.
+     * Generate an OTP of the given length using uppercase letters and digits.
      *
      * @param otpLength OTP length.
      * @return Generated OTP.
      */
-    public static String generateAdminForcedPasswordResetOTP(int otpLength) {
+    public static String generateUppercaseAlphanumericOTP(int otpLength) {
 
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder otp = new StringBuilder(otpLength);

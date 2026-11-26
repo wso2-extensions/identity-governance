@@ -143,7 +143,7 @@ public class AdminForcedPasswordResetHandlerTest {
                 .thenReturn(TEST_USER_STORE_DOMAIN);
         mockedUtils.when(() -> Utils.maskIfRequired(any())).thenReturn(MASKED_TEST_USERNAME);
         // Use the real generator for the default OTP. The configured OTP is stubbed per test.
-        mockedUtils.when(() -> Utils.generateAdminForcedPasswordResetOTP(anyInt())).thenCallRealMethod();
+        mockedUtils.when(() -> Utils.generateUppercaseAlphanumericOTP(anyInt())).thenCallRealMethod();
 
     }
 

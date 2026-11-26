@@ -334,7 +334,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         try {
             String otp = Utils.generateAdminForcedPasswordResetOTP(tenantDomain);
             return otp != null ? otp :
-                    Utils.generateAdminForcedPasswordResetOTP(IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH);
+                    Utils.generateUppercaseAlphanumericOTP(IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH);
         } catch (IdentityRecoveryServerException e) {
             throw new IdentityEventException("Error while generating the admin forced password reset OTP.", e);
         }
