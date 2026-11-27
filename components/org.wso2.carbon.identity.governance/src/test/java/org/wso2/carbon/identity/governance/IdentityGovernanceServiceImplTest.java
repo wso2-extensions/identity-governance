@@ -35,6 +35,7 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.exceptions.general.IdentityGovernanceClientException;
 import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.util.Arrays;
@@ -44,10 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertNotNull;
@@ -136,6 +139,54 @@ public class IdentityGovernanceServiceImplTest {
             assertEquals(expected.get(capturedProperty.getName()), capturedProperty.getValue());
         }
 
+    }
+
+    @Test(dataProvider = "invalidAdminForcedPasswordResetOTPLengths")
+    public void testUpdateConfigurationWithInvalidAdminForcedPasswordResetOTPLength(String otpLength)
+            throws Exception {
+
+        Map<String, String> configurationDetails = new HashMap<>();
+        configurationDetails.put("Recovery.AdminPasswordReset.OTP.OTPLength", otpLength);
+
+        assertThrows(IdentityGovernanceClientException.class, () ->
+                identityGovernanceService.updateConfiguration(TENANT_DOMAIN, configurationDetails));
+        verify(identityProvider, never()).setIdpProperties(any());
+    }
+
+    @DataProvider
+    public Object[][] invalidAdminForcedPasswordResetOTPLengths() {
+
+        return new Object[][]{
+                {"abc"},
+                {"12.5"},
+                {"3"},
+                {"33"},
+                {"-1"}
+        };
+    }
+
+    @Test(dataProvider = "validAdminForcedPasswordResetOTPLengths")
+    public void testUpdateConfigurationWithValidAdminForcedPasswordResetOTPLength(String otpLength)
+            throws Exception {
+
+        when(identityProvider.getIdpProperties()).thenReturn(new IdentityProviderProperty[0]);
+        Map<String, String> configurationDetails = new HashMap<>();
+        configurationDetails.put("Recovery.AdminPasswordReset.OTP.OTPLength", otpLength);
+
+        identityGovernanceService.updateConfiguration(TENANT_DOMAIN, configurationDetails);
+        verify(identityProvider).setIdpProperties(any());
+    }
+
+    @DataProvider
+    public Object[][] validAdminForcedPasswordResetOTPLengths() {
+
+        return new Object[][]{
+                // Empty keeps the default OTP generation.
+                {""},
+                {"4"},
+                {"12"},
+                {"32"}
+        };
     }
 
     @Test

@@ -1838,4 +1838,73 @@ public class UtilsTest {
 
         return userStoreDomainName +  UserCoreConstants.DOMAIN_SEPARATOR + username;
     }
+
+    @Test(description = "Admin forced password reset OTP falls back to the default generation when the OTP length " +
+            "is not configured or is invalid.", dataProvider = "adminForcedPasswordResetInvalidOTPLengthProvider")
+    public void testGenerateAdminForcedPasswordResetOTPWhenNotConfigured(String otpLength) throws Exception {
+
+        Map<String, String> configs = new HashMap<>();
+        if (otpLength != null) {
+            configs.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, otpLength);
+        }
+        mockAdminForcedPasswordResetOTPConfigs(configs);
+
+        assertNull(Utils.generateAdminForcedPasswordResetOTP(TENANT_DOMAIN));
+    }
+
+    @DataProvider
+    public Object[][] adminForcedPasswordResetInvalidOTPLengthProvider() {
+
+        return new Object[][]{
+                // Property not persisted (e.g. Oracle skips empty values).
+                {null},
+                {""},
+                {"  "},
+                {"twelve"},
+                {"3"},
+                {"33"}
+        };
+    }
+
+    @Test(description = "Admin forced password reset OTP uses the configured length with uppercase letters and digits.",
+            dataProvider = "adminForcedPasswordResetOTPLengthProvider")
+    public void testGenerateAdminForcedPasswordResetOTPWhenConfigured(String otpLength, int expectedLength)
+            throws Exception {
+
+        Map<String, String> configs = new HashMap<>();
+        configs.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_OTP_LENGTH, otpLength);
+        mockAdminForcedPasswordResetOTPConfigs(configs);
+
+        for (int i = 0; i < 20; i++) {
+            String otp = Utils.generateAdminForcedPasswordResetOTP(TENANT_DOMAIN);
+            assertNotNull(otp);
+            assertTrue(otp.matches("[A-Z0-9]{" + expectedLength + "}"), "Unexpected OTP: " + otp);
+        }
+    }
+
+    @DataProvider
+    public Object[][] adminForcedPasswordResetOTPLengthProvider() {
+
+        return new Object[][]{
+                {"4", 4},
+                {"12", 12},
+                {" 12 ", 12},
+                {"32", 32}
+        };
+    }
+
+    private void mockAdminForcedPasswordResetOTPConfigs(Map<String, String> configs) throws Exception {
+
+        when(identityGovernanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN))).thenAnswer(
+                invocation -> {
+                    String key = ((String[]) invocation.getArgument(0))[0];
+                    if (!configs.containsKey(key)) {
+                        return new Property[0];
+                    }
+                    Property property = new Property();
+                    property.setName(key);
+                    property.setValue(configs.get(key));
+                    return new Property[]{property};
+                });
+    }
 }

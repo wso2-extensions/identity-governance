@@ -28,6 +28,9 @@ public class IdentityMgtConstants {
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
     public static final String ERROR_CODE_DELIMITER = "-";
     public static final int MINIMUM_SMS_OTP_LENGTH = 4;
+    public static final String ADMIN_FORCED_PASSWORD_RESET_OTP_LENGTH = "Recovery.AdminPasswordReset.OTP.OTPLength";
+    public static final int ADMIN_FORCED_PASSWORD_RESET_OTP_MIN_LENGTH = 4;
+    public static final int ADMIN_FORCED_PASSWORD_RESET_OTP_MAX_LENGTH = 32;
     private IdentityMgtConstants() {
 
     }

@@ -848,6 +848,13 @@ public class ResendConfirmationManager {
                 case LITE_SIGN_UP:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "LiteRegistration");
+                case ADMIN_FORCED_PASSWORD_RESET_VIA_OTP:
+                case ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP:
+                    String adminForcedPasswordResetOTP = Utils.generateAdminForcedPasswordResetOTP(tenantDomain);
+                    if (adminForcedPasswordResetOTP != null) {
+                        return adminForcedPasswordResetOTP;
+                    }
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain, null);
                 default:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             null);
