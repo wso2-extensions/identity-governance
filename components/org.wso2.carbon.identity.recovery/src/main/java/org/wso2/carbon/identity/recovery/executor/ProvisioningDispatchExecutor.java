@@ -37,6 +37,7 @@ import java.util.List;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_ERROR;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.PROVISIONED_TENANT_DOMAIN;
 
 /**
  * Provisions a user and an organization in the order configured by the flow, then assigns configured roles.
@@ -191,15 +192,21 @@ public class ProvisioningDispatchExecutor implements Executor {
         // Switch both contexts: user provisioning reads the flow context, while listeners read the Carbon context.
         String currentTenantDomain = context.getTenantDomain();
         PrivilegedCarbonContext.startTenantFlow();
+        ExecutorResponse response;
         try {
             PrivilegedCarbonContext.getThreadLocalCarbonContext()
                     .setTenantDomain(organizationTenantDomain, true);
             context.setTenantDomain(organizationTenantDomain);
-            return provisionUser(userProvisioningExecutor, context);
+            response = provisionUser(userProvisioningExecutor, context);
         } finally {
             context.setTenantDomain(currentTenantDomain);
             PrivilegedCarbonContext.endTenantFlow();
         }
+        if (STATUS_COMPLETE.equals(response.getResult())) {
+            // The user exists in the organization, so the rest of the flow refers to it as the provisioned tenant.
+            context.setProperty(PROVISIONED_TENANT_DOMAIN, organizationTenantDomain);
+        }
+        return response;
     }
 
     private ExecutorResponse provisionUser(Executor executor, FlowExecutionContext context) throws FlowEngineException {
@@ -278,6 +285,7 @@ public class ProvisioningDispatchExecutor implements Executor {
     public ExecutorResponse rollback(FlowExecutionContext context) throws FlowEngineException {
 
         RegistrationCompletionDeferral.discard(context);
+        context.getProperties().remove(PROVISIONED_TENANT_DOMAIN);
         return null;
     }
 }
