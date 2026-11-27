@@ -316,6 +316,8 @@ public class ResendConfirmationManager {
             }
             properties.put(IdentityRecoveryConstants.SEND_TO, sendTo);
         }
+        properties.putIfAbsent(IdentityRecoveryConstants.CALLBACK, StringUtils.EMPTY);
+        properties.putIfAbsent(IdentityRecoveryConstants.SERVICE_PROVIDER, StringUtils.EMPTY);
         if (properties.containsKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME)) {
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     properties.get(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME));
